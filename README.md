@@ -4,6 +4,8 @@ Current monolithic Large Language Models (LLMs) often fail at executing multi-st
 
 It provides an Infrastructure-as-Code (IaC) testbed that dynamically loads attack scenarios against standard base images (using physical hardware and custom software emulations).
 
+**Important:** This project is designed for **OpenStack** environments and utilizes the [**CAVE**](https://gitlab.opencode.de/BSI-Bund/cave) infrastructure for deployment.
+
 **Note:** This is a research project. Detailed documentation, including Architectural Decision Records (ADRs) and the project proposal, can be found in the `docs/` folder.
 
 ## Project Structure
@@ -21,4 +23,39 @@ It provides an Infrastructure-as-Code (IaC) testbed that dynamically loads attac
 
 ## Getting Started
 
-*(Instructions for setting up the environment, building the packer images, and running the LangGraph agents will be added here).*
+Deployment is managed using the [CAVE Infrastructure Docker Wrapper](https://github.com/FelixHertweck/cave-infrastructure-docker). Ensure you have a running OpenStack environment and the necessary credentials. For more details see [README of CAVE Infrastructure Docker](https://github.com/FelixHertweck/cave-infrastructure-docker/blob/main/README.md).
+
+### 1. Prepare Environment
+Ensure you have a running OpenStack environment (e.g., by installing MicroStack). 
+For full details on these steps, see the [CAVE Infrastructure Docker README](https://github.com/FelixHertweck/cave-infrastructure-docker/blob/main/README.md).
+
+```bash
+git clone https://github.com/FelixHertweck/cave-infrastructure-docker.git
+cd cave-infrastructure-docker
+cp .env.sample .env
+# /!\ Configure .env and place your SSH keys in ./ssh-keys/ before continuing /!\
+
+# Start the docker container in the background
+docker compose up -d
+
+# Run the host initialization script (sets up NAT, flavors, VPN users, etc.)
+sudo ./scripts/post-openstack-init.sh
+
+# Run the pre-build setup (downloads base images and sets up security groups)
+docker compose run --rm cave /cave/pre-build-images.sh
+```
+
+### 2. Build the Base Images
+Build the Aegis base images using Packer by providing this repository's URL. Make sure to build **all** required images during this interactive step.
+
+```bash
+docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertweck/aegis-grid.git
+```
+
+### 3. Deploy Infrastructure
+TODO: Add details with configuration files
+Start the interactive deployment wrapper to provision the lab:
+
+```bash
+docker compose run --rm cave /cave/deploy-wrapper.sh
+```
