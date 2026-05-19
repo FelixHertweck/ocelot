@@ -4,6 +4,8 @@ Current monolithic Large Language Models (LLMs) often fail at executing multi-st
 
 It provides an Infrastructure-as-Code (IaC) testbed that dynamically loads attack scenarios against standard base images (using physical hardware and custom software emulations).
 
+**Note:** This is a research project. Detailed documentation, including Architectural Decision Records (ADRs) and the project proposal, can be found in the `docs/` folder.
+
 ## Project Structure
 
 * **`.github/`**: GitHub Actions workflows for CI/CD.
@@ -11,8 +13,7 @@ It provides an Infrastructure-as-Code (IaC) testbed that dynamically loads attac
 * **`docs/`**: Project documentation.
   * **`adrs/`**: Architecture Decision Records.
 * **`images/`**: Packer configurations to build the VM images for the ICS testbed (inspired by `cave-infrastructure-docker`).
-  * **`kali-agent/`**: Base image — installs Kali Linux with VNC, noVNC, MCP server, and AI agent tooling. Must be built first.
-  * **`attacker-v1/`**: Attacker image — layers on top of `kali-agent` and installs scenario-specific attack tools.
+  * **`attacker/`**: Attacker image — installs Kali Linux with VNC, noVNC, MCP server, AI agent tooling, and scenario-specific attack tools. Must be built for the attacker VM.
 * **`src/`**: Source code for the AI agents and knowledge graph.
   * **`agents/`**: LangGraph orchestration, Recon Agent, and Execution Agent.
   * **`kg/`**: Knowledge Graph integration and schema definitions.
