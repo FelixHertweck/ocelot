@@ -1,0 +1,36 @@
+{
+  firstOctet: 10,
+  wireguardCidr: "10.253.0.0/16",
+  globalInstances: [],
+  labs: [
+    {
+      name: "decepticon-vs-aloha",
+      times: 1,
+      virtualNetworks: [
+        {
+          internalDns: false,
+          id: 1,
+        },
+      ],
+      instances: [
+        {
+          type: "linux",
+          image: "aloha-water-treatment:latest",
+          networks: [ 1 ],
+          lastOctet: 10,
+          name: "aloha-water-treatment",
+          flavor: "server-small",
+          hostname: "aloha-water-treatment",
+        },
+        {
+          type: "linux",
+          image: "decepticon:latest",
+          networks: [ 1 ],
+          name: "decepticon",
+          flavor: "server-medium",
+          hostname: "decepticon",
+        },
+      ],
+    },
+  ],
+}
