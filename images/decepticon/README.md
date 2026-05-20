@@ -4,30 +4,42 @@ Builds an Ubuntu 24.04 image with [Decepticon](https://github.com/PurpleAILAB/De
 
 ## Configuration
 
-Decepticon reads its configuration from `~/.decepticon/.env` on the deployed VM. This file is **not** baked into the image and must be provided after deployment.
-
-Use `config/decepticon.env.example` from this repository as a template:
+All configuration lives in a single file: `config/decepticon.env` in this repository. Copy it to the deployed VM, fill in your values, and everything runs non-interactively.
 
 ```bash
-# Copy the example config to the deployed VM
-scp config/decepticon.env.example ubuntu@<VM_IP>:~/.decepticon/.env
-
-# SSH into the VM and fill in your API keys and passwords
+scp config/decepticon.env ubuntu@<VM_IP>:~/.decepticon/.env
 ssh ubuntu@<VM_IP>
 nano ~/.decepticon/.env
 ```
 
-At minimum, set one LLM API key (e.g. `ANTHROPIC_API_KEY`) and change the default database passwords (`POSTGRES_PASSWORD`, `NEO4J_PASSWORD`).
+The file contains three sections:
+
+| Section | What to configure |
+|---|---|
+| LLM providers | API keys for at least one provider |
+| Engagement | Target subnet/IP ranges, threat profile, scope |
+| Databases | Change `POSTGRES_PASSWORD` and `NEO4J_PASSWORD` |
 
 ## Starting Decepticon
 
-After placing the configuration file, start Decepticon with:
-
 ```bash
-decepticon
+decepticon-start
 ```
 
+This wrapper script:
+1. Sources `~/.decepticon/.env`
+2. If `DECEPTICON_ENGAGEMENT_NAME` is set, generates the workspace files (`roe.md`, `conops.md`) from the engagement variables in the config — the interactive Soundwave dialog is skipped
+3. Starts `decepticon`
+
+The interactive onboarding wizard (credentials) is also **automatically skipped** because `~/.decepticon/.env` already exists.
+
 The web dashboard is then available at `http://<VM_IP>:3000`.
+
+To force reconfiguration of credentials:
+
+```bash
+decepticon onboard --reset
+```
 
 ## Services
 

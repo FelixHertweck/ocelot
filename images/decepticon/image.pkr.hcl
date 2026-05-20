@@ -29,6 +29,11 @@ source "openstack" "decepticon" {
 build {
   sources = ["source.openstack.decepticon"]
 
+  provisioner "file" {
+    source      = "start.sh"
+    destination = "/tmp/decepticon-start.sh"
+  }
+
   provisioner "shell" {
     script = "./setup.sh"
   }
