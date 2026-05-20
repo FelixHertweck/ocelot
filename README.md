@@ -53,9 +53,7 @@ docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertw
 ```
 
 ### 3. Deploy Infrastructure
-TODO: Add details with configuration files
-Start the interactive deployment wrapper to provision the lab:
 
-```bash
-docker compose run --rm cave /cave/deploy-wrapper.sh
-```
+For deployment guides see the specific scenario documentation:
+
+- [Phase 0 — Decepticon vs. Aloha Water Treatment](config/phase-0/README.md)
