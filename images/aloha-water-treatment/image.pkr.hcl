@@ -16,7 +16,7 @@ locals {
 }
 
 source "openstack" "aloha-water-treatment" {
-  flavor                       = "server-medium"
+  flavor                       = "server-small"
   image_name                   = "aloha-water-treatment-${local.version}"
   external_source_image_url    = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
   ssh_username                 = "ubuntu"
