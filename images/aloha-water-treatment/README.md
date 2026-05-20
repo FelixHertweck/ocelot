@@ -1,6 +1,6 @@
 # Aloha Water Treatment Simulator
 
-This image builds an Ubuntu 24.04 VM running the [MITRE Aloha Water Treatment Simulator](https://github.com/mitre/aloha-water-treatment) — a simplified water treatment plant simulation exposing Modbus TCP and a Flask-based HMI web interface. It serves as the OT target in Decepticon scenario deployments.
+This image builds an Ubuntu 24.04 VM running the [MITRE Aloha Water Treatment Simulator](https://github.com/mitre/aloha-water-treatment) — a simplified water treatment plant simulation exposing Modbus TCP and a Flask-based HMI web interface. It serves as the OT target in attack scenario deployments.
 
 ## Services
 
@@ -21,36 +21,16 @@ Select `aloha-water-treatment` when prompted.
 
 ## Configuration
 
-The Decepticon scenario is configured via a JSON file placed in the CAVE infrastructure backend.
+The simulator reads its configuration from `/etc/aloha-water-treatment.env` on the deployed VM. This file is created with defaults during image build and can be overridden after deployment.
 
-### Configuration File
-
-The example configuration is located at:
-
-```
-config/aloha-water-treatment.example.json
-```
-
-### Where to Place It
-
-Copy the example config to the `backend/configs/` directory of your [cave-infrastructure-docker](https://github.com/FelixHertweck/cave-infrastructure-docker) checkout and rename it:
+Use `config/aloha-water-treatment.env.example` from this repository as a reference:
 
 ```bash
-cp config/aloha-water-treatment.example.json <path-to-cave-infrastructure-docker>/backend/configs/aloha-water-treatment.json
+# Copy the example config to the deployed VM
+scp config/aloha-water-treatment.env.example ubuntu@<VM_IP>:/etc/aloha-water-treatment.env
+
+# Restart services to apply changes
+ssh ubuntu@<VM_IP> "sudo systemctl restart aloha-plc.service aloha-hmi.service"
 ```
 
-Adjust the `image_name_prefix` values to match the image names built by Packer (use `openstack image list` to confirm).
-
-### Deploying the Scenario
-
-Run the following command from within your `cave-infrastructure-docker` directory:
-
-```bash
-docker compose run --rm cave /cave/deploy-wrapper.sh aloha-water-treatment
-```
-
-To tear down the deployment:
-
-```bash
-docker compose run --rm cave /cave/exterminate.sh aloha-water-treatment
-```
+The only configurable parameter is `MODBUS_PORT` (default: `5020`). The PLC binds to all interfaces (`0.0.0.0`) and the HMI connects to it locally (`127.0.0.1`) — both using the configured port.
