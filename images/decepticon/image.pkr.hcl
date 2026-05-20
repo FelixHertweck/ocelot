@@ -16,7 +16,7 @@ locals {
 }
 
 source "openstack" "decepticon" {
-  flavor                       = "server-medium"
+  flavor                       = "server-small"
   image_name                   = "decepticon-${local.version}"
   external_source_image_url    = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
   external_source_image_format = "qcow2"
