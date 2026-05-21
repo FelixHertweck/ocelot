@@ -1,7 +1,25 @@
 {
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",
-  globalInstances: [],
+  globalInstances: [
+    {
+      name: "vpn",
+      type: "vpn-server",
+      image: "vpn:latest",
+      flavor: "server-small",
+      hostname: "vpn",
+      fqdn: "vpn.cave.lab",
+    },
+    {
+      type: "dns-server",
+      image: "dns:latest",
+      name: "dns",
+      flavor: "server-small",
+      lastOctet: 254,
+      hostname: "dns.cave.lab",
+      fqdn: "dns.cave.lab",
+    },
+  ],
   labs: [
     {
       name: "decepticon-vs-aloha",
@@ -12,6 +30,7 @@
           id: 1,
         },
       ],
+      dnsConfig: [],
       instances: [
         {
           type: "linux",
@@ -21,14 +40,17 @@
           name: "aloha-water-treatment",
           flavor: "server-small",
           hostname: "aloha-water-treatment",
+          postCommand: "sudo systemctl restart aloha-plc.service aloha-hmi.service",
         },
         {
           type: "linux",
           image: "decepticon:latest",
           networks: [ 1 ],
+          lastOctet: 20,
           name: "decepticon",
-          flavor: "server-medium",
+          flavor: "server-large",
           hostname: "decepticon",
+          postCommand: "bash ~/set-targets.sh && decepticon-start",
         },
       ],
     },

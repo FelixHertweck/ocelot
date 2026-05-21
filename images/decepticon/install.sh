@@ -19,3 +19,7 @@ mkdir -p ~/.decepticon
 # Install start wrapper to /usr/local/bin
 sudo mv /tmp/decepticon-start.sh /usr/local/bin/decepticon-start
 sudo chmod +x /usr/local/bin/decepticon-start
+
+# Install set-targets script to home directory
+mv /tmp/set-targets.sh ~/set-targets.sh
+chmod +x ~/set-targets.sh

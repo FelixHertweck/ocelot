@@ -34,6 +34,11 @@ build {
     destination = "/tmp/decepticon-start.sh"
   }
 
+  provisioner "file" {
+    source      = "assets/set-targets.sh"
+    destination = "/tmp/set-targets.sh"
+  }
+
   provisioner "shell" {
     script = "./setup.sh"
   }

@@ -38,45 +38,9 @@ docker compose run --rm cave /cave/deploy-wrapper.sh phase-0/phase0-decepticon -
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-0/phase0-decepticon --wg --lab-prefix aegis-p0
 ```
 
-## 3. Push Configs and Start Decepticon
+Both VMs are fully configured automatically during deployment via `postCommand`:
 
-After deployment, push the engagement configs to both VMs.
+- **aloha-water-treatment**: restarts `aloha-plc.service` and `aloha-hmi.service`
+- **decepticon**: runs `set-targets.sh` (auto-detects the shared subnet, verifies Modbus/HMI reachability, patches `~/.decepticon/.env`) and then starts the agent via `decepticon-start`
 
-**Before pushing**, open `./configs/phase-0/decepticon.env` and add your LLM API key (at minimum `ANTHROPIC_API_KEY`).
-
-Push `aloha-water-treatment.env` to the target VM and restart both services:
-
-```bash
-docker compose run --rm cave /cave/push-vm-config.sh \
-  --only-instances aloha-water-treatment-1 \
-  --config-file ./configs/phase-0/aloha-water-treatment.env \
-  --remote-path /etc/aloha-water-treatment.env \
-  --post-command "sudo systemctl restart aloha-plc.service aloha-hmi.service"
-```
-
-Push `decepticon.env` to the decepticon VM (the destination directory is created automatically):
-
-```bash
-docker compose run --rm cave /cave/push-vm-config.sh \
-  --only-instances decepticon-1 \
-  --config-file ./configs/phase-0/decepticon.env \
-  --remote-path /home/ubuntu/.decepticon/.env
-```
-
-Push `set-targets.sh`, run it, and start Decepticon in one step:
-
-```bash
-docker compose run --rm cave /cave/push-vm-config.sh \
-  --only-instances decepticon-1 \
-  --config-file ./configs/phase-0/set-targets.sh \
-  --remote-path /home/ubuntu/set-targets.sh \
-  --post-command "bash ~/set-targets.sh && decepticon-start"
-```
-
-`set-targets.sh` runs on the decepticon VM itself — it reads the VM's own network interface to derive the shared subnet, then builds the target IP as `<subnet>.10`. It will:
-
-1. Verify Modbus (port 5020) and HMI (port 8090) on `aloha-water-treatment` are reachable
-2. Patch `~/.decepticon/.env` with `DECEPTICON_TARGET_RANGES` and `DECEPTICON_TARGET_URLS`
-3. Print the Decepticon dashboard URL (`http://<decepticon-ip>:3000`)
-
-After that `decepticon-start` launches the agent immediately.
+The Decepticon dashboard URL (`http://<decepticon-ip>:3000`) is printed to the VM console at the end of the `postCommand`.
