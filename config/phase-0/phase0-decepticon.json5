@@ -22,7 +22,7 @@
   ],
   labs: [
     {
-      name: "decepticon-vs-aloha",
+      name: "",
       times: 1,
       virtualNetworks: [
         {
@@ -35,6 +35,7 @@
         {
           type: "linux",
           image: "aloha-water-treatment:latest",
+          post: "aloha-water-treatment",
           networks: [ 1 ],
           lastOctet: 10,
           name: "aloha-water-treatment",
@@ -45,12 +46,16 @@
         {
           type: "linux",
           image: "decepticon:latest",
+          post: "decepticon",
           networks: [ 1 ],
           lastOctet: 20,
           name: "decepticon",
           flavor: "server-large",
           hostname: "decepticon",
-          postCommand: "bash ~/set-targets.sh && decepticon-start",
+          configFiles: [
+            { source: "/cave/backend/configs/phase-0/decepticon.env", destination: "/home/ubuntu/.decepticon/.env" },
+          ],
+          postCommand: "decepticon-start",
         },
       ],
     },
