@@ -13,8 +13,10 @@ sudo chmod 666 /var/run/docker.sock
 # Create config directory — populated post-deploy via ~/.decepticon/.env
 mkdir -p ~/.decepticon
 
-# Copy bundled docker-compose.yml into the Decepticon home directory
+# Copy bundled files into the Decepticon home directory
 cp /tmp/assets/docker-compose.yml ~/.decepticon/docker-compose.yml
+cp -r /tmp/assets/config ~/.decepticon/config
+cp -r /tmp/assets/containers ~/.decepticon/containers
 
 # Install start wrapper to /usr/local/bin
 sudo mv /tmp/assets/start.sh /usr/local/bin/decepticon-start
