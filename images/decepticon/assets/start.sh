@@ -68,4 +68,6 @@ if [ -n "${DECEPTICON_ENGAGEMENT_NAME:-}" ]; then
     fi
 fi
 
-exec decepticon "$@"
+DECEPTICON_DIR="${DECEPTICON_HOME:-$HOME/.decepticon}"
+cd "$DECEPTICON_DIR"
+exec docker compose up -d

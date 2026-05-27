@@ -30,8 +30,8 @@ build {
   sources = ["source.openstack.decepticon"]
 
   provisioner "file" {
-    source      = "start.sh"
-    destination = "/tmp/decepticon-start.sh"
+    source      = "assets"
+    destination = "/tmp"
   }
 
   provisioner "shell" {
