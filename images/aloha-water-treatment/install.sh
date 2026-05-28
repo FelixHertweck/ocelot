@@ -7,7 +7,7 @@ APP_DIR="/opt/aloha-water-treatment"
 APP_USER="ubuntu"
 ENV_FILE="/etc/aloha-water-treatment.env"
 
-sudo git clone https://github.com/mitre/aloha-water-treatment.git "${APP_DIR}"
+sudo git clone https://github.com/FelixHertweck/aloha-water-treatment.git "${APP_DIR}"
 
 sudo python3 -m venv "${APP_DIR}/venv"
 sudo "${APP_DIR}/venv/bin/pip" install --upgrade pip
