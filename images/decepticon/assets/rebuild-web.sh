@@ -25,4 +25,4 @@ fi
 export DECEPTICON_SRC_DIR="./src"
 
 cd "$DECEPTICON_DIR"
-docker compose build web
+docker compose --env-file "$ENV_FILE" build web
