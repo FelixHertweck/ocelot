@@ -166,6 +166,7 @@ services:
     build:
       context: ${DECEPTICON_SRC_DIR:-.}
       dockerfile: containers/web.Dockerfile
+      network: host
       args:
         VERSION: ${VERSION:-0.0.0}
         NEXT_PUBLIC_LANGGRAPH_API_URL: ${NEXT_PUBLIC_LANGGRAPH_API_URL:-http://localhost:2024}
