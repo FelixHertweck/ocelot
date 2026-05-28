@@ -55,7 +55,7 @@
           configFiles: [
             { source: "/cave/backend/configs/phase-0/decepticon.env", destination: "/home/ubuntu/.decepticon/.env" },
           ],
-          postCommand: "decepticon-start",
+          postCommand: "decepticon-rebuild-web && decepticon-start",
         },
       ],
     },

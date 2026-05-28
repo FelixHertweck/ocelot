@@ -18,7 +18,10 @@ cp /tmp/assets/docker-compose.yml ~/.decepticon/docker-compose.yml
 cp -r /tmp/assets/config ~/.decepticon/config
 cp -r /tmp/assets/containers ~/.decepticon/containers
 
-# Install start wrapper to /usr/local/bin
+# Install start and rebuild wrappers to /usr/local/bin
 sudo mv /tmp/assets/start.sh /usr/local/bin/decepticon-start
 sudo chmod +x /usr/local/bin/decepticon-start
+
+sudo mv /tmp/assets/rebuild-web.sh /usr/local/bin/decepticon-rebuild-web
+sudo chmod +x /usr/local/bin/decepticon-rebuild-web
 
