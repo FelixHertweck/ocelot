@@ -1,0 +1,63 @@
+{
+  firstOctet: 10,
+  wireguardCidr: "10.253.0.0/16",
+  globalInstances: [
+    {
+      name: "vpn",
+      type: "vpn-server",
+      image: "vpn:latest",
+      flavor: "server-small",
+      hostname: "vpn",
+      fqdn: "vpn.cave.lab",
+    },
+    {
+      type: "dns-server",
+      image: "dns:latest",
+      name: "dns",
+      flavor: "server-small",
+      lastOctet: 254,
+      hostname: "dns.cave.lab",
+      fqdn: "dns.cave.lab",
+    },
+  ],
+  labs: [
+    {
+      name: "phase-0-openhands",
+      times: 1,
+      virtualNetworks: [
+        {
+          internalDns: false,
+          id: 1,
+        },
+      ],
+      dnsConfig: [],
+      instances: [
+        {
+          type: "linux",
+          image: "aloha-water-treatment:latest",
+          post: "aloha-water-treatment",
+          networks: [ 1 ],
+          lastOctet: 10,
+          name: "aloha-water-treatment",
+          flavor: "server-small",
+          hostname: "aloha-water-treatment",
+          postCommand: "sudo systemctl restart aloha-plc.service aloha-hmi.service",
+        },
+        {
+          type: "linux",
+          image: "openhands:latest",
+          post: "openhands",
+          networks: [ 1 ],
+          lastOctet: 20,
+          name: "openhands",
+          flavor: "server-large",
+          hostname: "openhands",
+          configFiles: [
+            { source: "/cave/backend/configs/phase-0-openhands/openhands.env", destination: "/home/ubuntu/.openhands/.env" },
+          ],
+          postCommand: "openhands-run",
+        },
+      ],
+    },
+  ],
+}

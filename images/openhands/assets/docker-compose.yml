@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  openhands:
+    # Switch to latest release tag when new version is available
+    # current version has missing dependency, fixed with https://github.com/OpenHands/OpenHands/commit/e073659755487d831eb6eb4ef0e6a543f64fdb80 
+    # but missing in current release
+    image: ghcr.io/openhands/openhands:e073659
+    container_name: openhands-app
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      AGENT_SERVER_IMAGE_REPOSITORY: ghcr.io/openhands/agent-server
+      AGENT_SERVER_IMAGE_TAG: 1.24.0-python
+      WORKSPACE_MOUNT_PATH: $PWD/workspace
+      OH_PERMITTED_CORS_ORIGINS_0: "http://${HOST_IP:-localhost}:3000"
+      OH_PERMITTED_CORS_ORIGINS_1: "http://localhost:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/data:/.openhands
+      - ~/workspace:/opt/workspace_base
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - openhands-network
+
+networks:
+  openhands-network:
+    driver: bridge
