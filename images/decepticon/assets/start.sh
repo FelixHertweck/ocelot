@@ -11,4 +11,4 @@ if [ -f "$DECEPTICON_DIR/.env" ]; then
 fi
 
 cd "$DECEPTICON_DIR"
-exec docker compose up -d
+exec docker compose up -d --quiet-pull
