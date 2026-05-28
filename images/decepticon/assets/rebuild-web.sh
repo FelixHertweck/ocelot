@@ -23,6 +23,25 @@ git -C "$SRC_DIR" checkout "$REPO_REF"
 # — and the CSP sed would append a duplicate host every run.
 git -C "$SRC_DIR" checkout -- .
 
+# Patch the Dockerfile to expose NEXT_PUBLIC_* build args to next build.
+# Without ARG+ENV declarations in the build stage the values passed via
+# docker compose build args never reach `next build` and localhost stays baked in.
+DOCKERFILE="$SRC_DIR/containers/web.Dockerfile"
+if ! grep -q "NEXT_PUBLIC_LANGGRAPH_API_URL" "$DOCKERFILE"; then
+    LANGGRAPH_URL="${NEXT_PUBLIC_LANGGRAPH_API_URL:-http://localhost:2024}"
+    TERMINAL_URL="${NEXT_PUBLIC_TERMINAL_WS_URL:-ws://localhost:3003}"
+    sed -i '/^RUN npm run build$/i ENV NEXT_PUBLIC_LANGGRAPH_API_URL='"${LANGGRAPH_URL}"'\nENV NEXT_PUBLIC_TERMINAL_WS_URL='"${TERMINAL_URL}" "$DOCKERFILE"
+fi
+
+# Patch CSP to allow connections to the configured external hosts.
+# The upstream app hardcodes only localhost in connect-src, which blocks
+# any non-localhost NEXT_PUBLIC_* URL set in the env.
+LANGGRAPH_HOST=$(echo "${NEXT_PUBLIC_LANGGRAPH_API_URL:-http://localhost:2024}" | sed 's|^[a-z]*://||' | cut -d'/' -f1)
+TERMINAL_HOST=$(echo "${NEXT_PUBLIC_TERMINAL_WS_URL:-ws://localhost:3003}" | sed 's|^[a-z]*://||' | cut -d'/' -f1)
+
+sed -i "s|ws://localhost:\* http://localhost:\*|ws://localhost:* http://localhost:* ws://${TERMINAL_HOST} http://${LANGGRAPH_HOST}|g" \
+    "$SRC_DIR/clients/web/next.config.ts"
+
 export DECEPTICON_SRC_DIR="./src"
 
 cd "$DECEPTICON_DIR"
