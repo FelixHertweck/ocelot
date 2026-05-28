@@ -18,6 +18,10 @@ cp /tmp/assets/docker-compose.yml ~/.decepticon/docker-compose.yml
 cp -r /tmp/assets/config ~/.decepticon/config
 cp -r /tmp/assets/containers ~/.decepticon/containers
 
+# Pre-pull all images so decepticon-start doesn't block on downloads
+cd ~/.decepticon
+docker compose pull --quiet
+
 # Install start and rebuild wrappers to /usr/local/bin
 sudo mv /tmp/assets/start.sh /usr/local/bin/decepticon-start
 sudo chmod +x /usr/local/bin/decepticon-start
