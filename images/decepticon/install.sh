@@ -13,6 +13,9 @@ sudo chmod 666 /var/run/docker.sock
 # Create config directory — populated post-deploy via ~/.decepticon/.env
 mkdir -p ~/.decepticon
 
+# Clone Decepticon source code for web container rebuild
+git clone https://github.com/purpleailab/decepticon ~/.decepticon/src
+
 # Copy bundled files into the Decepticon home directory
 cp /tmp/assets/docker-compose.yml ~/.decepticon/docker-compose.yml
 cp -r /tmp/assets/config ~/.decepticon/config
