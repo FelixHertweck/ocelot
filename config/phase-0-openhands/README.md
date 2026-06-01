@@ -1,11 +1,11 @@
-# Phase 0: OpenHands
+# Phase 0: OpenHands vs. Aloha Water Treatment
 
 Deploys two VMs in a shared network:
 
 | VM | Image | Role |
 |---|---|---|
 | `aloha-water-treatment` | `aloha-water-treatment:latest` | Modbus TCP water treatment plant simulator (target) |
-| `openhands` | `openhands:latest` | AI-driven autonomous agent |
+| `openhands` | `openhands:latest` | AI-driven autonomous agent (attacker) |
 
 ## Prerequisites
 
@@ -36,6 +36,14 @@ nano configs/phase-0-openhands/openhands.env
 
 ## 3. Deploy Infrastructure
 
+Run the interactive wrapper from your `cave-infrastructure-docker` directory:
+
+```bash
+docker compose run --rm cave /cave/deploy-wrapper.sh
+```
+
+To deploy non-interactively with a custom lab prefix:
+
 ```bash
 # OpenVPN
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-0-openhands/phase0-openhands --lab-prefix aegis-p0oh
@@ -44,10 +52,22 @@ docker compose run --rm cave /cave/deploy-wrapper.sh phase-0-openhands/phase0-op
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-0-openhands/phase0-openhands --wg --lab-prefix aegis-p0oh
 ```
 
-The OpenHands agent starts automatically once the VM is up and the env file is in place. It reads `OPENHANDS_TASK` from `~/.openhands/.env` and runs headlessly — no interactive session required.
+Both VMs are fully configured automatically during deployment via `postCommand`:
 
-To run a one-off task manually after deployment:
+- **aloha-water-treatment**: restarts `aloha-plc.service` and `aloha-hmi.service`
+- **openhands**: runs `run.sh` which reads `OPENHANDS_TASK` from `~/.env` and starts the agent headlessly — no interactive session required
+
+## 4. Connect and Access
+
+After deployment, retrieve the OpenVPN client config from your `cave-infrastructure-docker` output directory and connect from your local machine:
 
 ```bash
-ssh ubuntu@<openhands-ip> openhands-run "your task here"
+sudo openvpn --config out/test/openvpn/admins/admin1.ovpn
 ```
+
+**OpenHands runs fully automatically** — no further action required. You can follow progress via the dashboard:
+
+| Service | URL |
+|---|---|
+| OpenHands dashboard | http://10.1.1.20:3000/ |
+| Aloha Water Treatment HMI | http://10.1.1.10:8090/ |

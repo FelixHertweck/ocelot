@@ -43,4 +43,17 @@ Both VMs are fully configured automatically during deployment via `postCommand`:
 - **aloha-water-treatment**: restarts `aloha-plc.service` and `aloha-hmi.service`
 - **decepticon**: runs `set-targets.sh` (auto-detects the shared subnet, verifies Modbus/HMI reachability, patches `~/.decepticon/.env`) and then starts the agent via `decepticon-start`
 
-The Decepticon dashboard URL (`http://<decepticon-ip>:3000`) is printed to the VM console at the end of the `postCommand`.
+## 3. Connect and Access
+
+After deployment, retrieve the OpenVPN client config from your `cave-infrastructure-docker` output directory and connect from your local machine:
+
+```bash
+sudo openvpn --config out/test/openvpn/admins/admin1.ovpn
+```
+
+Once connected, open the Decepticon dashboard in your browser — the engagement is already created. **Open the page once** to trigger the agent, then **confirm the generated plan once** before it starts executing:
+
+| Service | URL |
+|---|---|
+| Decepticon dashboard | http://10.1.1.20:3000/ |
+| Aloha Water Treatment HMI | http://10.1.1.10:8090/ |
