@@ -22,7 +22,7 @@
   ],
   labs: [
     {
-      name: "",
+      name: "phase-0-decepticon",
       times: 1,
       virtualNetworks: [
         {
