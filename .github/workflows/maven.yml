@@ -1,0 +1,75 @@
+name: maven.yml
+on:
+  workflow_call:
+    inputs:
+      maven-args:
+        description: "Additional Maven arguments to pass"
+        required: false
+        type: string
+      working-directory:
+        description: "Directory containing the pom.xml"
+        required: false
+        type: string
+        default: "."
+      build-artifact-name:
+        description: "Name of the build artifact to upload"
+        required: true
+        type: string
+      build-artifact-path:
+        description: "Path of the build artifact to upload"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  maven:
+    name: Maven Build & Test
+    permissions:
+      contents: write
+      security-events: write
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Maven Cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Run Spotless Check
+        run: mvn -B spotless:check
+
+      - name: Build & Test
+        run: mvn -B ${{ inputs.maven-args }} package
+
+      - name: Update dependency graph
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        uses: advanced-security/maven-dependency-submission-action@v5
+        with:
+          directory: ${{ inputs.working-directory }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.build-artifact-name }}
+          path: ${{ inputs.build-artifact-path }}
+          retention-days: 4
