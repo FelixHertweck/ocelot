@@ -1,0 +1,46 @@
+proxy:
+  listen:
+    host: 0.0.0.0
+    port: 5020
+  upstream:
+    host: 192.168.1.10
+    port: 502
+
+rules:
+  default_action: DENY   # Block any register not explicitly listed below
+
+  registers:
+    - address: 100
+      description: "Pump speed setpoint"
+      allow_write: true
+      value_range:
+        min: 0
+        max: 1500
+      rate_limit:
+        max_writes: 10
+        per_seconds: 60
+      on_violation: MODBUS_EXCEPTION
+
+    - address: 101
+      description: "Pump on/off coil"
+      allow_write: true
+      value_range:
+        min: 0
+        max: 1
+      on_violation: MODBUS_EXCEPTION
+
+    - address: 200
+      description: "Emergency stop (read-only)"
+      allow_write: false
+      on_violation: DISCONNECT
+
+    - address: 300
+      description: "Temperature setpoint (rate-limited)"
+      allow_write: true
+      value_range:
+        min: -20
+        max: 120
+      rate_limit:
+        max_writes: 5
+        per_seconds: 60
+      on_violation: SILENT_DROP
