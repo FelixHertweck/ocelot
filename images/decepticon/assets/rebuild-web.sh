@@ -12,7 +12,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 REPO_URL="https://github.com/purpleailab/decepticon"
-REPO_REF="v1.1.3"
+REPO_REF="v1.1.6"
 SRC_DIR="$DECEPTICON_DIR/src"
 
 git -C "$SRC_DIR" fetch --tags origin

@@ -1,6 +1,6 @@
 services:
   litellm:
-    image: ghcr.io/purpleailab/decepticon-litellm:1.1.3
+    image: ghcr.io/purpleailab/decepticon-litellm:1.1.6
     container_name: decepticon-litellm
     volumes:
       - ./config/litellm.yaml:/app/config.yaml:ro
@@ -94,7 +94,7 @@ services:
     restart: unless-stopped
 
   sandbox:
-    image: ghcr.io/purpleailab/decepticon-sandbox:1.1.3
+    image: ghcr.io/purpleailab/decepticon-sandbox:1.1.6
     container_name: decepticon-sandbox
     networks:
       - sandbox-net
@@ -119,7 +119,7 @@ services:
     restart: unless-stopped
 
   langgraph:
-    image: ghcr.io/purpleailab/decepticon-langgraph:1.1.3
+    image: ghcr.io/purpleailab/decepticon-langgraph:1.1.6
     container_name: decepticon-langgraph
     # $$ escapes compose interpolation — the if/else runs at container start, not compose render
     command:
@@ -169,7 +169,7 @@ services:
       network: host
       args:
         VERSION: ${VERSION:-0.0.0}
-    image: ghcr.io/purpleailab/decepticon-web:1.1.3
+    image: ghcr.io/purpleailab/decepticon-web:1.1.6
     container_name: decepticon-web
     ports:
       - "${WEB_PORT:-3000}:3000"
@@ -198,7 +198,7 @@ services:
     restart: unless-stopped
 
   cli:
-    image: ghcr.io/purpleailab/decepticon-cli:1.1.3
+    image: ghcr.io/purpleailab/decepticon-cli:1.1.6
     container_name: decepticon-cli
     stdin_open: true
     tty: true
@@ -206,7 +206,7 @@ services:
       - DECEPTICON_API_URL=http://langgraph:2024
       - TERM=xterm-256color
       - COLORTERM=truecolor
-      - DECEPTICON_VERSION=1.1.3
+      - DECEPTICON_VERSION=1.1.6
     depends_on:
       langgraph:
         condition: service_healthy
@@ -216,7 +216,7 @@ services:
       - cli
 
   c2-sliver:
-    image: ghcr.io/purpleailab/decepticon-c2-sliver:1.1.3
+    image: ghcr.io/purpleailab/decepticon-c2-sliver:1.1.6
     container_name: decepticon-c2-sliver
     networks:
       - sandbox-net
