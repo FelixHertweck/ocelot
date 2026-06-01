@@ -57,3 +57,4 @@ docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertw
 For deployment guides see the specific scenario documentation:
 
 - [Phase 0 — Decepticon vs. Aloha Water Treatment](config/phase-0/README.md)
+- [Phase 0 — OpenHands vs. Aloha Water Treatment](config/phase-0-openhands/README.md)
