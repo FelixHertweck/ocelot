@@ -1,0 +1,66 @@
+{
+  firstOctet: 10,
+  wireguardCidr: "10.253.0.0/16",
+  globalInstances: [
+    {
+      name: "vpn",
+      type: "vpn-server",
+      image: "vpn:latest",
+      flavor: "server-small",
+      hostname: "vpn",
+      fqdn: "vpn.cave.lab",
+    },
+    {
+      type: "dns-server",
+      image: "dns:latest",
+      name: "dns",
+      flavor: "server-small",
+      lastOctet: 254,
+      hostname: "dns.cave.lab",
+      fqdn: "dns.cave.lab",
+    },
+  ],
+  labs: [
+    {
+      name: "phase-1-decepticon",
+      times: 1,
+      virtualNetworks: [
+        {
+          internalDns: false,
+          id: 1,
+        },
+      ],
+      dnsConfig: [],
+      instances: [
+        {
+          type: "linux",
+          image: "ot-gateway:latest",
+          post: "ot-gateway",
+          networks: [ 1 ],
+          lastOctet: 15,
+          name: "ot-gateway",
+          flavor: "server-small",
+          hostname: "ot-gateway",
+          configFiles: [
+            { source: "/cave/backend/configs/phase-1-decepticon/proxy-config.yml", destination: "/home/ubuntu/proxy-config.yml" },
+          ],
+          postCommand: "/home/ubuntu/run.sh",
+        },
+        {
+          type: "linux",
+          image: "decepticon:latest",
+          post: "decepticon",
+          networks: [ 1 ],
+          lastOctet: 20,
+          name: "decepticon",
+          flavor: "server-large",
+          hostname: "decepticon",
+          configFiles: [
+            { source: "/cave/backend/configs/phase-1-decepticon/decepticon.env", destination: "/home/ubuntu/.decepticon/.env" },
+          ],
+          postCommand: "decepticon-rebuild-web && decepticon-start",
+        },
+      ],
+    },
+  ],
+}
