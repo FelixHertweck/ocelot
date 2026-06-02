@@ -1,0 +1,11 @@
+services:
+  ot-gateway:
+    image: ghcr.io/felixhertweck/aegis-grid-ot-gateway:ot-gateway
+    ports:
+      - "5021:5021"
+    volumes:
+      # Mount a custom config to override the bundled default
+      - ./proxy-config.yml:/app/proxy-config.yml:ro
+    environment:
+      - JAVA_OPTS=-Xmx128m
+    restart: unless-stopped
