@@ -42,7 +42,8 @@
           flavor: "server-small",
           hostname: "ot-gateway",
           configFiles: [
-            { source: "/cave/backend/configs/phase-1/proxy-config.yml", destination: "/home/ubuntu/proxy-config.yml" },
+            { source: "/cave/backend/configs/phase-1-openhands/proxy-config.yml", destination: "/home/ubuntu/proxy-config.yml" },
+            { source: "/cave/backend/configs/phase-1-openhands/ot-gateway.env", destination: "/home/ubuntu/ot-gateway.env" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },

@@ -16,6 +16,8 @@ cp /tmp/assets/docker-compose.yml ~/docker-compose.yml
 # Pre-pull the ot-gateway image
 docker compose pull --quiet
 
-# Install the run wrapper
+# Install the run wrapper and host-configuration script
 cp /tmp/assets/run.sh ~/run.sh
 chmod +x ~/run.sh
+cp /tmp/assets/configure-host.sh ~/configure-host.sh
+chmod +x ~/configure-host.sh
