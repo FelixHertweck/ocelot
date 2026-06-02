@@ -1,6 +1,6 @@
 services:
   ot-gateway:
-    image: ghcr.io/felixhertweck/aegis-grid-ot-gateway:ot-gateway
+    image: ghcr.io/felixhertweck/aegis-grid-ot-gateway:main
     ports:
       - "5021:5021"
     volumes:
