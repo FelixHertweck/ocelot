@@ -43,6 +43,7 @@
           hostname: "ot-gateway",
           configFiles: [
             { source: "/cave/backend/configs/phase-1-decepticon/proxy-config.yml", destination: "/home/ubuntu/proxy-config.yml" },
+            { source: "/cave/backend/configs/phase-1-decepticon/ot-gateway.env", destination: "/home/ubuntu/ot-gateway.env" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },

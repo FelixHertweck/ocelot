@@ -8,6 +8,8 @@ if [ -f "/home/ubuntu/.env" ]; then
   set +a
 fi
 
+/home/ubuntu/configure-host.sh
+
 echo "Starting OT-Gateway..."
 docker compose up -d
 
