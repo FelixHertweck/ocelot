@@ -34,16 +34,16 @@
       instances: [
         {
           type: "linux",
-          image: "ot-gateway:latest",
-          post: "ot-gateway",
+          image: "ot-proxy:latest",
+          post: "ot-proxy",
           networks: [ 1 ],
           lastOctet: 15,
-          name: "ot-gateway",
+          name: "ot-proxy",
           flavor: "server-small",
-          hostname: "ot-gateway",
+          hostname: "ot-proxy",
           configFiles: [
             { source: "/cave/backend/configs/phase-1-decepticon/proxy-config.yml", destination: "/home/ubuntu/proxy-config.yml" },
-            { source: "/cave/backend/configs/phase-1-decepticon/ot-gateway.env", destination: "/home/ubuntu/ot-gateway.env" },
+            { source: "/cave/backend/configs/phase-1-decepticon/ot-proxy.env", destination: "/home/ubuntu/ot-proxy.env" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },

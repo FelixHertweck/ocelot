@@ -1,0 +1,49 @@
+name: ot-proxy.yml
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "ot-proxy/**"
+      - "!ot-proxy/**/*.md"
+      - ".github/workflows/*"
+    tags:
+      - "v*.*"
+      - "v*.*.*"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "ot-proxy/**"
+      - "!ot-proxy/**/*.md"
+      - ".github/workflows/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+
+jobs:
+  maven:
+    uses: ./.github/workflows/maven.yml
+    permissions:
+      contents: write
+      security-events: write
+      actions: read
+    with:
+      working-directory: ot-proxy
+      build-artifact-name: ot-proxy
+      build-artifact-path: ot-proxy/target
+
+  backend-docker:
+    needs: maven
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      build-artifact-name: ot-proxy
+      build-artifact-path: ot-proxy/target
+      docker-file-path: ot-proxy/Dockerfile
+      docker-build-context: ot-proxy
+      container-image-title: ot-proxy
+      image-name: ${{ github.repository }}-ot-proxy
