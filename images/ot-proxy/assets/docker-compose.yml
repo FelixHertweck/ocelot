@@ -1,0 +1,26 @@
+services:
+  ot-proxy:
+    image: ghcr.io/felixhertweck/aegis-grid-ot-proxy:main
+    container_name: ot-proxy
+    ports:
+      - "${OT_PROXY_PORT:-5020}:5020"
+    volumes:
+      - ./proxy-config.yml:/app/proxy-config.yml:ro
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx128m}
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 5020 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - ot-proxy-net
+
+networks:
+  ot-proxy-net:
+    driver: bridge
