@@ -1,0 +1,99 @@
+# Phase 1: OpenHands vs. OT-Proxy
+
+Deploys two VMs in a shared network. OpenHands attacks a Modbus TCP device through an OT security proxy that enforces configurable allow/deny rules.
+
+| VM | Image | Role |
+|---|---|---|
+| `ot-proxy` | `ot-proxy:latest` | Modbus TCP security proxy (defender) |
+| `openhands` | `openhands:latest` | AI-driven autonomous agent (attacker) |
+
+The OT proxy sits between OpenHands and the upstream Modbus target. It forwards permitted register operations and blocks the rest according to `proxy-config.yml`.
+
+## Prerequisites
+
+Complete **steps 1 and 2** of the [main README](../../README.md) first — OpenStack and `cave-infrastructure-docker` must be set up, and **both** the `ot-proxy` and `openhands` images must be built and uploaded to OpenStack before continuing.
+
+The upstream Modbus TCP device (e.g. an Aloha Water Treatment simulator or physical OT hardware) must also be reachable at the address configured in `proxy-config.yml`.
+
+## 1. Place the Deployment Config
+
+Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1-openhands` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
+
+```bash
+git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
+cp -r /tmp/aegis-grid/config/phase-1-openhands ./configs/
+```
+
+## 2. Configure the Proxy
+
+Edit `configs/phase-1-openhands/proxy-config.yml` and set the upstream Modbus target that the proxy should forward to:
+
+```bash
+nano configs/phase-1-openhands/proxy-config.yml
+```
+
+| Field | Description |
+|---|---|
+| `proxy.listen.host` / `proxy.listen.port` | Address the proxy binds to on the VM (default: `0.0.0.0:5020`) |
+| `proxy.upstream.host` | IP of the upstream Modbus TCP device |
+| `proxy.upstream.port` | Port of the upstream device (default: `502`) |
+| `rules.default_action` | Fallback for unmatched requests (`ALLOW` or `DENY`) |
+| `rules.registers` | Per-register allow/deny rules |
+
+Optionally edit `configs/phase-1-openhands/ot-proxy.env` to override the proxy VM's hostname or set a spoofed MAC address:
+
+```bash
+nano configs/phase-1-openhands/ot-proxy.env
+```
+
+## 3. Configure the Task
+
+Edit `configs/phase-1-openhands/openhands.env` and fill in your LLM credentials and the task prompt:
+
+```bash
+nano configs/phase-1-openhands/openhands.env
+```
+
+| Variable | Description |
+|---|---|
+| `LLM_MODEL` | Model in provider-prefix format (e.g. `anthropic/claude-opus-4-7`) |
+| `LLM_API_KEY` | API key for the LLM provider |
+| `OPENHANDS_TASK` | The prompt OpenHands executes headlessly on VM start |
+
+## 4. Deploy Infrastructure
+
+Run the interactive wrapper from your `cave-infrastructure-docker` directory:
+
+```bash
+docker compose run --rm cave /cave/deploy-wrapper.sh
+```
+
+To deploy non-interactively with a custom lab prefix:
+
+```bash
+# OpenVPN
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1-openhands/phase-1 --lab-prefix aegis-p1oh
+
+# WireGuard
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1-openhands/phase-1 --wg --lab-prefix aegis-p1oh
+```
+
+Both VMs are fully configured automatically during deployment via `postCommand`:
+
+- **ot-proxy**: reads `ot-proxy.env` and `proxy-config.yml` from `~` and starts the proxy service
+- **openhands**: runs `run.sh` which reads `OPENHANDS_TASK` from `~/.env` and starts the agent headlessly — no interactive session required
+
+## 5. Connect and Access
+
+After deployment, retrieve the OpenVPN client config from your `cave-infrastructure-docker` output directory and connect from your local machine:
+
+```bash
+sudo openvpn --config out/<your-prefix>/openvpn/admins/admin1.ovpn
+```
+
+**OpenHands runs fully automatically** — no further action required. You can follow progress via the dashboard:
+
+| Service | URL |
+|---|---|
+| OpenHands dashboard | http://10.1.1.20:3000/ |
+| OT Proxy (Modbus TCP) | 10.1.1.15:5020 |

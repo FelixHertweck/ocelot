@@ -48,7 +48,7 @@ Both VMs are fully configured automatically during deployment via `postCommand`:
 After deployment, retrieve the OpenVPN client config from your `cave-infrastructure-docker` output directory and connect from your local machine:
 
 ```bash
-sudo openvpn --config out/test/openvpn/admins/admin1.ovpn
+sudo openvpn --config out/<your-prefix>/openvpn/admins/admin1.ovpn
 ```
 
 Once connected, open the Decepticon dashboard in your browser — the engagement is already created. **Open the page once** to trigger the agent, then **confirm the generated plan once** before it starts executing:
