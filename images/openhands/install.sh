@@ -12,9 +12,8 @@ sudo chmod 666 /var/run/docker.sock
 
 # Copy bundled files into the OpenHands home directory
 cp /tmp/assets/docker-compose.yml ~/docker-compose.yml
-cp /tmp/assets/config.toml ~/config.toml
 
-# Pre-pull all images so openhands-run doesn't block on downloads
+# Pre-pull all images so run.sh doesn't block on downloads
 docker compose pull --quiet
 
 # Also pre-pull the agent-server image (declared as env vars, not as a compose service)
@@ -22,8 +21,8 @@ AGENT_REPO=$(grep 'AGENT_SERVER_IMAGE_REPOSITORY' ~/docker-compose.yml | awk -F'
 AGENT_TAG=$(grep 'AGENT_SERVER_IMAGE_TAG' ~/docker-compose.yml | awk -F': ' '{print $2}' | tr -d ' ')
 docker pull --quiet "${AGENT_REPO}:${AGENT_TAG}"
 
-# Pre-pull the Neo4j MCP server image (used as a stdio MCP server by OpenHands)
-docker pull --quiet mcp/neo4j
+# Pre-pull the Neo4j MCP server image
+docker pull --quiet mcp/neo4j-cypher
 
 # Install the run wrapper
 cp /tmp/assets/run.sh  ~/run.sh

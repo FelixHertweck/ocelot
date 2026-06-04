@@ -1,10 +1,5 @@
-version: '3.8'
-
 services:
   openhands:
-    # Switch to latest release tag when new version is available
-    # current version has missing dependency, fixed with https://github.com/OpenHands/OpenHands/commit/e073659755487d831eb6eb4ef0e6a543f64fdb80
-    # but missing in current release
     image: ghcr.io/openhands/openhands:e073659
     container_name: openhands-app
     ports:
@@ -31,6 +26,8 @@ services:
     depends_on:
       neo4j:
         condition: service_healthy
+      mcp-neo4j:
+        condition: service_healthy
 
   neo4j:
     image: neo4j:5-community
@@ -49,8 +46,35 @@ services:
     networks:
       - openhands-network
 
+  mcp-neo4j:
+    image: mcp/neo4j-cypher
+    container_name: mcp-neo4j
+    environment:
+      NEO4J_URL: "bolt://neo4j:7687"
+      NEO4J_USERNAME: "neo4j"
+      NEO4J_PASSWORD: "${NEO4J_PASSWORD:-neo4j1234}"
+      NEO4J_DATABASE: "neo4j"
+      NEO4J_TRANSPORT: "http"
+      NEO4J_MCP_SERVER_HOST: "0.0.0.0"
+      NEO4J_MCP_SERVER_PORT: "8000"
+      NEO4J_MCP_SERVER_PATH: "/mcp/"
+      NEO4J_READ_ONLY: "false"
+      NEO4J_READ_TIMEOUT: "30"
+      NEO4J_RESPONSE_TOKEN_LIMIT: "10000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/mcp/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - openhands-network
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
 networks:
   openhands-network:
+    name: openhands-network
     driver: bridge
 
 volumes:
