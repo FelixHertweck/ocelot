@@ -62,7 +62,7 @@ Both VMs are fully configured automatically during deployment via `postCommand`:
 After deployment, retrieve the OpenVPN client config from your `cave-infrastructure-docker` output directory and connect from your local machine:
 
 ```bash
-sudo openvpn --config out/test/openvpn/admins/admin1.ovpn
+sudo openvpn --config out/<your-prefix>/openvpn/admins/admin1.ovpn
 ```
 
 **OpenHands runs fully automatically** — no further action required. You can follow progress via the dashboard:
