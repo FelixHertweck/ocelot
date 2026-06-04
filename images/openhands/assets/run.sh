@@ -8,10 +8,14 @@ if [ -f "/home/ubuntu/.env" ]; then
   set +a
 fi
 
-echo "🚀 Starting OpenHands with automatic LLM configuration..."
+echo "Starting OpenHands with Neo4j MCP..."
+
+# Write OpenHands config with Neo4j MCP server before starting
+mkdir -p ~/data
+NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j}" envsubst < ~/config.toml > ~/data/config.toml
 
 # 1. Docker Compose starten
-echo "📦 Starting services..."
+echo "Starting services..."
 docker compose up -d
 
 # 2. Warten bis API bereit ist

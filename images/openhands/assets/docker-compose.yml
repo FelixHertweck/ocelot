@@ -3,7 +3,7 @@ version: '3.8'
 services:
   openhands:
     # Switch to latest release tag when new version is available
-    # current version has missing dependency, fixed with https://github.com/OpenHands/OpenHands/commit/e073659755487d831eb6eb4ef0e6a543f64fdb80 
+    # current version has missing dependency, fixed with https://github.com/OpenHands/OpenHands/commit/e073659755487d831eb6eb4ef0e6a543f64fdb80
     # but missing in current release
     image: ghcr.io/openhands/openhands:e073659
     container_name: openhands-app
@@ -28,7 +28,33 @@ services:
       retries: 5
     networks:
       - openhands-network
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: neo4j
+    ports:
+      - "127.0.0.1:7474:7474"
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-neo4j}
+      NEO4J_server_memory_heap_initial__size: 128m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache__size: 128m
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - openhands-network
 
 networks:
   openhands-network:
     driver: bridge
+
+volumes:
+  neo4j_data:
