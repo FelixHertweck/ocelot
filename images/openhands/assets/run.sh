@@ -12,7 +12,7 @@ echo "Starting OpenHands with Neo4j MCP..."
 
 # Write OpenHands config with Neo4j MCP server before starting
 mkdir -p ~/data
-NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j}" envsubst < ~/config.toml > ~/data/config.toml
+NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j1234}" envsubst < ~/config.toml > ~/data/config.toml
 
 # 1. Docker Compose starten
 echo "Starting services..."

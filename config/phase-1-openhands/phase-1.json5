@@ -57,7 +57,7 @@
           flavor: "server-large",
           hostname: "openhands",
           configFiles: [
-            { source: "/cave/backend/configs/phase-1/openhands.env", destination: "/home/ubuntu/.env" },
+            { source: "/cave/backend/configs/phase-1-openhands/openhands.env", destination: "/home/ubuntu/.env" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },
