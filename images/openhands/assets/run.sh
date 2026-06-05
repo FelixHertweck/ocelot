@@ -29,19 +29,36 @@ echo "OpenHands is ready!"
 
 SESSION_TOKEN="${SESSION_TOKEN:-default-token}"
 
-# 3. Configure Neo4j MCP server (always, independent of task)
+# 3. Configure MCP servers from mcp-servers.json (if present)
 # config.toml is ignored in Docker mode; the settings API is the correct approach.
-if [ "${NEO4J_MCP_ENABLED:-true}" = "true" ]; then
-  echo "Configuring Neo4j MCP server..."
+# mcp-servers.json uses the standard mcpServers format; ${NEO4J_PASSWORD} is expanded at runtime.
+MCP_SERVERS_FILE="/home/ubuntu/mcp-servers.json"
+if [ -f "$MCP_SERVERS_FILE" ]; then
+  echo "Configuring MCP servers..."
+  export NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j1234}"
+  stdio_servers=$(envsubst < "$MCP_SERVERS_FILE" | jq '[.mcpServers | to_entries[] | {name: .key} + .value]')
 
   curl -s -X POST "http://localhost:3000/api/v1/settings" \
     -H "Content-Type: application/json" \
     -H "Cookie: oh-session=${SESSION_TOKEN}" \
-    -d '{"agent_settings_diff": {"mcp_config": {"mcpServers": {"neo4j": {"url": "http://mcp-neo4j:8000/mcp/"}}}}}' \
-    || echo "Warning: Neo4j MCP settings call failed"
+    -d "$(jq -n --argjson servers "$stdio_servers" \
+        '{agent_settings_diff: {mcp_config: {stdio_servers: $servers, sse_servers: [], shttp_servers: []}}}')" \
+    || echo "Warning: MCP settings call failed"
+else
+  echo "No mcp-servers.json found, skipping MCP configuration"
 fi
 
-# 4. Configure LLM (always)
+# 4. Configure Tavily search API key (if set)
+if [ -n "${TAVILY_API_KEY:-}" ]; then
+  echo "Configuring Tavily search API key..."
+  curl -s -X POST "http://localhost:3000/api/v1/settings" \
+    -H "Content-Type: application/json" \
+    -H "Cookie: oh-session=${SESSION_TOKEN}" \
+    -d "$(jq -n --arg key "${TAVILY_API_KEY}" '{search_api_key: $key}')" \
+    || echo "Warning: Tavily API key settings call failed"
+fi
+
+# 5. Configure LLM (always)
 echo "Configuring LLM..."
 curl -s -X POST "http://localhost:3000/api/v1/settings" \
   -H "Content-Type: application/json" \
@@ -50,7 +67,7 @@ curl -s -X POST "http://localhost:3000/api/v1/settings" \
     --arg model "openai/${LLM_MODEL}" \
     --arg key   "${LLM_API_KEY}" \
     --arg url   "${LLM_BASE_URL}" \
-    '{agent_settings_diff: {llm: {model: $model, api_key: $key, base_url: $url}}}')" \
+    '{agent_settings_diff: {llm: {model: $model, api_key: $key, base_url: $url, supports_function_calling: true}}}')" \
   || echo "Warning: LLM settings call failed"
 
 # 5. Start automated conversation (only if task is set)
