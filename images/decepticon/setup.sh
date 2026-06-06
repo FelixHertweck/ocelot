@@ -28,6 +28,14 @@ sudo apt-get install -y \
   docker-compose-plugin
 
 sudo usermod -aG docker ubuntu
+
+# Set MTU to 1442 for all Docker networks (fixes slow internet in OpenStack environments)
+sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
+{
+  "mtu": 1442
+}
+EOF
+
 sudo systemctl enable docker
 sudo systemctl start docker
 

@@ -271,5 +271,9 @@ volumes:
 networks:
   decepticon-net:
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1442"
   sandbox-net:
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1442"

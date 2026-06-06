@@ -50,6 +50,8 @@ networks:
   openhands-network:
     name: openhands-network
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1442"
 
 volumes:
   neo4j_data:
