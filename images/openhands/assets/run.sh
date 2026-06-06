@@ -36,13 +36,11 @@ MCP_SERVERS_FILE="/home/ubuntu/mcp-servers.json"
 if [ -f "$MCP_SERVERS_FILE" ]; then
   echo "Configuring MCP servers..."
   export NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j1234}"
-  stdio_servers=$(envsubst < "$MCP_SERVERS_FILE" | jq '[.mcpServers | to_entries[] | {name: .key} + .value]')
 
   curl -s -X POST "http://localhost:3000/api/v1/settings" \
     -H "Content-Type: application/json" \
     -H "Cookie: oh-session=${SESSION_TOKEN}" \
-    -d "$(jq -n --argjson servers "$stdio_servers" \
-        '{agent_settings_diff: {mcp_config: {stdio_servers: $servers, sse_servers: [], shttp_servers: []}}}')" \
+    -d "$(envsubst < "$MCP_SERVERS_FILE" | jq '{agent_settings_diff: {mcp_config: .}}')" \
     || echo "Warning: MCP settings call failed"
 else
   echo "No mcp-servers.json found, skipping MCP configuration"
