@@ -1,10 +1,5 @@
-version: '3.8'
-
 services:
   openhands:
-    # Switch to latest release tag when new version is available
-    # current version has missing dependency, fixed with https://github.com/OpenHands/OpenHands/commit/e073659755487d831eb6eb4ef0e6a543f64fdb80 
-    # but missing in current release
     image: ghcr.io/openhands/openhands:e073659
     container_name: openhands-app
     ports:
@@ -13,10 +8,11 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       AGENT_SERVER_IMAGE_REPOSITORY: ghcr.io/openhands/agent-server
-      AGENT_SERVER_IMAGE_TAG: 1.24.0-python
+      AGENT_SERVER_IMAGE_TAG: 1.25.0-python
       WORKSPACE_MOUNT_PATH: $PWD/workspace
       OH_PERMITTED_CORS_ORIGINS_0: "http://${HOST_IP:-localhost}:3000"
       OH_PERMITTED_CORS_ORIGINS_1: "http://localhost:3000"
+      SANDBOX_USE_HOST_NETWORK: "true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/data:/.openhands
@@ -28,7 +24,32 @@ services:
       retries: 5
     networks:
       - openhands-network
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+  neo4j:
+    image: neo4j:5
+    container_name: neo4j
+    ports:
+      - "7474:7474"   # Browser UI
+      - "7687:7687"   # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-neo4j1234}
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - openhands-network
 
 networks:
   openhands-network:
+    name: openhands-network
     driver: bridge
+
+volumes:
+  neo4j_data:

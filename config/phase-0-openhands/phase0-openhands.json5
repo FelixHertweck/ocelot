@@ -54,6 +54,7 @@
           hostname: "openhands",
           configFiles: [
             { source: "/cave/backend/configs/phase-0-openhands/openhands.env", destination: "/home/ubuntu/.env" },
+            { source: "/cave/backend/configs/phase-0-openhands/mcp-servers.json", destination: "/home/ubuntu/mcp-servers.json" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },
