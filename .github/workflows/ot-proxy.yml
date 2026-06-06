@@ -40,6 +40,7 @@ jobs:
       packages: write
       id-token: write
     uses: ./.github/workflows/docker.yml
+    secrets: inherit
     with:
       build-artifact-name: ot-proxy
       build-artifact-path: ot-proxy/target
