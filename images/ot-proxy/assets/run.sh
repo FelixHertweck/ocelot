@@ -14,7 +14,7 @@ echo "Starting OT-Proxy..."
 docker compose up -d
 
 echo "Waiting for OT-Proxy to become ready..."
-until docker compose ps | grep -q "healthy\|running"; do
+until docker compose ps | grep -qE "healthy|running"; do
   echo "  Waiting..."
   sleep 3
 done
