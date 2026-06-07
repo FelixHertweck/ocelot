@@ -31,7 +31,8 @@ network:
     ${IFACE}:
       macaddress: "${OT_MAC_ADDRESS}"
 EOF
-    # Apply — briefly drops and re-establishes the interface
-    sudo netplan apply
+    # Run netplan apply out-of-band so the current SSH session survives the
+    # brief interface flap. systemd-run fires 2s after this script returns.
+    sudo systemd-run --on-active=2s --timer-property=AccuracySec=1s netplan apply
   fi
 fi
