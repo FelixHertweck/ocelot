@@ -1,0 +1,23 @@
+services:
+  ot-management-gateway:
+    image: ghcr.io/felixhertweck/aegis-grid-ot-management-gateway:main
+    container_name: ot-management-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - /opt/gateway-protected:/var/www/protected:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - gateway-net
+
+networks:
+  gateway-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1442"
