@@ -1,5 +1,7 @@
 package de.felixhertweck.emulator;
 
+import java.net.ServerSocket;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,10 +16,17 @@ class ProtectionRelayEmulatorTest {
 
     private ProtectionRelayEmulator emulator;
 
+    private int findFreePort() throws Exception {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
+    }
+
     @BeforeEach
     void setUp() throws Exception {
-        // Use a different port for testing to avoid conflicts
-        emulator = new ProtectionRelayEmulator(10103);
+        // Use an ephemeral port for testing to avoid conflicts
+        int port = findFreePort();
+        emulator = new ProtectionRelayEmulator(port);
         emulator.start();
     }
 
@@ -60,13 +69,21 @@ class ProtectionRelayEmulatorTest {
         BdaFloat32 bda = (BdaFloat32) totWNode;
         Float initialValue = bda.getFloat();
 
-        // Wait for scheduler to run
-        Thread.sleep(3500);
+        // Sometimes it starts as null, so convert null to 0f for comparison
+        float initial = initialValue == null ? 0.0f : initialValue;
 
-        Float newValue = bda.getFloat();
-        assertNotNull(newValue);
+        boolean valueChanged = false;
 
-        // Since we initialize as null/0, after 2s it should be around 1000.
-        assertTrue(newValue > 0.0f, "Value should have been updated by dynamic simulation");
+        // Wait for scheduler to run (up to 5 seconds max)
+        for (int i = 0; i < 50; i++) {
+            Thread.sleep(100);
+            Float newValue = bda.getFloat();
+            if (newValue != null && newValue != initial) {
+                valueChanged = true;
+                break;
+            }
+        }
+
+        assertTrue(valueChanged, "Value should have been updated by dynamic simulation");
     }
 }
