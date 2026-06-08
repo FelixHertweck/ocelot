@@ -1,4 +1,7 @@
-package com.example.emulator;
+package de.felixhertweck.emulator;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.beanit.iec61850bean.BdaFloat32;
 import com.beanit.iec61850bean.FcModelNode;
@@ -6,9 +9,6 @@ import com.beanit.iec61850bean.ServerModel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProtectionRelayEmulatorTest {
 
@@ -34,18 +34,27 @@ class ProtectionRelayEmulatorTest {
         assertNotNull(model, "ServerModel should not be null");
 
         // Verify MMXU exists
-        FcModelNode hzNode = (FcModelNode) model.findModelNode("RelayIEDPROT/MMXU1.Hz.mag.f", com.beanit.iec61850bean.Fc.MX);
+        FcModelNode hzNode =
+                (FcModelNode)
+                        model.findModelNode(
+                                "RelayIEDPROT/MMXU1.Hz.mag.f", com.beanit.iec61850bean.Fc.MX);
         assertNotNull(hzNode, "Hz node should exist");
 
         // Verify XCBR exists
-        FcModelNode posNode = (FcModelNode) model.findModelNode("RelayIEDPROT/XCBR1.Pos.stVal", com.beanit.iec61850bean.Fc.ST);
+        FcModelNode posNode =
+                (FcModelNode)
+                        model.findModelNode(
+                                "RelayIEDPROT/XCBR1.Pos.stVal", com.beanit.iec61850bean.Fc.ST);
         assertNotNull(posNode, "XCBR Pos stVal node should exist");
     }
 
     @Test
     void testDynamicSimulationUpdatesMeasurements() throws InterruptedException {
         ServerModel model = emulator.getServerModel();
-        FcModelNode totWNode = (FcModelNode) model.findModelNode("RelayIEDPROT/MMXU1.TotW.mag.f", com.beanit.iec61850bean.Fc.MX);
+        FcModelNode totWNode =
+                (FcModelNode)
+                        model.findModelNode(
+                                "RelayIEDPROT/MMXU1.TotW.mag.f", com.beanit.iec61850bean.Fc.MX);
         assertNotNull(totWNode);
 
         BdaFloat32 bda = (BdaFloat32) totWNode;

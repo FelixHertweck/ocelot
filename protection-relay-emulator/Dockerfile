@@ -14,8 +14,8 @@ WORKDIR /app
 ENV IEC61850_PORT=102
 EXPOSE 102
 
-# Copy the fat jar from build stage. The shade plugin replaces the original jar without appending -shaded
-COPY --from=build /app/target/protection-relay-emulator-1.0.0-SNAPSHOT.jar /app/emulator.jar
+# Copy the fat jar from build stage. The assembly plugin creates a jar with '-jar-with-dependencies' suffix
+COPY --from=build /app/target/protection-relay-emulator-1.0.0-SNAPSHOT-jar-with-dependencies.jar /app/emulator.jar
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "/app/emulator.jar"]
