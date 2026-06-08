@@ -1,7 +1,7 @@
 # ADR: Initial OT Protocol Selection (Modbus TCP vs. IEC 61850)
 
 **Date:** May 19, 2026  
-**Status:** Proposed (Under Review)  
+**Status:** Accepted  
 **Context Area:** OT Protocol Targeting, Phase 1 & 2 Scenario Design
 
 ## 1. Context and Problem Statement
