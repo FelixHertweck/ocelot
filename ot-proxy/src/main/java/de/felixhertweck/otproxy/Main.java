@@ -10,6 +10,8 @@ import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.core.pipeline.RequestHandler;
 import de.felixhertweck.otproxy.core.pipeline.RequestPipeline;
 import de.felixhertweck.otproxy.core.rules.RuleEngine;
+import de.felixhertweck.otproxy.protocol.iec61850.Iec61850Listener;
+import de.felixhertweck.otproxy.protocol.iec61850.Iec61850Upstream;
 import de.felixhertweck.otproxy.protocol.modbus.ModbusTcpListener;
 import de.felixhertweck.otproxy.protocol.modbus.ModbusTcpUpstream;
 import org.slf4j.Logger;
@@ -28,9 +30,9 @@ public class Main {
                 (req, result) -> {
                     if (!result.allowed()) {
                         log.warn(
-                                "VIOLATION protocol={} register={} value={} ip={} reason={}",
+                                "VIOLATION protocol={} target={} value={} ip={} reason={}",
                                 req.protocol(),
-                                req.registerAddress(),
+                                req.target(),
                                 req.value(),
                                 req.sourceIp(),
                                 result.reason());
@@ -39,20 +41,40 @@ public class Main {
 
         RequestPipeline pipeline = new RequestPipeline(ruleEngine, List.of(violationLogger));
 
-        ModbusTcpUpstream upstream =
-                new ModbusTcpUpstream(
-                        config.getProxy().getUpstream().getHost(),
-                        config.getProxy().getUpstream().getPort());
+        String protocol = config.getProxy().getProtocol();
 
-        ModbusTcpListener listener =
-                new ModbusTcpListener(
-                        config.getProxy().getListen().getHost(),
-                        config.getProxy().getListen().getPort(),
-                        pipeline,
-                        upstream);
+        if ("iec61850".equalsIgnoreCase(protocol)) {
+            Iec61850Upstream upstream =
+                    new Iec61850Upstream(
+                            config.getProxy().getUpstream().getHost(),
+                            config.getProxy().getUpstream().getPort());
 
-        Runtime.getRuntime().addShutdownHook(new Thread(listener::stop));
-        listener.start();
+            Iec61850Listener listener =
+                    new Iec61850Listener(
+                            config.getProxy().getListen().getHost(),
+                            config.getProxy().getListen().getPort(),
+                            pipeline,
+                            upstream);
+
+            Runtime.getRuntime().addShutdownHook(new Thread(listener::stop));
+            listener.start();
+        } else {
+            // Default to Modbus
+            ModbusTcpUpstream upstream =
+                    new ModbusTcpUpstream(
+                            config.getProxy().getUpstream().getHost(),
+                            config.getProxy().getUpstream().getPort());
+
+            ModbusTcpListener listener =
+                    new ModbusTcpListener(
+                            config.getProxy().getListen().getHost(),
+                            config.getProxy().getListen().getPort(),
+                            pipeline,
+                            upstream);
+
+            Runtime.getRuntime().addShutdownHook(new Thread(listener::stop));
+            listener.start();
+        }
     }
 
     private static ProxyConfig loadConfig(String[] args) throws IOException {

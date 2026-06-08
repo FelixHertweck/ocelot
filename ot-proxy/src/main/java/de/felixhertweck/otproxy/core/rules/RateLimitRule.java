@@ -5,25 +5,25 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
 
+import de.felixhertweck.otproxy.config.NodeRuleConfig;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 
 public class RateLimitRule implements Rule {
 
-    private final ConcurrentHashMap<Integer, Deque<Instant>> windows = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Deque<Instant>> windows = new ConcurrentHashMap<>();
 
     @Override
-    public RuleResult evaluate(WriteRequest request, RegisterRuleConfig config) {
+    public RuleResult evaluate(WriteRequest request, NodeRuleConfig config) {
         RateLimitConfig rlConfig = config.getRateLimit();
         if (rlConfig == null) return RuleResult.allow();
 
-        int address = request.registerAddress();
+        String target = request.target();
         Instant now = request.timestamp();
         Instant cutoff = now.minusSeconds(rlConfig.getPerSeconds());
 
-        Deque<Instant> window = windows.computeIfAbsent(address, k -> new ArrayDeque<>());
+        Deque<Instant> window = windows.computeIfAbsent(target, k -> new ArrayDeque<>());
 
         synchronized (window) {
             while (!window.isEmpty() && window.peekFirst().isBefore(cutoff)) {
@@ -32,8 +32,8 @@ public class RateLimitRule implements Rule {
             if (window.size() >= rlConfig.getMaxWrites()) {
                 return RuleResult.deny(
                         WhitelistRule.parseAction(config.getOnViolation()),
-                        "Rate limit exceeded for register "
-                                + address
+                        "Rate limit exceeded for target "
+                                + target
                                 + " (max "
                                 + rlConfig.getMaxWrites()
                                 + " writes per "

@@ -72,9 +72,9 @@ public class ModbusConnectionHandler implements Runnable {
                     relayToUpstream(frame, out);
                 } else {
                     log.warn(
-                            "[BLOCKED] {} register={} value={} reason={}",
+                            "[BLOCKED] {} target={} value={} reason={}",
                             clientAddr,
-                            request.get().registerAddress(),
+                            request.get().target(),
                             request.get().value(),
                             result.reason());
                     handleViolation(frame, result, out);

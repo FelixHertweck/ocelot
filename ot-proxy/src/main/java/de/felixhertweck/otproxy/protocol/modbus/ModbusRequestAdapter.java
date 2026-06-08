@@ -28,7 +28,8 @@ public class ModbusRequestAdapter {
                 int address = ((pdu[1] & 0xFF) << 8) | (pdu[2] & 0xFF);
                 int value = ((pdu[3] & 0xFF) << 8) | (pdu[4] & 0xFF);
                 yield Optional.of(
-                        new WriteRequest("modbus", address, value, sourceIp, Instant.now()));
+                        new WriteRequest(
+                                "modbus", String.valueOf(address), value, sourceIp, Instant.now()));
             }
             case FC_WRITE_MULTIPLE_COILS, FC_WRITE_MULTIPLE_REGS -> {
                 if (pdu.length < 5) yield Optional.empty();
@@ -36,7 +37,8 @@ public class ModbusRequestAdapter {
                 int address = ((pdu[1] & 0xFF) << 8) | (pdu[2] & 0xFF);
                 int value = pdu.length >= 8 ? ((pdu[6] & 0xFF) << 8) | (pdu[7] & 0xFF) : 0;
                 yield Optional.of(
-                        new WriteRequest("modbus", address, value, sourceIp, Instant.now()));
+                        new WriteRequest(
+                                "modbus", String.valueOf(address), value, sourceIp, Instant.now()));
             }
             default -> Optional.empty();
         };

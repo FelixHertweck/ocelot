@@ -2,8 +2,8 @@ package de.felixhertweck.otproxy.core.rules;
 
 import java.util.List;
 
+import de.felixhertweck.otproxy.config.NodeRuleConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.ViolationAction;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
@@ -19,22 +19,22 @@ public class RuleEngine {
     }
 
     public RuleResult evaluate(WriteRequest request) {
-        RegisterRuleConfig registerConfig = findRegisterConfig(request.registerAddress());
+        NodeRuleConfig nodeConfig = findNodeConfig(request.target());
 
-        if (registerConfig == null) {
-            // Register not explicitly configured — apply default action
+        if (nodeConfig == null) {
+            // Node not explicitly configured — apply default action
             String defaultAction =
                     config.getRules() != null ? config.getRules().getDefaultAction() : "DENY";
             if ("DENY".equalsIgnoreCase(defaultAction)) {
                 return RuleResult.deny(
                         ViolationAction.MODBUS_EXCEPTION,
-                        "Register " + request.registerAddress() + " is not in the whitelist");
+                        "Target " + request.target() + " is not in the whitelist");
             }
             return RuleResult.allow();
         }
 
         for (Rule rule : rules) {
-            RuleResult result = rule.evaluate(request, registerConfig);
+            RuleResult result = rule.evaluate(request, nodeConfig);
             if (!result.allowed()) {
                 return result;
             }
@@ -42,10 +42,10 @@ public class RuleEngine {
         return RuleResult.allow();
     }
 
-    private RegisterRuleConfig findRegisterConfig(int address) {
-        if (config.getRules() == null || config.getRules().getRegisters() == null) return null;
-        return config.getRules().getRegisters().stream()
-                .filter(r -> r.getAddress() == address)
+    private NodeRuleConfig findNodeConfig(String target) {
+        if (config.getRules() == null || config.getRules().getNodes() == null) return null;
+        return config.getRules().getNodes().stream()
+                .filter(r -> target.equals(r.getTarget()))
                 .findFirst()
                 .orElse(null);
     }

@@ -4,8 +4,8 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.felixhertweck.otproxy.config.NodeRuleConfig;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 import de.felixhertweck.otproxy.core.rules.RateLimitRule;
@@ -23,7 +23,7 @@ class RateLimitRuleTest {
 
     @Test
     void allowsWritesUpToLimit() {
-        RegisterRuleConfig config = config(3, 60);
+        NodeRuleConfig config = config(3, 60);
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         for (int i = 0; i < 3; i++) {
@@ -34,7 +34,7 @@ class RateLimitRuleTest {
 
     @Test
     void blocksWriteExceedingLimit() {
-        RegisterRuleConfig config = config(3, 60);
+        NodeRuleConfig config = config(3, 60);
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         for (int i = 0; i < 3; i++) {
@@ -47,7 +47,7 @@ class RateLimitRuleTest {
 
     @Test
     void allowsWriteAfterWindowExpires() {
-        RegisterRuleConfig config = config(2, 10);
+        NodeRuleConfig config = config(2, 10);
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         rule.evaluate(request(100, 1, base), config);
@@ -60,7 +60,7 @@ class RateLimitRuleTest {
 
     @Test
     void rateLimitsArePerRegister() {
-        RegisterRuleConfig config = config(1, 60);
+        NodeRuleConfig config = config(1, 60);
         Instant now = Instant.now();
 
         // Fill register 100
@@ -73,7 +73,7 @@ class RateLimitRuleTest {
 
     @Test
     void allowsWhenNoRateLimitConfigured() {
-        RegisterRuleConfig c = new RegisterRuleConfig();
+        NodeRuleConfig c = new NodeRuleConfig();
         // no rateLimit set
         for (int i = 0; i < 100; i++) {
             assertThat(rule.evaluate(request(100, i, Instant.now()), c).allowed()).isTrue();
@@ -81,14 +81,14 @@ class RateLimitRuleTest {
     }
 
     private WriteRequest request(int address, int value, Instant timestamp) {
-        return new WriteRequest("modbus", address, value, "127.0.0.1", timestamp);
+        return new WriteRequest("modbus", String.valueOf(address), value, "127.0.0.1", timestamp);
     }
 
-    private RegisterRuleConfig config(int maxWrites, int perSeconds) {
+    private NodeRuleConfig config(int maxWrites, int perSeconds) {
         RateLimitConfig rl = new RateLimitConfig();
         rl.setMaxWrites(maxWrites);
         rl.setPerSeconds(perSeconds);
-        RegisterRuleConfig c = new RegisterRuleConfig();
+        NodeRuleConfig c = new NodeRuleConfig();
         c.setRateLimit(rl);
         c.setOnViolation("MODBUS_EXCEPTION");
         return c;

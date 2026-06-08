@@ -14,9 +14,9 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.felixhertweck.otproxy.config.ListenConfig;
+import de.felixhertweck.otproxy.config.NodeRuleConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.ProxySection;
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.config.RulesConfig;
 import de.felixhertweck.otproxy.config.UpstreamConfig;
 import de.felixhertweck.otproxy.config.ValueRangeConfig;
@@ -212,10 +212,10 @@ class ModbusProxyIntegrationTest {
         return config;
     }
 
-    private static RegisterRuleConfig register(
+    private static NodeRuleConfig register(
             int address, boolean allowWrite, ValueRangeConfig range, String onViolation) {
-        RegisterRuleConfig r = new RegisterRuleConfig();
-        r.setAddress(address);
+        NodeRuleConfig r = new NodeRuleConfig();
+        r.setTarget(String.valueOf(address));
         r.setAllowWrite(allowWrite);
         r.setValueRange(range);
         r.setOnViolation(onViolation);

@@ -15,6 +15,13 @@
   </properties>
 
   <dependencies>
+    <!-- IEC 61850 -->
+    <dependency>
+      <groupId>com.beanit</groupId>
+      <artifactId>iec61850bean</artifactId>
+      <version>1.9.0</version>
+    </dependency>
+
     <!-- Modbus TCP -->
     <dependency>
       <groupId>com.ghgande</groupId>

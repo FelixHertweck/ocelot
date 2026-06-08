@@ -5,7 +5,7 @@ import java.util.List;
 
 public class RulesConfig {
     private String defaultAction = "DENY";
-    private List<RegisterRuleConfig> registers = new ArrayList<>();
+    private List<NodeRuleConfig> nodes = new ArrayList<>();
 
     public String getDefaultAction() {
         return defaultAction;
@@ -15,11 +15,16 @@ public class RulesConfig {
         this.defaultAction = defaultAction;
     }
 
-    public List<RegisterRuleConfig> getRegisters() {
-        return registers;
+    public List<NodeRuleConfig> getNodes() {
+        return nodes;
     }
 
-    public void setRegisters(List<RegisterRuleConfig> registers) {
-        this.registers = registers;
+    public void setNodes(List<NodeRuleConfig> nodes) {
+        this.nodes = nodes;
+    }
+
+    // For backwards compatibility with old Modbus configs
+    public void setRegisters(List<NodeRuleConfig> registers) {
+        this.nodes = registers;
     }
 }

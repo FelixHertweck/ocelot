@@ -9,8 +9,8 @@ proxy:
 rules:
   default_action: DENY   # Block any register not explicitly listed below
 
-  registers:
-    - address: 100
+  nodes:
+    - target: "100"
       description: "Pump speed setpoint"
       allow_write: true
       value_range:
@@ -21,7 +21,7 @@ rules:
         per_seconds: 60
       on_violation: MODBUS_EXCEPTION
 
-    - address: 101
+    - target: "101"
       description: "Pump on/off coil"
       allow_write: true
       value_range:
@@ -29,12 +29,12 @@ rules:
         max: 1
       on_violation: MODBUS_EXCEPTION
 
-    - address: 200
+    - target: "200"
       description: "Emergency stop (read-only)"
       allow_write: false
       on_violation: DISCONNECT
 
-    - address: 300
+    - target: "300"
       description: "Temperature setpoint (rate-limited)"
       allow_write: true
       value_range:

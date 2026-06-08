@@ -20,8 +20,8 @@ class ConfigLoaderTest {
                 port: 502
             rules:
               default_action: DENY
-              registers:
-                - address: 100
+              nodes:
+                - target: "100"
                   description: "Pump speed"
                   allow_write: true
                   value_range:
@@ -31,7 +31,7 @@ class ConfigLoaderTest {
                     max_writes: 10
                     per_seconds: 60
                   on_violation: MODBUS_EXCEPTION
-                - address: 200
+                - target: "200"
                   description: "Emergency stop"
                   allow_write: false
                   on_violation: DISCONNECT
@@ -55,19 +55,19 @@ class ConfigLoaderTest {
     @Test
     void parsesRegisterList() {
         ProxyConfig config = load(YAML);
-        assertThat(config.getRules().getRegisters()).hasSize(2);
+        assertThat(config.getRules().getNodes()).hasSize(2);
     }
 
     @Test
     void parsesAllowWriteAndViolationAction() {
         ProxyConfig config = load(YAML);
-        RegisterRuleConfig pump = config.getRules().getRegisters().get(0);
-        assertThat(pump.getAddress()).isEqualTo(100);
+        NodeRuleConfig pump = config.getRules().getNodes().get(0);
+        assertThat(pump.getTarget()).isEqualTo("100");
         assertThat(pump.isAllowWrite()).isTrue();
         assertThat(pump.getOnViolation()).isEqualTo("MODBUS_EXCEPTION");
 
-        RegisterRuleConfig eStop = config.getRules().getRegisters().get(1);
-        assertThat(eStop.getAddress()).isEqualTo(200);
+        NodeRuleConfig eStop = config.getRules().getNodes().get(1);
+        assertThat(eStop.getTarget()).isEqualTo("200");
         assertThat(eStop.isAllowWrite()).isFalse();
         assertThat(eStop.getOnViolation()).isEqualTo("DISCONNECT");
     }
@@ -75,7 +75,7 @@ class ConfigLoaderTest {
     @Test
     void parsesValueRange() {
         ProxyConfig config = load(YAML);
-        ValueRangeConfig range = config.getRules().getRegisters().get(0).getValueRange();
+        ValueRangeConfig range = config.getRules().getNodes().get(0).getValueRange();
         assertThat(range).isNotNull();
         assertThat(range.getMin()).isEqualTo(0);
         assertThat(range.getMax()).isEqualTo(1500);
@@ -84,7 +84,7 @@ class ConfigLoaderTest {
     @Test
     void parsesRateLimit() {
         ProxyConfig config = load(YAML);
-        RateLimitConfig rl = config.getRules().getRegisters().get(0).getRateLimit();
+        RateLimitConfig rl = config.getRules().getNodes().get(0).getRateLimit();
         assertThat(rl).isNotNull();
         assertThat(rl.getMaxWrites()).isEqualTo(10);
         assertThat(rl.getPerSeconds()).isEqualTo(60);

@@ -1,19 +1,19 @@
 package de.felixhertweck.otproxy.config;
 
-public class RegisterRuleConfig {
-    private int address;
+public class NodeRuleConfig {
+    private String target;
     private String description = "";
     private boolean allowWrite = false;
     private ValueRangeConfig valueRange;
     private RateLimitConfig rateLimit;
     private String onViolation = "MODBUS_EXCEPTION";
 
-    public int getAddress() {
-        return address;
+    public String getTarget() {
+        return target;
     }
 
-    public void setAddress(int address) {
-        this.address = address;
+    public void setTarget(String target) {
+        this.target = target;
     }
 
     public String getDescription() {

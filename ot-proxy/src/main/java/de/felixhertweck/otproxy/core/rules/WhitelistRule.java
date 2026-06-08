@@ -1,6 +1,6 @@
 package de.felixhertweck.otproxy.core.rules;
 
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
+import de.felixhertweck.otproxy.config.NodeRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.ViolationAction;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
@@ -8,11 +8,11 @@ import de.felixhertweck.otproxy.core.model.WriteRequest;
 public class WhitelistRule implements Rule {
 
     @Override
-    public RuleResult evaluate(WriteRequest request, RegisterRuleConfig config) {
+    public RuleResult evaluate(WriteRequest request, NodeRuleConfig config) {
         if (!config.isAllowWrite()) {
             return RuleResult.deny(
                     parseAction(config.getOnViolation()),
-                    "Write to register " + request.registerAddress() + " is explicitly denied");
+                    "Write to target " + request.target() + " is explicitly denied");
         }
         return RuleResult.allow();
     }

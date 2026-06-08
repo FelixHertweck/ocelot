@@ -4,7 +4,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
+import de.felixhertweck.otproxy.config.NodeRuleConfig;
 import de.felixhertweck.otproxy.config.ValueRangeConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
@@ -43,21 +43,22 @@ class ValueRangeRuleTest {
 
     @Test
     void allowsWhenNoRangeConfigured() {
-        RegisterRuleConfig c = new RegisterRuleConfig();
+        NodeRuleConfig c = new NodeRuleConfig();
         // no valueRange set
         RuleResult result = rule.evaluate(request(100, 99999), c);
         assertThat(result.allowed()).isTrue();
     }
 
     private WriteRequest request(int address, int value) {
-        return new WriteRequest("modbus", address, value, "127.0.0.1", Instant.now());
+        return new WriteRequest(
+                "modbus", String.valueOf(address), value, "127.0.0.1", Instant.now());
     }
 
-    private RegisterRuleConfig config(int min, int max) {
+    private NodeRuleConfig config(int min, int max) {
         ValueRangeConfig range = new ValueRangeConfig();
         range.setMin(min);
         range.setMax(max);
-        RegisterRuleConfig c = new RegisterRuleConfig();
+        NodeRuleConfig c = new NodeRuleConfig();
         c.setValueRange(range);
         c.setOnViolation("MODBUS_EXCEPTION");
         return c;
