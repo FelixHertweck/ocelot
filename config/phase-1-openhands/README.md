@@ -40,7 +40,7 @@ nano configs/phase-1-openhands/proxy-config.yml
 | `rules.default_action` | Fallback for unmatched requests (`ALLOW` or `DENY`) |
 | `rules.registers` | Per-register allow/deny rules |
 
-Optionally edit `configs/phase-1-openhands/ot-proxy.env` to override the proxy VM's hostname or set a spoofed MAC address:
+Optionally edit `configs/phase-1-openhands/ot-proxy.env` to override the proxy VM's hostname:
 
 ```bash
 nano configs/phase-1-openhands/ot-proxy.env
