@@ -97,3 +97,31 @@ sudo openvpn --config out/<your-prefix>/openvpn/admins/admin1.ovpn
 |---|---|
 | OpenHands dashboard | http://10.1.1.20:3000/ |
 | OT Proxy (Modbus TCP) | 10.1.1.15:5020 |
+
+## 6. Test the Proxy
+
+`test-proxy.py` reads all allowed registers from the proxy and optionally verifies that the default DENY rule rejects unlisted registers.
+
+**On the `ot-proxy` VM** (SSH in or run locally on the VM):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pymodbus
+python test-proxy.py --host localhost --port 5020
+```
+
+**From your local machine** (VPN must be connected):
+
+```bash
+source .venv/bin/activate
+python test-proxy.py --host 10.1.1.15 --port 5020
+```
+
+**Also verify the DENY rule:**
+
+```bash
+python test-proxy.py --host 10.1.1.15 --port 5020 --test-blocked
+```
+
+If the upstream Modbus device uses a slave ID other than `3`, pass `--slave <id>`.
