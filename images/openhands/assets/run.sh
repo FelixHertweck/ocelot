@@ -68,7 +68,15 @@ curl -s -X POST "http://localhost:3000/api/v1/settings" \
     '{agent_settings_diff: {llm: {model: $model, api_key: $key, base_url: $url, supports_function_calling: true}}}')" \
   || echo "Warning: LLM settings call failed"
 
-# 5. Start automated conversation (only if task is set)
+# 6. Configure agent settings
+echo "Configuring agent settings..."
+curl -s -X POST "http://localhost:3000/api/settings" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: oh-session=${SESSION_TOKEN}" \
+  -d '{"agent": {"enable_sub_agents": true}, "user_consents_to_analytics": false}' \
+  || echo "Warning: Agent settings call failed"
+
+# 7. Start automated conversation (only if task is set)
 if [ -n "${OPENHANDS_TASK}" ]; then
   echo "Starting automated conversation..."
   curl -s -X POST "http://localhost:3000/api/v1/app-conversations/stream-start" \
