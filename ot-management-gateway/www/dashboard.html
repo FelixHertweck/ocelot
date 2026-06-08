@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OT Management Gateway</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <span class="logo">&#9632;</span>
+                <h1>OT Management Gateway</h1>
+            </div>
+            <span class="status-badge online">&#9679; ONLINE</span>
+        </div>
+    </header>
+
+    <main>
+        <section class="system-overview">
+            <h2>System Overview</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <span class="label">Hostname</span>
+                    <span class="value">ot-gateway-01</span>
+                </div>
+                <div class="info-card">
+                    <span class="label">Status</span>
+                    <span class="value green">Operational</span>
+                </div>
+                <div class="info-card">
+                    <span class="label">IT Interface</span>
+                    <span class="value">eth0 &mdash; 10.0.1.1/24</span>
+                </div>
+                <div class="info-card">
+                    <span class="label">OT Interface</span>
+                    <span class="value">eth1 &mdash; 192.168.10.1/24</span>
+                </div>
+                <div class="info-card">
+                    <span class="label">IP Forwarding</span>
+                    <span class="value green">Enabled</span>
+                </div>
+                <div class="info-card">
+                    <span class="label">SSH</span>
+                    <span class="value green">Running &mdash; :22</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="api-reference">
+            <h2>Management API</h2>
+            <p class="section-desc">
+                REST API for gateway configuration and status monitoring.
+                All endpoints require HTTP Basic Authentication.
+            </p>
+
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td><a href="/api/v1/status">/api/v1/status</a></td>
+                        <td>Service and system status</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td><a href="/api/v1/system/info">/api/v1/system/info</a></td>
+                        <td>System information and OS details</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td><a href="/api/v1/network/interfaces">/api/v1/network/interfaces</a></td>
+                        <td>Network interface configuration</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td><a href="/api/v1/network/routes">/api/v1/network/routes</a></td>
+                        <td>IP routing table</td>
+                    </tr>
+                    <tr class="row-highlight">
+                        <td><span class="method get">GET</span></td>
+                        <td><a href="/api/v1/credentials/gateway-key">/api/v1/credentials/gateway-key</a></td>
+                        <td>Download SSH private key for gateway access</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="usage-notes">
+            <h2>Usage Notes</h2>
+            <pre class="code-block"># Authenticate and fetch status
+curl -u admin:&lt;password&gt; http://&lt;gateway-ip&gt;/api/v1/status
+
+# Download SSH key for gateway access
+curl -u admin:&lt;password&gt; -O http://&lt;gateway-ip&gt;/api/v1/credentials/gateway-key
+chmod 600 gateway-key
+
+# Connect to OT network via gateway
+ssh -i gateway-key gateway-user@&lt;gateway-ip&gt;</pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>OT Management Gateway v1.0 &mdash; Restricted Access &mdash; Unauthorized access is prohibited</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "hostname": "ot-gateway-01",
+  "os": "Ubuntu 24.04 LTS",
+  "kernel": "6.8.0-45-generic",
+  "arch": "x86_64",
+  "gateway_version": "1.0.0"
+}

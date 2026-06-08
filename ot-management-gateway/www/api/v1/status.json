@@ -1,0 +1,9 @@
+{
+  "status": "operational",
+  "uptime": "14d 7h 23m",
+  "services": {
+    "nginx": "running",
+    "ssh": "running",
+    "routing": "enabled"
+  }
+}
