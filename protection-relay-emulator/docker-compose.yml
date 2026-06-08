@@ -1,0 +1,7 @@
+services:
+  protection-relay:
+    build: .
+    container_name: protection-relay-emulator
+    ports:
+      - "10102:102"
+    restart: unless-stopped
