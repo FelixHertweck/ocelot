@@ -4,7 +4,7 @@ proxy:
     port: 5020
   upstream:
     host: ""
-    port: 502
+    port: 5020
 
 rules:
   default_action: DENY
