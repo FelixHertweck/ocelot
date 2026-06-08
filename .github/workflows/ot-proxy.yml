@@ -1,4 +1,4 @@
-name: ot-proxy.yml
+name: OT-Proxy — Build & Publish
 on:
   push:
     branches: [ "main" ]

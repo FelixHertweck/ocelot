@@ -1,4 +1,4 @@
-name: maven.yml
+name: Reusable — Maven Build & Test
 on:
   workflow_call:
     inputs:

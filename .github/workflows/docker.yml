@@ -1,4 +1,4 @@
-name: docker.yml
+name: Reusable — Docker Build & Publish
 
 on:
   # Build container according to ref input:
