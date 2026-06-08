@@ -24,5 +24,3 @@ services:
 networks:
   ot-proxy-net:
     driver: bridge
-    driver_opts:
-      com.docker.network.driver.mtu: "1442"
