@@ -1,0 +1,227 @@
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #0d1117;
+    color: #c9d1d9;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ── */
+
+header {
+    background-color: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 0.875rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.logo {
+    color: #58a6ff;
+    font-size: 1rem;
+}
+
+h1 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #e6edf3;
+    letter-spacing: 0.02em;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+}
+
+.status-badge.online {
+    color: #3fb950;
+    border: 1px solid #238636;
+    background-color: rgba(35, 134, 54, 0.1);
+}
+
+/* ── Main layout ── */
+
+main {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    flex: 1;
+    width: 100%;
+}
+
+section {
+    margin-bottom: 2.5rem;
+}
+
+h2 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #f0f6fc;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ── System info grid ── */
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.info-card {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 0.875rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.label {
+    font-size: 0.6875rem;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.value {
+    font-size: 0.875rem;
+    color: #e6edf3;
+}
+
+.value.green {
+    color: #3fb950;
+}
+
+/* ── API table ── */
+
+.section-desc {
+    font-size: 0.8125rem;
+    color: #8b949e;
+    margin-bottom: 1rem;
+}
+
+.api-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    overflow: hidden;
+    font-size: 0.875rem;
+}
+
+.api-table thead tr {
+    background-color: #1c2128;
+}
+
+.api-table th {
+    padding: 0.625rem 1rem;
+    text-align: left;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8b949e;
+    border-bottom: 1px solid #30363d;
+    font-weight: 600;
+}
+
+.api-table td {
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid #21262d;
+    vertical-align: middle;
+}
+
+.api-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.api-table tbody tr:hover td {
+    background-color: #1c2128;
+}
+
+.api-table tbody tr.row-highlight td {
+    background-color: rgba(88, 166, 255, 0.04);
+}
+
+.api-table tbody tr.row-highlight:hover td {
+    background-color: rgba(88, 166, 255, 0.08);
+}
+
+.method {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 3px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.method.get {
+    color: #3fb950;
+    background-color: rgba(35, 134, 54, 0.15);
+    border: 1px solid rgba(35, 134, 54, 0.4);
+}
+
+.api-table a {
+    color: #58a6ff;
+    text-decoration: none;
+}
+
+.api-table a:hover {
+    text-decoration: underline;
+}
+
+/* ── Code block ── */
+
+.code-block {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    font-size: 0.8125rem;
+    color: #c9d1d9;
+    overflow-x: auto;
+    line-height: 1.8;
+    white-space: pre;
+}
+
+/* ── Footer ── */
+
+footer {
+    text-align: center;
+    padding: 1.5rem 2rem;
+    color: #484f58;
+    font-size: 0.6875rem;
+    border-top: 1px solid #21262d;
+    letter-spacing: 0.03em;
+}

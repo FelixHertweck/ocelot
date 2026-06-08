@@ -1,0 +1,16 @@
+{
+  "routes": [
+    {
+      "destination": "0.0.0.0/0",
+      "gateway": "10.0.1.254",
+      "interface": "eth0",
+      "metric": 100
+    },
+    {
+      "destination": "192.168.10.0/24",
+      "gateway": "direct",
+      "interface": "eth1",
+      "metric": 0
+    }
+  ]
+}
