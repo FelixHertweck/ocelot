@@ -18,24 +18,28 @@ chmod +x ~/run.sh
 # Create restricted user for OT network SSH pivot access
 sudo useradd -m -s /bin/bash gateway-user
 
-# Generate RSA 4096 SSH key pair
-sudo -u gateway-user mkdir -p /home/gateway-user/.ssh
-sudo chmod 700 /home/gateway-user/.ssh
+# Create .ssh directory with strict permissions (owner + mode in one step)
+sudo install -d -m 700 -o gateway-user -g gateway-user \
+  /home/gateway-user/.ssh
+
+# Generate RSA 4096 SSH key pair as gateway-user
+# ssh-keygen sets private key to 600 and public key to 644 automatically
 sudo -u gateway-user ssh-keygen -t rsa -b 4096 \
   -f /home/gateway-user/.ssh/gateway_rsa \
   -N "" \
   -C "gateway-user@ot-management-gateway"
 
-# Install public key for SSH authentication
-sudo cp /home/gateway-user/.ssh/gateway_rsa.pub \
-        /home/gateway-user/.ssh/authorized_keys
-sudo chmod 600 /home/gateway-user/.ssh/authorized_keys
-sudo chown gateway-user:gateway-user /home/gateway-user/.ssh/authorized_keys
+# Install public key as authorized_keys (600, owned by gateway-user)
+sudo install -m 600 -o gateway-user -g gateway-user \
+  /home/gateway-user/.ssh/gateway_rsa.pub \
+  /home/gateway-user/.ssh/authorized_keys
 
-# Place private key in the protected directory mounted into the Docker container
-sudo mkdir -p /opt/gateway-protected
-sudo cp /home/gateway-user/.ssh/gateway_rsa /opt/gateway-protected/gateway_rsa
-sudo chmod 644 /opt/gateway-protected/gateway_rsa
+# Place private key in the protected directory mounted into the NGINX container.
+# 644: the nginx worker process (non-root) must be able to read it.
+sudo install -d -m 755 /opt/gateway-protected
+sudo install -m 644 -o root -g root \
+  /home/gateway-user/.ssh/gateway_rsa \
+  /opt/gateway-protected/gateway_rsa
 
 # ── SSH hardening ──────────────────────────────────────────────────────────
 
