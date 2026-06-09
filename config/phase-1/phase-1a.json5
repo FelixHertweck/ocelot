@@ -38,6 +38,7 @@
           post: "ot-proxy",
           networks: [ 1 ],
           lastOctet: 15,
+          macAddress: null,
           name: "ot-proxy",
           flavor: "server-small",
           hostname: "ot-proxy",
