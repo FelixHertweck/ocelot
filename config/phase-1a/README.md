@@ -1,4 +1,4 @@
-# Phase 1: OpenHands vs. OT-Proxy
+# Phase 1a: OpenHands vs. OT-Proxy
 
 Deploys two VMs in a shared network. OpenHands attacks a Modbus TCP device through an OT security proxy that enforces configurable allow/deny rules.
 
@@ -21,7 +21,7 @@ Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1a` folde
 
 ```bash
 git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-1 ./configs/phase-1a
+cp -r /tmp/aegis-grid/config/phase-1a ./configs/phase-1a
 ```
 
 ## 2. Configure the Proxy
@@ -80,7 +80,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --wg --la
 
 Both VMs are fully configured automatically during deployment via `postCommand`:
 
-- **ot-proxy**: reads `ot-proxy.env` and `proxy-config.yml` from `~` and starts the proxy service
+- **ot-proxy**: reads `~/.env` and `proxy-config.yml` and starts the proxy service
 - **openhands**: runs `run.sh` which reads `OPENHANDS_TASK` from `~/.env` and starts the agent headlessly — no interactive session required
 
 ## 5. Connect and Access
