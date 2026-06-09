@@ -3,6 +3,7 @@ package de.felixhertweck.otproxy.config;
 public class NodeRuleConfig {
     private String target;
     private String description = "";
+    private boolean allowRead = true;
     private boolean allowWrite = false;
     private ValueRangeConfig valueRange;
     private RateLimitConfig rateLimit;
@@ -22,6 +23,14 @@ public class NodeRuleConfig {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isAllowRead() {
+        return allowRead;
+    }
+
+    public void setAllowRead(boolean allowRead) {
+        this.allowRead = allowRead;
     }
 
     public boolean isAllowWrite() {

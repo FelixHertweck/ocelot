@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -127,6 +128,62 @@ class ModbusProxyIntegrationTest {
             socket.setSoTimeout(2000);
             sendFc6(socket.getOutputStream(), address, value);
             return isSuccessResponse(socket.getInputStream());
+        }
+    }
+
+    @Test
+    void deniesReadWhenConfigured() throws Exception {
+        ProxyConfig config = buildConfig(proxyPort, slave.getPort());
+        List<NodeRuleConfig> newNodes = new ArrayList<>(config.getRules().getNodes());
+        NodeRuleConfig r = new NodeRuleConfig();
+        r.setTarget("300");
+        r.setAllowRead(false);
+        r.setAllowWrite(true);
+        newNodes.add(r);
+        config.getRules().setNodes(newNodes);
+
+        // Re-initialize proxy with new config
+        if (proxy != null) {
+            proxy.stop();
+        }
+        RuleEngine ruleEngine = new RuleEngine(config);
+        RequestPipeline pipeline = new RequestPipeline(ruleEngine, List.of());
+        ModbusTcpUpstream upstream = new ModbusTcpUpstream("127.0.0.1", slave.getPort());
+        proxy = new ModbusTcpListener("127.0.0.1", proxyPort, pipeline, upstream);
+        new Thread(
+                        () -> {
+                            try {
+                                proxy.start();
+                            } catch (Exception e) {
+                            }
+                        })
+                .start();
+        Thread.sleep(200);
+
+        try (Socket client = new Socket("127.0.0.1", proxyPort);
+                OutputStream out = client.getOutputStream();
+                InputStream in = client.getInputStream()) {
+
+            // FC 0x03 Read Holding Registers starting at 300, quantity 1
+            // 01 2C -> 300
+            // build MBAP manually:
+            byte[] frame = new byte[12];
+            frame[0] = 0;
+            frame[1] = 1; // transaction id
+            frame[2] = 0;
+            frame[3] = 0; // protocol id (modbus = 0)
+            frame[4] = 0;
+            frame[5] = 6; // length
+            frame[6] = 1; // unit id
+            frame[7] = 0x03; // fc
+            frame[8] = 0x01;
+            frame[9] = 0x2C; // addr 300
+            frame[10] = 0x00;
+            frame[11] = 0x01; // count 1
+            out.write(frame);
+            out.flush();
+
+            assertThat(isSuccessResponse(in)).isFalse();
         }
     }
 

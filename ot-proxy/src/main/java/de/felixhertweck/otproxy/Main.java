@@ -27,15 +27,34 @@ public class Main {
         RuleEngine ruleEngine = new RuleEngine(config);
 
         RequestHandler violationLogger =
-                (req, result) -> {
-                    if (!result.allowed()) {
-                        log.warn(
-                                "VIOLATION protocol={} target={} value={} ip={} reason={}",
-                                req.protocol(),
-                                req.target(),
-                                req.value(),
-                                req.sourceIp(),
-                                result.reason());
+                new RequestHandler() {
+                    @Override
+                    public void handle(
+                            de.felixhertweck.otproxy.core.model.WriteRequest req,
+                            de.felixhertweck.otproxy.core.model.RuleResult result) {
+                        if (!result.allowed()) {
+                            log.warn(
+                                    "VIOLATION protocol={} target={} value={} ip={} reason={}",
+                                    req.protocol(),
+                                    req.target(),
+                                    req.value(),
+                                    req.sourceIp(),
+                                    result.reason());
+                        }
+                    }
+
+                    @Override
+                    public void handleRead(
+                            de.felixhertweck.otproxy.core.model.ReadRequest req,
+                            de.felixhertweck.otproxy.core.model.RuleResult result) {
+                        if (!result.allowed()) {
+                            log.warn(
+                                    "VIOLATION READ protocol={} target={} ip={} reason={}",
+                                    req.protocol(),
+                                    req.target(),
+                                    req.sourceIp(),
+                                    result.reason());
+                        }
                     }
                 };
 

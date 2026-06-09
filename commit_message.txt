@@ -1,0 +1,6 @@
+feat: Implement read restrictions and fix IEC61850 proxy
+
+- Added `allowRead` to NodeRuleConfig, modifying `RuleEngine` to include `evaluateRead` for validating reads.
+- Re-architected `Iec61850Listener` to use `findModelNode` ensuring that the proxy model stays correctly in sync with polled upstream data.
+- Refactored Modbus Request Adapter to properly interpret read requests, routing them via `RequestPipeline.processRead` for transparent validation against security rules.
+- Added comprehensive unit tests and confirmed formatting using Spotless.

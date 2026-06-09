@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Optional;
 
+import de.felixhertweck.otproxy.core.model.ReadRequest;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 import de.felixhertweck.otproxy.core.pipeline.RequestPipeline;
@@ -53,8 +54,47 @@ public class ModbusConnectionHandler implements Runnable {
             while (!clientSocket.isClosed()) {
                 ModbusFrame frame = ModbusFrame.read(in);
 
+                if (adapter.isReadFrame(frame)) {
+                    Optional<ReadRequest> readReq = adapter.adaptRead(frame, clientAddr);
+                    if (readReq.isPresent()) {
+                        ReadRequest baseReq = readReq.get();
+                        boolean allowed = true;
+                        RuleResult finalResult = RuleResult.allow();
+                        int startAddress = Integer.parseInt(baseReq.target());
+
+                        // Check all registers in the requested range
+                        for (int i = 0; i < baseReq.count(); i++) {
+                            ReadRequest req =
+                                    new ReadRequest(
+                                            baseReq.protocol(),
+                                            String.valueOf(startAddress + i),
+                                            1,
+                                            baseReq.sourceIp(),
+                                            baseReq.timestamp());
+                            RuleResult res = pipeline.processRead(req);
+                            if (!res.allowed()) {
+                                allowed = false;
+                                finalResult = res;
+                                break;
+                            }
+                        }
+
+                        if (!allowed) {
+                            handleViolation(frame, finalResult, out);
+                            if (finalResult.action()
+                                    == de.felixhertweck.otproxy.core.model.ViolationAction
+                                            .DISCONNECT) {
+                                break;
+                            }
+                            continue;
+                        }
+                    }
+                    relayToUpstream(frame, out);
+                    continue;
+                }
+
                 if (!adapter.isWriteFrame(frame)) {
-                    // Non-write (read, diagnostics, …) → forward transparently
+                    // diagnostics, … → forward transparently
                     relayToUpstream(frame, out);
                     continue;
                 }

@@ -3,6 +3,7 @@ package de.felixhertweck.otproxy.protocol.modbus;
 import java.time.Instant;
 import java.util.Optional;
 
+import de.felixhertweck.otproxy.core.model.ReadRequest;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 
 /**
@@ -13,10 +14,35 @@ import de.felixhertweck.otproxy.core.model.WriteRequest;
  */
 public class ModbusRequestAdapter {
 
+    private static final int FC_READ_COILS = 0x01;
+    private static final int FC_READ_DISCRETE_INPUTS = 0x02;
+    private static final int FC_READ_HOLDING_REGISTERS = 0x03;
+    private static final int FC_READ_INPUT_REGISTERS = 0x04;
+
     private static final int FC_WRITE_SINGLE_COIL = 0x05;
     private static final int FC_WRITE_SINGLE_REGISTER = 0x06;
     private static final int FC_WRITE_MULTIPLE_COILS = 0x0F;
     private static final int FC_WRITE_MULTIPLE_REGS = 0x10;
+
+    public Optional<ReadRequest> adaptRead(ModbusFrame frame, String sourceIp) {
+        int fc = frame.functionCode();
+        byte[] pdu = frame.pdu();
+
+        return switch (fc) {
+            case FC_READ_COILS,
+                    FC_READ_DISCRETE_INPUTS,
+                    FC_READ_HOLDING_REGISTERS,
+                    FC_READ_INPUT_REGISTERS -> {
+                if (pdu.length < 5) yield Optional.empty();
+                int address = ((pdu[1] & 0xFF) << 8) | (pdu[2] & 0xFF);
+                int count = ((pdu[3] & 0xFF) << 8) | (pdu[4] & 0xFF);
+                yield Optional.of(
+                        new ReadRequest(
+                                "modbus", String.valueOf(address), count, sourceIp, Instant.now()));
+            }
+            default -> Optional.empty();
+        };
+    }
 
     public Optional<WriteRequest> adapt(ModbusFrame frame, String sourceIp) {
         int fc = frame.functionCode();
@@ -50,5 +76,13 @@ public class ModbusRequestAdapter {
                 || fc == FC_WRITE_SINGLE_REGISTER
                 || fc == FC_WRITE_MULTIPLE_COILS
                 || fc == FC_WRITE_MULTIPLE_REGS;
+    }
+
+    public boolean isReadFrame(ModbusFrame frame) {
+        int fc = frame.functionCode();
+        return fc == FC_READ_COILS
+                || fc == FC_READ_DISCRETE_INPUTS
+                || fc == FC_READ_HOLDING_REGISTERS
+                || fc == FC_READ_INPUT_REGISTERS;
     }
 }
