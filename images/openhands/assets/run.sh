@@ -70,10 +70,10 @@ curl -s -X POST "http://localhost:3000/api/v1/settings" \
 
 # 6. Configure agent settings
 echo "Configuring agent settings..."
-curl -s -X POST "http://localhost:3000/api/settings" \
+curl -s -X POST "http://localhost:3000/api/v1/settings" \
   -H "Content-Type: application/json" \
   -H "Cookie: oh-session=${SESSION_TOKEN}" \
-  -d '{"agent": {"enable_sub_agents": true}, "user_consents_to_analytics": false}' \
+  -d '{"agent_settings_diff": {"enable_sub_agents": true}, "user_consents_to_analytics": false}' \
   || echo "Warning: Agent settings call failed"
 
 # 7. Start automated conversation (only if task is set)
