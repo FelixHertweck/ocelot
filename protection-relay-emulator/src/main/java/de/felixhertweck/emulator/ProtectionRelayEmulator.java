@@ -15,6 +15,7 @@ import com.beanit.iec61850bean.BasicDataAttribute;
 import com.beanit.iec61850bean.BdaBitString;
 import com.beanit.iec61850bean.BdaBoolean;
 import com.beanit.iec61850bean.BdaFloat32;
+import com.beanit.iec61850bean.Fc;
 import com.beanit.iec61850bean.FcModelNode;
 import com.beanit.iec61850bean.SclParser;
 import com.beanit.iec61850bean.ServerEventListener;
@@ -68,9 +69,26 @@ public class ProtectionRelayEmulator {
         return serverModel;
     }
 
+    /** Returns the current logical state of the circuit breaker. Package-private for tests. */
+    boolean isBreakerClosed() {
+        return breakerClosed;
+    }
+
+    /**
+     * Applies a breaker open/close command and updates the XCBR model node. Package-private for
+     * tests.
+     */
+    void triggerBreakerCommand(boolean close) {
+        breakerClosed = close;
+        updateBreakerPosition();
+    }
+
     private void startDynamicSimulation() {
-        scheduler = Executors.newSingleThreadScheduledExecutor();
+        // Two threads: one for periodic measurements, one for fault simulation tasks
+        scheduler = Executors.newScheduledThreadPool(2);
         scheduler.scheduleAtFixedRate(this::updateMeasurements, 1, 2, TimeUnit.SECONDS);
+        // First fault check after 15 s, then every 30 s — well outside test timeouts
+        scheduler.scheduleAtFixedRate(this::checkFaultCondition, 15, 30, TimeUnit.SECONDS);
         logger.info("Dynamic measurement simulation started.");
     }
 
@@ -115,10 +133,48 @@ public class ProtectionRelayEmulator {
         }
     }
 
+    /**
+     * Randomly triggers a PTOC fault simulation at each 30-second interval. Simulates the full
+     * protection sequence: pickup → trip → reset.
+     */
+    private void checkFaultCondition() {
+        if (random.nextFloat() < 0.3f) {
+            simulateFault();
+        }
+    }
+
+    /**
+     * Simulates an overcurrent fault event: PTOC picks up (Str=true), operates (Op=true) and opens
+     * the breaker after 1 s, then resets the PTOC indicators after 4 s. The breaker stays open
+     * until an explicit close command is received.
+     */
+    private void simulateFault() {
+        logger.info("Simulating protection fault: PTOC pickup (Str=true)");
+        updateBooleanValue("RelayIEDPROT/PTOC1.Str.general", Fc.ST, true);
+
+        scheduler.schedule(
+                () -> {
+                    logger.info("PTOC operated (Op=true): opening circuit breaker");
+                    updateBooleanValue("RelayIEDPROT/PTOC1.Op.general", Fc.ST, true);
+                    breakerClosed = false;
+                    updateBreakerPosition();
+                },
+                1,
+                TimeUnit.SECONDS);
+
+        scheduler.schedule(
+                () -> {
+                    logger.info("Fault cleared: resetting PTOC indicators");
+                    updateBooleanValue("RelayIEDPROT/PTOC1.Str.general", Fc.ST, false);
+                    updateBooleanValue("RelayIEDPROT/PTOC1.Op.general", Fc.ST, false);
+                },
+                4,
+                TimeUnit.SECONDS);
+    }
+
     private void updateFloat32Value(String reference, float value) {
-        FcModelNode node =
-                (FcModelNode) serverModel.findModelNode(reference, com.beanit.iec61850bean.Fc.MX);
-        if (node != null && node instanceof BdaFloat32) {
+        FcModelNode node = (FcModelNode) serverModel.findModelNode(reference, Fc.MX);
+        if (node instanceof BdaFloat32) {
             BdaFloat32 bda = (BdaFloat32) node;
             bda.setFloat(value);
             try {
@@ -129,20 +185,27 @@ public class ProtectionRelayEmulator {
         }
     }
 
+    private void updateBooleanValue(String reference, Fc fc, boolean value) {
+        FcModelNode node = (FcModelNode) serverModel.findModelNode(reference, fc);
+        if (node instanceof BdaBoolean) {
+            BdaBoolean bda = (BdaBoolean) node;
+            bda.setValue(value);
+            try {
+                serverSap.setValues(Collections.singletonList(bda));
+            } catch (Exception e) {
+                // Ignore missing triggers during simulation
+            }
+        }
+    }
+
     private void updateBreakerPosition() {
         FcModelNode node =
-                (FcModelNode)
-                        serverModel.findModelNode(
-                                "RelayIEDPROT/XCBR1.Pos.stVal", com.beanit.iec61850bean.Fc.ST);
+                (FcModelNode) serverModel.findModelNode("RelayIEDPROT/XCBR1.Pos.stVal", Fc.ST);
         if (node != null) {
-            // stVal for DPC is Dbpos, which maps to BdaBitString (2 bits) in iec61850bean
-            // 00=intermediate, 01=off(open), 10=on(closed), 11=bad
-            byte[] val =
-                    breakerClosed
-                            ? new byte[] {(byte) 0x80}
-                            : new byte[] {
-                                0x40
-                            }; // 10000000 (0x80) -> on(10) | 01000000 (0x40) -> off(01)
+            // stVal for DPC is Dbpos, mapped as BdaBitString (2 bits):
+            // 00=intermediate, 01=off(open), 10=on(closed), 11=bad-state
+            // MSB-first in byte: 0x80 = 10000000 → on(10), 0x40 = 01000000 → off(01)
+            byte[] val = breakerClosed ? new byte[] {(byte) 0x80} : new byte[] {0x40};
             try {
                 if (node instanceof BdaBitString) {
                     BdaBitString bda = (BdaBitString) node;
@@ -177,8 +240,11 @@ public class ProtectionRelayEmulator {
 
     public static void main(String[] args) {
         try {
-            int port =
-                    10102; // Default IEC 61850 port is 102, but using 10102 to avoid requiring root
+            // Default 10102 for local runs (avoids root requirement for port 102).
+            // The Dockerfile overrides this with ENV IEC61850_PORT=102 so the container
+            // always listens on the standard IEC 61850 port, with docker-compose
+            // mapping host:10102 → container:102.
+            int port = 10102;
             String portEnv = System.getenv("IEC61850_PORT");
             if (portEnv != null) {
                 port = Integer.parseInt(portEnv);
@@ -213,8 +279,7 @@ public class ProtectionRelayEmulator {
                                 "Received command to "
                                         + (command ? "CLOSE" : "OPEN")
                                         + " the circuit breaker.");
-                        breakerClosed = command;
-                        updateBreakerPosition();
+                        triggerBreakerCommand(command);
                     }
                 }
             }
