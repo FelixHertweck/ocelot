@@ -102,6 +102,8 @@ sudo openvpn --config out/<your-prefix>/openvpn/admins/admin1.ovpn
 
 `test-proxy.py` reads all allowed registers from the proxy and optionally verifies that the default DENY rule rejects unlisted registers.
 
+> **Note:** The register list in `test-proxy.py` is tailored to the **SMA Tripower inverter** described in `proxy-config-example.yml`. If you use a different device or a different `proxy-config.yml`, update the `ALLOWED_REGISTERS` list accordingly.
+
 **On the `ot-proxy` VM** (SSH in or run locally on the VM):
 
 ```bash
@@ -125,3 +127,20 @@ python test-proxy.py --host 10.1.1.15 --port 5020 --test-blocked
 ```
 
 If the upstream Modbus device uses a slave ID other than `3`, pass `--slave <id>`.
+
+## 7. Assign a MAC Address to the OT-Proxy VM
+
+By default the `ot-proxy` VM is deployed without a fixed MAC address (`macAddress: null` in `phase-1a.json5`). Some physical OT networks require a known MAC address — e.g. for DHCP reservations or switch-port ACLs.
+
+To assign a fixed MAC address, edit `configs/phase-1a/phase-1a.json5` and replace `null` with the desired address:
+
+```json5
+{
+  name: "ot-proxy",
+  ...
+  macAddress: "52:54:00:ab:cd:ef",   // set your desired MAC here
+  ...
+}
+```
+
+The value is passed directly to the OpenStack VM, so any unicast MAC address in the format `XX:XX:XX:XX:XX:XX` is valid.
