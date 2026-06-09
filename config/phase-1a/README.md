@@ -17,19 +17,19 @@ The upstream Modbus TCP device (e.g. an Aloha Water Treatment simulator or physi
 
 ## 1. Place the Deployment Config
 
-Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1-openhands` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
+Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1a` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
 
 ```bash
 git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-1-openhands ./configs/
+cp -r /tmp/aegis-grid/config/phase-1 ./configs/phase-1a
 ```
 
 ## 2. Configure the Proxy
 
-Edit `configs/phase-1-openhands/proxy-config.yml` and set the upstream Modbus target that the proxy should forward to:
+Edit `configs/phase-1a/proxy-config.yml` and set the upstream Modbus target that the proxy should forward to:
 
 ```bash
-nano configs/phase-1-openhands/proxy-config.yml
+nano configs/phase-1a/proxy-config.yml
 ```
 
 | Field | Description |
@@ -40,18 +40,18 @@ nano configs/phase-1-openhands/proxy-config.yml
 | `rules.default_action` | Fallback for unmatched requests (`ALLOW` or `DENY`) |
 | `rules.registers` | Per-register allow/deny rules |
 
-Optionally edit `configs/phase-1-openhands/ot-proxy.env` to override the proxy VM's hostname:
+Optionally edit `configs/phase-1a/ot-proxy.env` to override the proxy VM's hostname:
 
 ```bash
-nano configs/phase-1-openhands/ot-proxy.env
+nano configs/phase-1a/ot-proxy.env
 ```
 
 ## 3. Configure the Task
 
-Edit `configs/phase-1-openhands/openhands.env` and fill in your LLM credentials and the task prompt:
+Edit `configs/phase-1a/openhands.env` and fill in your LLM credentials and the task prompt:
 
 ```bash
-nano configs/phase-1-openhands/openhands.env
+nano configs/phase-1a/openhands.env
 ```
 
 | Variable | Description |
@@ -72,10 +72,10 @@ To deploy non-interactively with a custom lab prefix:
 
 ```bash
 # OpenVPN
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1-openhands/phase-1 --lab-prefix aegis-p1oh
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --lab-prefix aegis-p1a
 
 # WireGuard
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1-openhands/phase-1 --wg --lab-prefix aegis-p1oh
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --wg --lab-prefix aegis-p1a
 ```
 
 Both VMs are fully configured automatically during deployment via `postCommand`:
