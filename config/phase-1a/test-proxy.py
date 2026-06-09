@@ -34,8 +34,8 @@ _SLAVE_KW = next((k for k in ("slave", "unit", "unit_id", "dev_id") if k in _sig
 
 # ---------------------------------------------------------------------------
 # Register definitions (from proxy-config.yml)
-# Addresses are the "register numbers" as in the SMA/proxy config (1-based).
-# The Modbus PDU address = register_number - 1.
+# Addresses are SMA Modbus addresses, which equal the PDU starting address
+# directly (no offset). SMA does NOT follow the IEC 61131-3 -1 convention.
 # All reads use FC3 (read holding registers).
 # U32 values span 2 consecutive registers → count=2.
 # ---------------------------------------------------------------------------
@@ -77,7 +77,7 @@ def read_registers(client: ModbusTcpClient, slave: int) -> None:
     print(f"{'─'*70}")
     ok = 0
     for reg_num, count, name, desc in ALLOWED_REGISTERS:
-        addr = reg_num - 1  # 0-based PDU address
+        addr = reg_num  # SMA PDU address == register number (no offset)
         try:
             kw = {_SLAVE_KW: slave} if _SLAVE_KW else {}
             result = client.read_holding_registers(addr, count=count, **kw)
@@ -99,7 +99,7 @@ def test_blocked(client: ModbusTcpClient, slave: int) -> None:
     print(f"\n{'─'*70}")
     print(f"  Testing DENY on blocked register {BLOCKED_REGISTER} (FC3)")
     print(f"{'─'*70}")
-    addr = BLOCKED_REGISTER - 1
+    addr = BLOCKED_REGISTER
     try:
         kw = {_SLAVE_KW: slave} if _SLAVE_KW else {}
         result = client.read_holding_registers(addr, count=2, **kw)

@@ -5,6 +5,7 @@
 proxy:
   listen:
     host: 0.0.0.0
+    # This means the port inside the docker container, to change the outside port need do it in ot-proxy.env
     port: 5020
   upstream:
     host: modbus-device
