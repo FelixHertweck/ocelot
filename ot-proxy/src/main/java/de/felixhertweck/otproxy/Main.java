@@ -63,6 +63,8 @@ public class Main {
         String protocol = config.getProxy().getProtocol();
 
         if ("iec61850".equalsIgnoreCase(protocol)) {
+            warnIfDisconnectRulesPresent(config);
+
             Iec61850Upstream upstream =
                     new Iec61850Upstream(
                             config.getProxy().getUpstream().getHost(),
@@ -93,6 +95,19 @@ public class Main {
 
             Runtime.getRuntime().addShutdownHook(new Thread(listener::stop));
             listener.start();
+        }
+    }
+
+    private static void warnIfDisconnectRulesPresent(ProxyConfig config) {
+        if (config.getRules() == null || config.getRules().getNodes() == null) return;
+        boolean hasDisconnect =
+                config.getRules().getNodes().stream()
+                        .anyMatch(n -> "DISCONNECT".equalsIgnoreCase(n.getOnViolation()));
+        if (hasDisconnect) {
+            log.warn(
+                    "Config contains on_violation: DISCONNECT rules, but the IEC 61850 protocol"
+                            + " does not support closing individual client connections."
+                            + " DISCONNECT will behave like MODBUS_EXCEPTION (ACCESS_VIOLATION).");
         }
     }
 

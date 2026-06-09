@@ -5,6 +5,8 @@ import java.util.List;
 
 public class RulesConfig {
     private String defaultAction = "DENY";
+    private String defaultReadAction = "ALLOW";
+    private String defaultViolationAction = "MODBUS_EXCEPTION";
     private List<NodeRuleConfig> nodes = new ArrayList<>();
 
     public String getDefaultAction() {
@@ -13,6 +15,22 @@ public class RulesConfig {
 
     public void setDefaultAction(String defaultAction) {
         this.defaultAction = defaultAction;
+    }
+
+    public String getDefaultReadAction() {
+        return defaultReadAction;
+    }
+
+    public void setDefaultReadAction(String defaultReadAction) {
+        this.defaultReadAction = defaultReadAction;
+    }
+
+    public String getDefaultViolationAction() {
+        return defaultViolationAction;
+    }
+
+    public void setDefaultViolationAction(String defaultViolationAction) {
+        this.defaultViolationAction = defaultViolationAction;
     }
 
     public List<NodeRuleConfig> getNodes() {
