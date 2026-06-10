@@ -41,3 +41,38 @@ sudo systemctl enable docker
 sudo systemctl start docker
 
 sudo timedatectl set-timezone Europe/Berlin
+
+# Fix asymmetric routing for dual-homed instances:
+# When two NICs are present, DHCP on the secondary interface overwrites the
+# default route set by the primary. This service removes spurious default routes
+# at boot so management traffic (SSH, Ansible) always exits via eth0/ens3.
+sudo tee /usr/local/bin/fix-multinic-routes.sh > /dev/null <<'EOF'
+#!/bin/bash
+# Remove default routes from all interfaces except the one with the lowest
+# kernel index (ens3/eth0 = the first-attached OpenStack network).
+PRIMARY=$(ip -br link show | grep -v '^lo' | sort | head -1 | cut -d' ' -f1)
+ip route show | grep '^default' | while read -r route; do
+  iface=$(echo "$route" | grep -o 'dev [^ ]*' | awk '{print $2}')
+  if [ "$iface" != "$PRIMARY" ]; then
+    ip route del $route
+  fi
+done
+EOF
+sudo chmod +x /usr/local/bin/fix-multinic-routes.sh
+
+sudo tee /etc/systemd/system/fix-multinic-routes.service > /dev/null <<'EOF'
+[Unit]
+Description=Remove spurious default routes from secondary NICs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/fix-multinic-routes.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl enable fix-multinic-routes.service
