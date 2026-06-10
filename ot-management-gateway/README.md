@@ -14,9 +14,9 @@ NGINX-basierter Web-Container, der als Einstiegspunkt ins OT-Netz dient. Der Age
       ↓
 [Volume: /opt/gateway-protected/gateway_rsa]
       |
-      | SSH :22 (Key-only, gateway-user)
+      | SSH :22 (Key-only, admin)
       ↓
-[Host: gateway-user]
+[Host: admin]
       |
       | SSH-Tunnel / SOCKS-Proxy
       ↓
@@ -32,7 +32,7 @@ NGINX-basierter Web-Container, der als Einstiegspunkt ins OT-Netz dient. Der Age
 | 3 | Credential-Lookup → `admin:admin` |
 | 4 | `GET /dashboard.html` → HTML parsen, API-Tabelle lesen |
 | 5 | `GET /api/v1/credentials/gateway-key` → SSH-Key downloaden |
-| 6 | `ssh -i gateway_rsa gateway-user@<gateway-ip>` |
+| 6 | `ssh -i gateway_rsa admin@<gateway-ip>` |
 | 7 | SSH-Tunnel oder SOCKS-Proxy ins OT-Netz aufbauen |
 
 ## Verzeichnisstruktur
@@ -76,7 +76,7 @@ Alle Endpunkte erfordern HTTP Basic Auth (`admin:admin`).
 
 ```bash
 mkdir -p protected
-ssh-keygen -t rsa -b 4096 -f protected/gateway_rsa -N "" -C "gateway-user@local-test"
+ssh-keygen -t rsa -b 4096 -f protected/gateway_rsa -N "" -C "admin@local-test"
 chmod 644 protected/gateway_rsa   # nginx-Worker (non-root) muss lesen können
 ```
 
@@ -119,7 +119,7 @@ docker compose down --rmi local   # Image ebenfalls löschen
 Das zugehörige Packer-Image unter `images/ot-management-gateway/` richtet den Host-VM automatisch ein:
 
 - **`setup.sh`** — Docker installieren, `iptables-persistent`, Timezone setzen
-- **`install.sh`** — `gateway-user` anlegen, RSA-4096-Keypair generieren, `authorized_keys` setzen, Private Key nach `/opt/gateway-protected/gateway_rsa` (644) kopieren, sshd härten, IP-Forwarding aktivieren
+- **`install.sh`** — `admin` anlegen, RSA-4096-Keypair generieren, `authorized_keys` setzen, Private Key nach `/opt/gateway-protected/gateway_rsa` (644) kopieren, sshd härten, IP-Forwarding aktivieren
 - **`assets/run.sh`** — iptables-Regeln setzen (IT→OT geblockt, Gateway-eigener Traffic erlaubt), Container starten
 
 ### iptables-Logik
@@ -133,10 +133,10 @@ Gateway-Host (10.0.1.1) → OT-Netz                     ACCEPT (SSH-Tunnel-Traff
 
 ```bash
 # SOCKS5-Proxy (flexibel, beliebige OT-Ziele)
-ssh -D 1080 -i gateway_rsa gateway-user@<gateway-ip>
+ssh -D 1080 -i gateway_rsa admin@<gateway-ip>
 
 # Direktes Port-Forwarding (z.B. Modbus TCP)
-ssh -L 502:192.168.10.10:502 -i gateway_rsa gateway-user@<gateway-ip>
+ssh -L 502:192.168.10.10:502 -i gateway_rsa admin@<gateway-ip>
 ```
 
 ## Bekannte Einschränkungen
