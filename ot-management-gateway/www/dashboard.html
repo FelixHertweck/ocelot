@@ -92,19 +92,6 @@
                 </tbody>
             </table>
         </section>
-
-        <section class="usage-notes">
-            <h2>Usage Notes</h2>
-            <pre class="code-block"># Authenticate and fetch status
-curl -u admin:&lt;password&gt; http://&lt;gateway-ip&gt;/api/v1/status
-
-# Download SSH key for gateway access
-curl -u admin:&lt;password&gt; -O http://&lt;gateway-ip&gt;/api/v1/credentials/gateway-key
-chmod 600 gateway-key
-
-# Connect to OT network via gateway
-ssh -i gateway-key gateway-user@&lt;gateway-ip&gt;</pre>
-        </section>
     </main>
 
     <footer>
