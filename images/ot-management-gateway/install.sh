@@ -16,36 +16,36 @@ chmod +x ~/run.sh
 # ── gateway-user setup ─────────────────────────────────────────────────────
 
 # Create restricted user for OT network SSH pivot access
-sudo useradd -m -s /bin/bash gateway-user
+sudo useradd -m -s /bin/bash admin
 
 # Create .ssh directory with strict permissions (owner + mode in one step)
-sudo install -d -m 700 -o gateway-user -g gateway-user \
-  /home/gateway-user/.ssh
+sudo install -d -m 700 -o admin -g admin \
+  /home/admin/.ssh
 
-# Generate RSA 4096 SSH key pair as gateway-user
+# Generate RSA 4096 SSH key pair as admin
 # ssh-keygen sets private key to 600 and public key to 644 automatically
-sudo -u gateway-user ssh-keygen -t rsa -b 4096 \
-  -f /home/gateway-user/.ssh/gateway_rsa \
+sudo -u admin ssh-keygen -t rsa -b 4096 \
+  -f /home/admin/.ssh/gateway_rsa \
   -N "" \
-  -C "gateway-user@ot-management-gateway"
+  -C "admin@ot-management-gateway"
 
-# Install public key as authorized_keys (600, owned by gateway-user)
-sudo install -m 600 -o gateway-user -g gateway-user \
-  /home/gateway-user/.ssh/gateway_rsa.pub \
-  /home/gateway-user/.ssh/authorized_keys
+# Install public key as authorized_keys (600, owned by admin)
+sudo install -m 600 -o admin -g admin \
+  /home/admin/.ssh/gateway_rsa.pub \
+  /home/admin/.ssh/authorized_keys
 
 # Place private key in the protected directory mounted into the NGINX container.
 # 644: the nginx worker process (non-root) must be able to read it.
 sudo install -d -m 755 /opt/gateway-protected
 sudo install -m 644 -o root -g root \
-  /home/gateway-user/.ssh/gateway_rsa \
+  /home/admin/.ssh/gateway_rsa \
   /opt/gateway-protected/gateway_rsa
 
 # ── SSH hardening ──────────────────────────────────────────────────────────
 
 sudo tee /etc/ssh/sshd_config.d/99-gateway-hardening.conf > /dev/null <<'EOF'
 # Allow only gateway-user (OT pivot) and ubuntu (admin); reject everything else
-AllowUsers gateway-user ubuntu
+AllowUsers admin ubuntu
 
 # Key-based authentication only
 PasswordAuthentication no
