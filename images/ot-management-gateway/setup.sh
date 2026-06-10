@@ -6,7 +6,8 @@ set -x
 export DEBIAN_FRONTEND=noninteractive
 
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl iptables-persistent netfilter-persistent
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  ca-certificates curl iptables-persistent netfilter-persistent
 
 # Install Docker
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -20,7 +21,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
   | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo apt-get update
-sudo apt-get install -y \
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   docker-ce \
   docker-ce-cli \
   containerd.io \
