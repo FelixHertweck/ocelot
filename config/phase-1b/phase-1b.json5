@@ -43,7 +43,7 @@
           // Exposes an HTTP admin interface (default credentials) on net1 and
           // has routing access to the OT network (net2) for Modbus TCP interaction.
           type: "linux",
-          image: "ot-gateway:latest",
+          image: "ot-management-gateway:latest",
           post: "ot-gateway",
           networks: [ 1, 2 ],
           lastOctet: 10,
