@@ -13,7 +13,7 @@ cp /tmp/assets/docker-compose.yml ~/docker-compose.yml
 cp /tmp/assets/run.sh ~/run.sh
 chmod +x ~/run.sh
 
-# ── gateway-user setup ─────────────────────────────────────────────────────
+# ── admin setup ────────────────────────────────────────────────────────────
 
 # Create restricted user for OT network SSH pivot access
 sudo useradd -m -s /bin/bash admin
@@ -44,7 +44,7 @@ sudo install -m 644 -o root -g root \
 # ── SSH hardening ──────────────────────────────────────────────────────────
 
 sudo tee /etc/ssh/sshd_config.d/99-gateway-hardening.conf > /dev/null <<'EOF'
-# Allow only gateway-user (OT pivot) and ubuntu (admin); reject everything else
+# Allow only admin (OT pivot) and ubuntu (provisioning); reject everything else
 AllowUsers admin ubuntu
 
 # Key-based authentication only
