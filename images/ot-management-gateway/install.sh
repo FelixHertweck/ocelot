@@ -16,7 +16,7 @@ chmod +x ~/run.sh
 # ── admin setup ────────────────────────────────────────────────────────────
 
 # Create restricted user for OT network SSH pivot access
-sudo useradd -m -s /bin/bash admin
+sudo useradd -m -s /bin/bash -g admin admin
 
 # Create .ssh directory with strict permissions (owner + mode in one step)
 sudo install -d -m 700 -o admin -g admin \
