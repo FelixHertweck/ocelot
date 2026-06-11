@@ -4,6 +4,7 @@ import com.ghgande.j2mod.modbus.procimg.SimpleProcessImage;
 import com.ghgande.j2mod.modbus.procimg.SimpleRegister;
 import com.ghgande.j2mod.modbus.slave.ModbusSlave;
 import com.ghgande.j2mod.modbus.slave.ModbusSlaveFactory;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -52,14 +53,11 @@ public class InverterEmulator {
             ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
             executor.scheduleAtFixedRate(InverterEmulator::simulationLoop, 1, 1, TimeUnit.SECONDS);
 
-            // Wait forever
-            while (true) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
+            // Block until JVM shutdown
+            CountDownLatch latch = new CountDownLatch(1);
+            Runtime.getRuntime().addShutdownHook(new Thread(latch::countDown));
+            latch.await();
+            executor.shutdown();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -102,11 +100,8 @@ public class InverterEmulator {
     }
 
     private static void writeU32(int offset, int value) {
-        // Big-Endian: High word at offset, Low word at offset+1
-        short high = (short) ((value >> 16) & 0xFFFF);
-        short low = (short) (value & 0xFFFF);
-        spi.getRegister(offset).setValue(high);
-        spi.getRegister(offset + 1).setValue(low);
+        spi.getRegister(offset).setValue((value >> 16) & 0xFFFF);
+        spi.getRegister(offset + 1).setValue(value & 0xFFFF);
     }
 
     private static int readU32(int offset) {
@@ -116,14 +111,9 @@ public class InverterEmulator {
     }
 
     private static void writeU64(int offset, long value) {
-        // 4 registers. Big-Endian
-        short reg0 = (short) ((value >> 48) & 0xFFFF);
-        short reg1 = (short) ((value >> 32) & 0xFFFF);
-        short reg2 = (short) ((value >> 16) & 0xFFFF);
-        short reg3 = (short) (value & 0xFFFF);
-        spi.getRegister(offset).setValue(reg0);
-        spi.getRegister(offset + 1).setValue(reg1);
-        spi.getRegister(offset + 2).setValue(reg2);
-        spi.getRegister(offset + 3).setValue(reg3);
+        spi.getRegister(offset).setValue((int) ((value >> 48) & 0xFFFF));
+        spi.getRegister(offset + 1).setValue((int) ((value >> 32) & 0xFFFF));
+        spi.getRegister(offset + 2).setValue((int) ((value >> 16) & 0xFFFF));
+        spi.getRegister(offset + 3).setValue((int) (value & 0xFFFF));
     }
 }
