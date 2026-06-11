@@ -1,6 +1,6 @@
 services:
   protection-relay:
-    image: ghcr.io/felixhertweck/aegis-protection-relay-emulator:main
+    image: ghcr.io/felixhertweck/aegis-grid-protection-relay-emulator:main
     container_name: protection-relay-emulator
     ports:
       - "${IEC61850_PORT:-102}:102"
