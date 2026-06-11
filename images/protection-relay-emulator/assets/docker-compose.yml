@@ -1,0 +1,23 @@
+services:
+  protection-relay:
+    image: ghcr.io/felixhertweck/aegis-grid-protection-relay-emulator:main
+    container_name: protection-relay-emulator
+    ports:
+      - "${IEC61850_PORT:-102}:102"
+    environment:
+      - IEC61850_PORT=102
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 102 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - relay-net
+
+networks:
+  relay-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1442"
