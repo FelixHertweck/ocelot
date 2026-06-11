@@ -60,6 +60,40 @@ class DefaultOnViolationTest {
     }
 
     @Test
+    void registerOnViolationOverridesGlobalWriteLimitOnViolation() {
+        // Global write limit says SILENT_DROP; register says DISCONNECT — register must win.
+        RateLimitConfig globalWrite = new RateLimitConfig();
+        globalWrite.setMaxRequests(1);
+        globalWrite.setPerMillis(1000);
+        globalWrite.setOnViolation("SILENT_DROP");
+
+        DirectionalRateLimitConfig defaults = new DirectionalRateLimitConfig();
+        defaults.setWrite(globalWrite);
+
+        RegisterRuleConfig reg = new RegisterRuleConfig();
+        reg.setAddress(100);
+        reg.setAllowWrite(true);
+        reg.setOnViolation("DISCONNECT");
+
+        RulesConfig rules = new RulesConfig();
+        rules.setDefaultRateLimit(defaults);
+        rules.setRegisters(List.of(reg));
+
+        ProxyConfig config = new ProxyConfig();
+        config.setRules(rules);
+        RuleEngine engine = new RuleEngine(config);
+
+        Instant base = Instant.parse("2024-01-01T00:00:00Z");
+        assertThat(engine.evaluate(new WriteRequest("modbus", 100, 1, "127.0.0.1", base)).allowed())
+                .isTrue();
+        RuleResult blocked =
+                engine.evaluate(
+                        new WriteRequest("modbus", 100, 1, "127.0.0.1", base.plusMillis(10)));
+        assertThat(blocked.allowed()).isFalse();
+        assertThat(blocked.action()).isEqualTo(ViolationAction.DISCONNECT);
+    }
+
+    @Test
     void registerOnViolationOverridesGlobalReadLimitOnViolation() {
         // Global rate limit says SILENT_DROP; register says DISCONNECT — register must win.
         RateLimitConfig globalRead = new RateLimitConfig();

@@ -107,10 +107,15 @@ Omit a block to leave that direction unthrottled.
 
 ### Violation action resolution
 
-`on_violation` is one of `MODBUS_EXCEPTION` | `SILENT_DROP` | `DISCONNECT` and is
-resolved from the most specific source available: the rate-limit block's own
-`on_violation` → the register's `on_violation` → `rules.default_on_violation` →
-`MODBUS_EXCEPTION`.
+`on_violation` is one of `MODBUS_EXCEPTION` | `SILENT_DROP` | `DISCONNECT`.
+**Register-level settings always override global defaults.** The exact chain depends
+on whether the register has its own rate-limit block:
+
+| Scenario | Resolution order |
+|---|---|
+| Register has its own `read`/`write` block | rate-limit `on_violation` → register `on_violation` → `default_on_violation` → `MODBUS_EXCEPTION` |
+| Register uses `default_rate_limit` | register `on_violation` → `default_rate_limit` `on_violation` → `default_on_violation` → `MODBUS_EXCEPTION` |
+| Unlisted register (default action) | `default_on_violation` → `MODBUS_EXCEPTION` |
 
 ### Violation actions
 
