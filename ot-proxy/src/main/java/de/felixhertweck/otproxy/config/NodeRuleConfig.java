@@ -17,11 +17,6 @@ public class NodeRuleConfig {
         this.target = target;
     }
 
-    // For backwards compatibility with old Modbus configs that used address: <int>
-    public void setAddress(int address) {
-        this.target = String.valueOf(address);
-    }
-
     public String getDescription() {
         return description;
     }

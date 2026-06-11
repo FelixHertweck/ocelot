@@ -30,7 +30,6 @@ public class Iec61850Listener implements ServerEventListener {
     private final Iec61850Upstream upstream;
 
     private ServerSap serverSap;
-    private ServerModel proxyModel;
     private volatile boolean running = false;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -46,8 +45,9 @@ public class Iec61850Listener implements ServerEventListener {
         upstream.connect();
         ServerModel model = upstream.getServerModel();
 
-        // Copy the upstream model so the proxy can serve clients independently
-        proxyModel = model.copy();
+        // Create the ServerSap using the model retrieved from the upstream
+        // We need a copy of the model to serve our clients independently
+        ServerModel proxyModel = model.copy();
 
         serverSap = new ServerSap(bindPort, 50, InetAddress.getByName(bindHost), proxyModel, null);
         running = true;

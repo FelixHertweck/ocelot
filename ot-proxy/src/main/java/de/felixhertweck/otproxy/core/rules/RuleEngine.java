@@ -25,11 +25,11 @@ public class RuleEngine {
         NodeRuleConfig nodeConfig = findNodeConfig(request.target());
 
         if (nodeConfig == null) {
-            String defaultReadAction =
-                    config.getRules() != null ? config.getRules().getDefaultReadAction() : "ALLOW";
-            if ("DENY".equalsIgnoreCase(defaultReadAction)) {
+            String defaultAction =
+                    config.getRules() != null ? config.getRules().getDefaultAction() : "DENY";
+            if ("DENY".equalsIgnoreCase(defaultAction)) {
                 return RuleResult.deny(
-                        defaultViolationAction(),
+                        ViolationAction.MODBUS_EXCEPTION,
                         "Target " + request.target() + " is not in the whitelist for reading");
             }
             return RuleResult.allow();
@@ -47,7 +47,7 @@ public class RuleEngine {
                     config.getRules() != null ? config.getRules().getDefaultAction() : "DENY";
             if ("DENY".equalsIgnoreCase(defaultAction)) {
                 return RuleResult.deny(
-                        defaultViolationAction(),
+                        ViolationAction.MODBUS_EXCEPTION,
                         "Target " + request.target() + " is not in the whitelist");
             }
             return RuleResult.allow();
@@ -68,13 +68,5 @@ public class RuleEngine {
                 .filter(r -> target.equals(r.getTarget()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    private ViolationAction defaultViolationAction() {
-        String action =
-                config.getRules() != null
-                        ? config.getRules().getDefaultViolationAction()
-                        : "MODBUS_EXCEPTION";
-        return WhitelistRule.parseAction(action);
     }
 }

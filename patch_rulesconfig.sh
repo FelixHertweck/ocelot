@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > ot-proxy/src/main/java/de/felixhertweck/otproxy/config/RulesConfig.java
 package de.felixhertweck.otproxy.config;
 
 import java.util.ArrayList;
@@ -55,3 +56,4 @@ public class RulesConfig {
         this.nodes = registers;
     }
 }
+INNER_EOF
