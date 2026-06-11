@@ -60,16 +60,16 @@ proxy:
 rules:
   default_action: DENY  # block everything not explicitly listed
 
-  # Write throttle for registers without their own rate_limit (per-register overrides).
+  # Read/write fallback for registers without their own read/write block.
   default_rate_limit:
-    max_writes: 1
-    per_millis: 100
-
-  # Global throttle for all read requests (ms window).
-  read_rate_limit:
-    max_requests: 10
-    per_millis: 1000
-    on_violation: MODBUS_EXCEPTION
+    write:
+      max_requests: 1
+      per_millis: 100
+      on_violation: MODBUS_EXCEPTION
+    read:
+      max_requests: 10
+      per_millis: 1000
+      on_violation: MODBUS_EXCEPTION
 
   registers:
     - address: 100
@@ -78,9 +78,12 @@ rules:
       value_range:
         min: 0
         max: 1500
-      rate_limit:
-        max_writes: 10
-        per_millis: 60000   # sliding window in milliseconds
+      write:                  # overrides default_rate_limit.write for this register
+        max_requests: 10
+        per_millis: 60000     # sliding window in milliseconds
+      read:                   # overrides default_rate_limit.read for this register
+        max_requests: 50
+        per_millis: 1000
       on_violation: MODBUS_EXCEPTION   # MODBUS_EXCEPTION | SILENT_DROP | DISCONNECT
 
     - address: 200
@@ -91,18 +94,18 @@ rules:
 
 ### Rate limiting
 
-`rate_limit` enforces at most `max_writes` writes per sliding window of
-`per_millis` milliseconds, tracked **per register address**. Define
-`default_rate_limit` under `rules` to apply a baseline to every writable
-register; a register's own `rate_limit` takes precedence, and registers without
-either are unthrottled.
+Every rate limit has the same shape — `max_requests` per sliding window of
+`per_millis` milliseconds, plus an optional `on_violation` — and is tracked
+**per register address**, separately for reads and writes:
 
-`read_rate_limit` applies the same sliding-window mechanism to **all read
-(non-write) requests** as a single global window (shared across registers and
-clients), independent of the write limits. `max_requests` is the cap per
-`per_millis` window; `on_violation` (`MODBUS_EXCEPTION` | `SILENT_DROP` |
-`DISCONNECT`) controls what happens when it is exceeded. Omit the block to leave
-reads unthrottled.
+- A register's own `read` / `write` block applies first.
+- `rules.default_rate_limit.read` / `.write` is the fallback for registers
+  without their own block.
+- If a limit omits `on_violation`, the register's `on_violation` is used
+  (`MODBUS_EXCEPTION` for reads of unlisted registers).
+
+Omit a block to leave that direction unthrottled. `on_violation` is one of
+`MODBUS_EXCEPTION` | `SILENT_DROP` | `DISCONNECT`.
 
 ### Violation actions
 

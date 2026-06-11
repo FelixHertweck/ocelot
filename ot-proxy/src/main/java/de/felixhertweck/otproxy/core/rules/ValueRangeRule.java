@@ -3,6 +3,7 @@ package de.felixhertweck.otproxy.core.rules;
 import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.config.ValueRangeConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
+import de.felixhertweck.otproxy.core.model.ViolationAction;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 
 public class ValueRangeRule implements Rule {
@@ -15,7 +16,7 @@ public class ValueRangeRule implements Rule {
         int value = request.value();
         if (value < range.getMin() || value > range.getMax()) {
             return RuleResult.deny(
-                    WhitelistRule.parseAction(config.getOnViolation()),
+                    ViolationAction.parse(config.getOnViolation()),
                     "Value "
                             + value
                             + " out of allowed range ["

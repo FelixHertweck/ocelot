@@ -5,7 +5,8 @@ public class RegisterRuleConfig {
     private String description = "";
     private boolean allowWrite = false;
     private ValueRangeConfig valueRange;
-    private RateLimitConfig rateLimit;
+    private RateLimitConfig read;
+    private RateLimitConfig write;
     private String onViolation = "MODBUS_EXCEPTION";
 
     public int getAddress() {
@@ -40,12 +41,20 @@ public class RegisterRuleConfig {
         this.valueRange = valueRange;
     }
 
-    public RateLimitConfig getRateLimit() {
-        return rateLimit;
+    public RateLimitConfig getRead() {
+        return read;
     }
 
-    public void setRateLimit(RateLimitConfig rateLimit) {
-        this.rateLimit = rateLimit;
+    public void setRead(RateLimitConfig read) {
+        this.read = read;
+    }
+
+    public RateLimitConfig getWrite() {
+        return write;
+    }
+
+    public void setWrite(RateLimitConfig write) {
+        this.write = write;
     }
 
     public String getOnViolation() {

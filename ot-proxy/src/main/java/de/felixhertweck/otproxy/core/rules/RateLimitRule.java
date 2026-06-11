@@ -5,46 +5,32 @@ import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 
+/**
+ * Enforces the write rate limit: the register's own {@code write} limit, else the rules default.
+ */
 public class RateLimitRule implements Rule {
 
-    private final SlidingWindowRateLimiter limiter = new SlidingWindowRateLimiter();
+    private final RateLimitEvaluator evaluator = new RateLimitEvaluator();
 
-    /** Fallback limit for registers without their own {@code rate_limit}; may be {@code null}. */
-    private final RateLimitConfig defaultRateLimit;
+    /** Rules-level fallback for registers without their own {@code write} limit; may be null. */
+    private final RateLimitConfig defaultWriteLimit;
 
     public RateLimitRule() {
         this(null);
     }
 
-    public RateLimitRule(RateLimitConfig defaultRateLimit) {
-        this.defaultRateLimit = defaultRateLimit;
+    public RateLimitRule(RateLimitConfig defaultWriteLimit) {
+        this.defaultWriteLimit = defaultWriteLimit;
     }
 
     @Override
     public RuleResult evaluate(WriteRequest request, RegisterRuleConfig config) {
-        RateLimitConfig rlConfig =
-                config.getRateLimit() != null ? config.getRateLimit() : defaultRateLimit;
-        if (rlConfig == null) return RuleResult.allow();
-
-        int address = request.registerAddress();
-        boolean allowed =
-                limiter.tryAcquire(
-                        address,
-                        rlConfig.getMaxWrites(),
-                        rlConfig.getPerMillis(),
-                        request.timestamp());
-
-        if (!allowed) {
-            return RuleResult.deny(
-                    WhitelistRule.parseAction(config.getOnViolation()),
-                    "Rate limit exceeded for register "
-                            + address
-                            + " (max "
-                            + rlConfig.getMaxWrites()
-                            + " writes per "
-                            + rlConfig.getPerMillis()
-                            + "ms)");
-        }
-        return RuleResult.allow();
+        RateLimitConfig limit = config.getWrite() != null ? config.getWrite() : defaultWriteLimit;
+        return evaluator.evaluate(
+                limit,
+                request.registerAddress(),
+                request.timestamp(),
+                config.getOnViolation(),
+                "write register " + request.registerAddress());
     }
 }

@@ -1,11 +1,13 @@
 package de.felixhertweck.otproxy.core.rules;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import de.felixhertweck.otproxy.config.DirectionalRateLimitConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
-import de.felixhertweck.otproxy.config.ReadRateLimitConfig;
 import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.ViolationAction;
@@ -13,25 +15,38 @@ import de.felixhertweck.otproxy.core.model.WriteRequest;
 
 public class RuleEngine {
 
-    // Reads share a single global window, so any constant key works here.
-    private static final long READ_WINDOW_KEY = 0L;
-
     private final ProxyConfig config;
     private final List<Rule> rules;
-    private final ReadRateLimitConfig readRateLimit;
-    private final SlidingWindowRateLimiter readLimiter = new SlidingWindowRateLimiter();
+
+    // Built once so per-request lookups are O(1) instead of scanning the register list.
+    private final Map<Integer, RegisterRuleConfig> registersByAddress;
+
+    private final RateLimitConfig defaultReadLimit;
+    private final RateLimitEvaluator readEvaluator = new RateLimitEvaluator();
 
     public RuleEngine(ProxyConfig config) {
         this.config = config;
-        RateLimitConfig defaultRateLimit =
+        DirectionalRateLimitConfig defaults =
                 config.getRules() != null ? config.getRules().getDefaultRateLimit() : null;
-        this.readRateLimit =
-                config.getRules() != null ? config.getRules().getReadRateLimit() : null;
+        RateLimitConfig defaultWriteLimit = defaults != null ? defaults.getWrite() : null;
+        this.defaultReadLimit = defaults != null ? defaults.getRead() : null;
+        this.registersByAddress = indexRegisters(config);
         this.rules =
                 List.of(
                         new WhitelistRule(),
                         new ValueRangeRule(),
-                        new RateLimitRule(defaultRateLimit));
+                        new RateLimitRule(defaultWriteLimit));
+    }
+
+    private static Map<Integer, RegisterRuleConfig> indexRegisters(ProxyConfig config) {
+        Map<Integer, RegisterRuleConfig> index = new HashMap<>();
+        if (config.getRules() != null && config.getRules().getRegisters() != null) {
+            for (RegisterRuleConfig register : config.getRules().getRegisters()) {
+                // First entry wins on duplicate addresses, matching the previous findFirst scan.
+                index.putIfAbsent(register.getAddress(), register);
+            }
+        }
+        return index;
     }
 
     public RuleResult evaluate(WriteRequest request) {
@@ -59,36 +74,21 @@ public class RuleEngine {
     }
 
     /**
-     * Applies the global read rate limit to a read (non-write) request. Returns {@link
-     * RuleResult#allow()} when no read limit is configured.
+     * Applies the read rate limit for a read of {@code address}: the register's own {@code read}
+     * limit, else the rules default. Returns {@link RuleResult#allow()} when neither is configured.
      */
-    public RuleResult evaluateRead(Instant now) {
-        if (readRateLimit == null) return RuleResult.allow();
-
-        boolean allowed =
-                readLimiter.tryAcquire(
-                        READ_WINDOW_KEY,
-                        readRateLimit.getMaxRequests(),
-                        readRateLimit.getPerMillis(),
-                        now);
-
-        if (!allowed) {
-            return RuleResult.deny(
-                    WhitelistRule.parseAction(readRateLimit.getOnViolation()),
-                    "Read rate limit exceeded (max "
-                            + readRateLimit.getMaxRequests()
-                            + " reads per "
-                            + readRateLimit.getPerMillis()
-                            + "ms)");
-        }
-        return RuleResult.allow();
+    public RuleResult evaluateRead(int address, Instant now) {
+        RegisterRuleConfig registerConfig = findRegisterConfig(address);
+        RateLimitConfig limit =
+                registerConfig != null && registerConfig.getRead() != null
+                        ? registerConfig.getRead()
+                        : defaultReadLimit;
+        String fallbackAction = registerConfig != null ? registerConfig.getOnViolation() : null;
+        return readEvaluator.evaluate(
+                limit, address, now, fallbackAction, "read register " + address);
     }
 
     private RegisterRuleConfig findRegisterConfig(int address) {
-        if (config.getRules() == null || config.getRules().getRegisters() == null) return null;
-        return config.getRules().getRegisters().stream()
-                .filter(r -> r.getAddress() == address)
-                .findFirst()
-                .orElse(null);
+        return registersByAddress.get(address);
     }
 }

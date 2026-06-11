@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
 import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
+import de.felixhertweck.otproxy.core.model.ViolationAction;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 import de.felixhertweck.otproxy.core.rules.RateLimitRule;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,15 @@ class RateLimitRuleTest {
     }
 
     @Test
+    void treatsNonPositiveLimitAsNoLimit() {
+        // A partial config (e.g. max_requests omitted -> 0) must not silently block everything.
+        RegisterRuleConfig config = config(0, 100);
+        for (int i = 0; i < 50; i++) {
+            assertThat(rule.evaluate(request(100, i, Instant.now()), config).allowed()).isTrue();
+        }
+    }
+
+    @Test
     void enforcesSubSecondWindow() {
         // 1 write per 100ms
         RegisterRuleConfig config = config(1, 100);
@@ -99,7 +109,7 @@ class RateLimitRuleTest {
 
         RegisterRuleConfig c = new RegisterRuleConfig();
         c.setOnViolation("MODBUS_EXCEPTION");
-        // register defines no rate_limit of its own -> falls back to the default
+        // register defines no write limit of its own -> falls back to the default
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         assertThat(ruleWithDefault.evaluate(request(100, 1, base), c).allowed()).isTrue();
@@ -124,20 +134,45 @@ class RateLimitRuleTest {
                 .isFalse();
     }
 
+    @Test
+    void inheritsRegisterViolationActionWhenLimitHasNone() {
+        RegisterRuleConfig c = config(1, 1000);
+        c.setOnViolation("DISCONNECT"); // the write block has no on_violation of its own
+        Instant base = Instant.parse("2024-01-01T00:00:00Z");
+
+        rule.evaluate(request(100, 1, base), c);
+        RuleResult blocked = rule.evaluate(request(100, 2, base.plusMillis(1)), c);
+        assertThat(blocked.allowed()).isFalse();
+        assertThat(blocked.action()).isEqualTo(ViolationAction.DISCONNECT);
+    }
+
+    @Test
+    void rateLimitViolationActionOverridesRegister() {
+        RegisterRuleConfig c = config(1, 1000);
+        c.setOnViolation("DISCONNECT");
+        c.getWrite().setOnViolation("SILENT_DROP"); // limit overrides the register
+        Instant base = Instant.parse("2024-01-01T00:00:00Z");
+
+        rule.evaluate(request(100, 1, base), c);
+        RuleResult blocked = rule.evaluate(request(100, 2, base.plusMillis(1)), c);
+        assertThat(blocked.allowed()).isFalse();
+        assertThat(blocked.action()).isEqualTo(ViolationAction.SILENT_DROP);
+    }
+
     private WriteRequest request(int address, int value, Instant timestamp) {
         return new WriteRequest("modbus", address, value, "127.0.0.1", timestamp);
     }
 
-    private RateLimitConfig rateLimit(int maxWrites, int perMillis) {
+    private RateLimitConfig rateLimit(int maxRequests, int perMillis) {
         RateLimitConfig rl = new RateLimitConfig();
-        rl.setMaxWrites(maxWrites);
+        rl.setMaxRequests(maxRequests);
         rl.setPerMillis(perMillis);
         return rl;
     }
 
-    private RegisterRuleConfig config(int maxWrites, int perMillis) {
+    private RegisterRuleConfig config(int maxRequests, int perMillis) {
         RegisterRuleConfig c = new RegisterRuleConfig();
-        c.setRateLimit(rateLimit(maxWrites, perMillis));
+        c.setWrite(rateLimit(maxRequests, perMillis));
         c.setOnViolation("MODBUS_EXCEPTION");
         return c;
     }
