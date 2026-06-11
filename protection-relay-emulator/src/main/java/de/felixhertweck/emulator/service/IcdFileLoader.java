@@ -21,7 +21,7 @@ public class IcdFileLoader {
     public String extractToTemp() throws IOException {
         try (InputStream is = getClass().getResourceAsStream("/relay.icd")) {
             if (is == null) {
-                throw new RuntimeException("Could not find relay.icd in classpath");
+                throw new IOException("Could not find relay.icd in classpath");
             }
             File tempFile = File.createTempFile("relay", ".icd");
             tempFile.deleteOnExit();

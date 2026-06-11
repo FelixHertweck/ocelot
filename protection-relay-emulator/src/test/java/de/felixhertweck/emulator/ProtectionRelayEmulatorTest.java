@@ -138,7 +138,7 @@ class ProtectionRelayEmulatorTest {
         for (int i = 0; i < 50; i++) {
             Thread.sleep(100);
             Float newValue = bda.getFloat();
-            if (newValue != null && newValue != initial) {
+            if (newValue != null && Math.abs(newValue - initial) > 1.0e-3f) {
                 valueChanged = true;
                 break;
             }
