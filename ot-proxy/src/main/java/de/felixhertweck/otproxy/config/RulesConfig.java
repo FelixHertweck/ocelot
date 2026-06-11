@@ -5,6 +5,7 @@ import java.util.List;
 
 public class RulesConfig {
     private String defaultAction = "DENY";
+    private String defaultOnViolation;
     private DirectionalRateLimitConfig defaultRateLimit;
     private List<RegisterRuleConfig> registers = new ArrayList<>();
 
@@ -14,6 +15,18 @@ public class RulesConfig {
 
     public void setDefaultAction(String defaultAction) {
         this.defaultAction = defaultAction;
+    }
+
+    /**
+     * Fallback {@code on_violation} for registers (and rate limits) that do not specify their own.
+     * {@code null} falls back to {@code MODBUS_EXCEPTION}.
+     */
+    public String getDefaultOnViolation() {
+        return defaultOnViolation;
+    }
+
+    public void setDefaultOnViolation(String defaultOnViolation) {
+        this.defaultOnViolation = defaultOnViolation;
     }
 
     /**

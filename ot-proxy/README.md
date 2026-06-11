@@ -58,7 +58,8 @@ proxy:
     port: 502
 
 rules:
-  default_action: DENY  # block everything not explicitly listed
+  default_action: DENY           # block everything not explicitly listed
+  default_on_violation: MODBUS_EXCEPTION  # fallback action when none is set closer to the rule
 
   # Read/write fallback for registers without their own read/write block.
   default_rate_limit:
@@ -101,11 +102,20 @@ Every rate limit has the same shape — `max_requests` per sliding window of
 - A register's own `read` / `write` block applies first.
 - `rules.default_rate_limit.read` / `.write` is the fallback for registers
   without their own block.
-- If a limit omits `on_violation`, the register's `on_violation` is used
-  (`MODBUS_EXCEPTION` for reads of unlisted registers).
 
-Omit a block to leave that direction unthrottled. `on_violation` is one of
-`MODBUS_EXCEPTION` | `SILENT_DROP` | `DISCONNECT`.
+Omit a block to leave that direction unthrottled.
+
+### Violation action resolution
+
+`on_violation` is one of `MODBUS_EXCEPTION` | `SILENT_DROP` | `DISCONNECT`.
+**Register-level settings always override global defaults.** The exact chain depends
+on whether the register has its own rate-limit block:
+
+| Scenario | Resolution order |
+|---|---|
+| Register has its own `read`/`write` block | rate-limit `on_violation` → register `on_violation` → `default_on_violation` → `MODBUS_EXCEPTION` |
+| Register uses `default_rate_limit` | register `on_violation` → `default_rate_limit` `on_violation` → `default_on_violation` → `MODBUS_EXCEPTION` |
+| Unlisted register (default action) | `default_on_violation` → `MODBUS_EXCEPTION` |
 
 ### Violation actions
 

@@ -25,12 +25,29 @@ public class RateLimitRule implements Rule {
 
     @Override
     public RuleResult evaluate(WriteRequest request, RegisterRuleConfig config) {
-        RateLimitConfig limit = config.getWrite() != null ? config.getWrite() : defaultWriteLimit;
+        boolean hasOwnLimit = config.getWrite() != null;
+        RateLimitConfig limit = hasOwnLimit ? config.getWrite() : defaultWriteLimit;
+        String onViolation;
+        if (hasOwnLimit) {
+            // register's own write limit: write.on_violation → register.on_violation
+            onViolation =
+                    config.getWrite().getOnViolation() != null
+                            ? config.getWrite().getOnViolation()
+                            : config.getOnViolation();
+        } else {
+            // global default: register.on_violation overrides the global limit's on_violation
+            onViolation =
+                    config.getOnViolation() != null
+                            ? config.getOnViolation()
+                            : (defaultWriteLimit != null
+                                    ? defaultWriteLimit.getOnViolation()
+                                    : null);
+        }
         return evaluator.evaluate(
                 limit,
                 request.registerAddress(),
                 request.timestamp(),
-                config.getOnViolation(),
+                onViolation,
                 "write register " + request.registerAddress());
     }
 }
