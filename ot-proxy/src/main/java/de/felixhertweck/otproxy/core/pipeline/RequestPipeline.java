@@ -1,5 +1,6 @@
 package de.felixhertweck.otproxy.core.pipeline;
 
+import java.time.Instant;
 import java.util.List;
 
 import de.felixhertweck.otproxy.core.model.RuleResult;
@@ -20,5 +21,10 @@ public class RequestPipeline {
         RuleResult result = ruleEngine.evaluate(request);
         handlers.forEach(h -> h.handle(request, result));
         return result;
+    }
+
+    /** Applies the global read rate limit to a read (non-write) request. */
+    public RuleResult processRead(Instant now) {
+        return ruleEngine.evaluateRead(now);
     }
 }

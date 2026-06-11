@@ -60,6 +60,17 @@ proxy:
 rules:
   default_action: DENY  # block everything not explicitly listed
 
+  # Write throttle for registers without their own rate_limit (per-register overrides).
+  default_rate_limit:
+    max_writes: 1
+    per_millis: 100
+
+  # Global throttle for all read requests (ms window).
+  read_rate_limit:
+    max_requests: 10
+    per_millis: 1000
+    on_violation: MODBUS_EXCEPTION
+
   registers:
     - address: 100
       description: "Pump speed setpoint"
@@ -69,7 +80,7 @@ rules:
         max: 1500
       rate_limit:
         max_writes: 10
-        per_seconds: 60
+        per_millis: 60000   # sliding window in milliseconds
       on_violation: MODBUS_EXCEPTION   # MODBUS_EXCEPTION | SILENT_DROP | DISCONNECT
 
     - address: 200
@@ -77,6 +88,21 @@ rules:
       allow_write: false
       on_violation: DISCONNECT
 ```
+
+### Rate limiting
+
+`rate_limit` enforces at most `max_writes` writes per sliding window of
+`per_millis` milliseconds, tracked **per register address**. Define
+`default_rate_limit` under `rules` to apply a baseline to every writable
+register; a register's own `rate_limit` takes precedence, and registers without
+either are unthrottled.
+
+`read_rate_limit` applies the same sliding-window mechanism to **all read
+(non-write) requests** as a single global window (shared across registers and
+clients), independent of the write limits. `max_requests` is the cap per
+`per_millis` window; `on_violation` (`MODBUS_EXCEPTION` | `SILENT_DROP` |
+`DISCONNECT`) controls what happens when it is exceeded. Omit the block to leave
+reads unthrottled.
 
 ### Violation actions
 

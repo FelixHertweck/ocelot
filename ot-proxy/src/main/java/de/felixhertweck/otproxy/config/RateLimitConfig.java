@@ -2,7 +2,7 @@ package de.felixhertweck.otproxy.config;
 
 public class RateLimitConfig {
     private int maxWrites = 0;
-    private int perSeconds = 60;
+    private int perMillis = 60_000;
 
     public int getMaxWrites() {
         return maxWrites;
@@ -12,11 +12,11 @@ public class RateLimitConfig {
         this.maxWrites = maxWrites;
     }
 
-    public int getPerSeconds() {
-        return perSeconds;
+    public int getPerMillis() {
+        return perMillis;
     }
 
-    public void setPerSeconds(int perSeconds) {
-        this.perSeconds = perSeconds;
+    public void setPerMillis(int perMillis) {
+        this.perMillis = perMillis;
     }
 }
