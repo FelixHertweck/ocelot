@@ -5,9 +5,11 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.time.Instant;
 import java.util.Optional;
 
 import de.felixhertweck.otproxy.core.model.RuleResult;
+import de.felixhertweck.otproxy.core.model.ViolationAction;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 import de.felixhertweck.otproxy.core.pipeline.RequestPipeline;
 import org.slf4j.Logger;
@@ -16,10 +18,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Handles a single Modbus TCP client connection.
  *
- * <p>For every incoming frame: - Read requests → forwarded to upstream transparently - Write
- * requests → evaluated by the rule pipeline first ALLOW → forwarded to upstream, response relayed
- * back MODBUS_EXCEPTION → exception frame returned to client SILENT_DROP → request discarded,
- * connection stays open DISCONNECT → connection closed immediately
+ * <p>For every incoming frame: - Read requests → checked against the global read rate limit, then
+ * forwarded to upstream - Write requests → evaluated by the rule pipeline first ALLOW → forwarded
+ * to upstream, response relayed back MODBUS_EXCEPTION → exception frame returned to client
+ * SILENT_DROP → request discarded, connection stays open DISCONNECT → connection closed immediately
  */
 public class ModbusConnectionHandler implements Runnable {
 
@@ -54,8 +56,21 @@ public class ModbusConnectionHandler implements Runnable {
                 ModbusFrame frame = ModbusFrame.read(in);
 
                 if (!adapter.isWriteFrame(frame)) {
-                    // Non-write (read, diagnostics, …) → forward transparently
-                    relayToUpstream(frame, out);
+                    // Non-write (read, diagnostics, …) → throttled by the global read limit
+                    RuleResult readResult = pipeline.processRead(Instant.now());
+                    if (readResult.allowed()) {
+                        relayToUpstream(frame, out);
+                    } else {
+                        log.warn(
+                                "[BLOCKED] {} read fc={} reason={}",
+                                clientAddr,
+                                frame.functionCode(),
+                                readResult.reason());
+                        handleViolation(frame, readResult, out);
+                        if (readResult.action() == ViolationAction.DISCONNECT) {
+                            break;
+                        }
+                    }
                     continue;
                 }
 
@@ -78,8 +93,7 @@ public class ModbusConnectionHandler implements Runnable {
                             request.get().value(),
                             result.reason());
                     handleViolation(frame, result, out);
-                    if (result.action()
-                            == de.felixhertweck.otproxy.core.model.ViolationAction.DISCONNECT) {
+                    if (result.action() == ViolationAction.DISCONNECT) {
                         break;
                     }
                 }

@@ -23,7 +23,7 @@ class RateLimitRuleTest {
 
     @Test
     void allowsWritesUpToLimit() {
-        RegisterRuleConfig config = config(3, 60);
+        RegisterRuleConfig config = config(3, 60_000);
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         for (int i = 0; i < 3; i++) {
@@ -34,7 +34,7 @@ class RateLimitRuleTest {
 
     @Test
     void blocksWriteExceedingLimit() {
-        RegisterRuleConfig config = config(3, 60);
+        RegisterRuleConfig config = config(3, 60_000);
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         for (int i = 0; i < 3; i++) {
@@ -47,7 +47,7 @@ class RateLimitRuleTest {
 
     @Test
     void allowsWriteAfterWindowExpires() {
-        RegisterRuleConfig config = config(2, 10);
+        RegisterRuleConfig config = config(2, 10_000);
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
 
         rule.evaluate(request(100, 1, base), config);
@@ -60,7 +60,7 @@ class RateLimitRuleTest {
 
     @Test
     void rateLimitsArePerRegister() {
-        RegisterRuleConfig config = config(1, 60);
+        RegisterRuleConfig config = config(1, 60_000);
         Instant now = Instant.now();
 
         // Fill register 100
@@ -80,16 +80,64 @@ class RateLimitRuleTest {
         }
     }
 
+    @Test
+    void enforcesSubSecondWindow() {
+        // 1 write per 100ms
+        RegisterRuleConfig config = config(1, 100);
+        Instant base = Instant.parse("2024-01-01T00:00:00Z");
+
+        assertThat(rule.evaluate(request(100, 1, base), config).allowed()).isTrue();
+        // 50ms later -> still inside window -> blocked
+        assertThat(rule.evaluate(request(100, 2, base.plusMillis(50)), config).allowed()).isFalse();
+        // 150ms after the first -> window expired -> allowed again
+        assertThat(rule.evaluate(request(100, 3, base.plusMillis(150)), config).allowed()).isTrue();
+    }
+
+    @Test
+    void usesDefaultRateLimitWhenRegisterHasNone() {
+        RateLimitRule ruleWithDefault = new RateLimitRule(rateLimit(1, 100));
+
+        RegisterRuleConfig c = new RegisterRuleConfig();
+        c.setOnViolation("MODBUS_EXCEPTION");
+        // register defines no rate_limit of its own -> falls back to the default
+        Instant base = Instant.parse("2024-01-01T00:00:00Z");
+
+        assertThat(ruleWithDefault.evaluate(request(100, 1, base), c).allowed()).isTrue();
+        assertThat(ruleWithDefault.evaluate(request(100, 2, base.plusMillis(10)), c).allowed())
+                .isFalse();
+    }
+
+    @Test
+    void registerRateLimitOverridesDefault() {
+        // Strict global default, but the register allows many more writes
+        RateLimitRule ruleWithDefault = new RateLimitRule(rateLimit(1, 100));
+        RegisterRuleConfig c = config(5, 100);
+        Instant base = Instant.parse("2024-01-01T00:00:00Z");
+
+        for (int i = 0; i < 5; i++) {
+            assertThat(ruleWithDefault.evaluate(request(100, i, base.plusMillis(i)), c).allowed())
+                    .as("write #" + i)
+                    .isTrue();
+        }
+        // 6th within the same window exceeds the register's own limit of 5
+        assertThat(ruleWithDefault.evaluate(request(100, 99, base.plusMillis(6)), c).allowed())
+                .isFalse();
+    }
+
     private WriteRequest request(int address, int value, Instant timestamp) {
         return new WriteRequest("modbus", address, value, "127.0.0.1", timestamp);
     }
 
-    private RegisterRuleConfig config(int maxWrites, int perSeconds) {
+    private RateLimitConfig rateLimit(int maxWrites, int perMillis) {
         RateLimitConfig rl = new RateLimitConfig();
         rl.setMaxWrites(maxWrites);
-        rl.setPerSeconds(perSeconds);
+        rl.setPerMillis(perMillis);
+        return rl;
+    }
+
+    private RegisterRuleConfig config(int maxWrites, int perMillis) {
         RegisterRuleConfig c = new RegisterRuleConfig();
-        c.setRateLimit(rl);
+        c.setRateLimit(rateLimit(maxWrites, perMillis));
         c.setOnViolation("MODBUS_EXCEPTION");
         return c;
     }

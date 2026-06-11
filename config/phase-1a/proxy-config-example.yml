@@ -14,6 +14,17 @@ proxy:
 rules:
   default_action: DENY
 
+  # Write throttle for registers without their own rate_limit (per-register overrides).
+  default_rate_limit:
+    max_writes: 1
+    per_millis: 100
+
+  # Global throttle for all read requests (ms window).
+  read_rate_limit:
+    max_requests: 1
+    per_millis: 100
+    on_violation: MODBUS_EXCEPTION
+
   registers:
     # --- Goal A: Nameplate / Device Identification (U32, Read-Only, FC3) ---
     - address: 30003
@@ -101,7 +112,7 @@ rules:
         max: 1749
       rate_limit:
         max_writes: 1
-        per_seconds: 3600
+        per_millis: 150  # 1 write per 150ms; overrides the global default above
       on_violation: DISCONNECT
 
     - address: 40029
