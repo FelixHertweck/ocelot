@@ -14,16 +14,16 @@ proxy:
 rules:
   default_action: DENY
 
-  # Write throttle for registers without their own rate_limit (per-register overrides).
+  # Read/write throttle for registers without their own read/write block (ms window).
   default_rate_limit:
-    max_writes: 1
-    per_millis: 100
-
-  # Global throttle for all read requests (ms window).
-  read_rate_limit:
-    max_requests: 1
-    per_millis: 100
-    on_violation: MODBUS_EXCEPTION
+    write:
+      max_requests: 1
+      per_millis: 100
+      on_violation: MODBUS_EXCEPTION
+    read:
+      max_requests: 1
+      per_millis: 100
+      on_violation: MODBUS_EXCEPTION
 
   registers:
     # --- Goal A: Nameplate / Device Identification (U32, Read-Only, FC3) ---
@@ -36,6 +36,12 @@ rules:
       description: "Nameplate.SerNum – Serial number"
       allow_write: false
       on_violation: MODBUS_EXCEPTION
+      write:
+        max_requests: 1
+        per_millis: 100
+      read:
+        max_requests: 10
+        per_millis: 1000
 
     - address: 30051
       description: "Nameplate.MainModel – Device class (8001 = Solar Inverters)"
@@ -110,9 +116,9 @@ rules:
       value_range:
         min: 0
         max: 1749
-      rate_limit:
-        max_writes: 1
-        per_millis: 150  # 1 write per 150ms; overrides the global default above
+      write:
+        max_requests: 1
+        per_millis: 150  # 1 write per 150ms; overrides default_rate_limit.write
       on_violation: DISCONNECT
 
     - address: 40029

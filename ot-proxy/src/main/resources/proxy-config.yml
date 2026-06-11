@@ -9,16 +9,16 @@ proxy:
 rules:
   default_action: DENY   # Block any register not explicitly listed below
 
-  # Write throttle for registers without their own rate_limit (per-register overrides).
+  # Read/write throttle for registers without their own read/write block (ms window).
   default_rate_limit:
-    max_writes: 1
-    per_millis: 100
-
-  # Global throttle for all read requests (ms window).
-  read_rate_limit:
-    max_requests: 10
-    per_millis: 1000
-    on_violation: MODBUS_EXCEPTION
+    write:
+      max_requests: 1
+      per_millis: 100
+      on_violation: MODBUS_EXCEPTION
+    read:
+      max_requests: 10
+      per_millis: 1000
+      on_violation: MODBUS_EXCEPTION
 
   registers:
     - address: 100
@@ -27,8 +27,8 @@ rules:
       value_range:
         min: 0
         max: 1500
-      rate_limit:
-        max_writes: 10
+      write:
+        max_requests: 10
         per_millis: 60000
       on_violation: MODBUS_EXCEPTION
 
@@ -51,7 +51,7 @@ rules:
       value_range:
         min: -20
         max: 120
-      rate_limit:
-        max_writes: 5
+      write:
+        max_requests: 5
         per_millis: 60000
       on_violation: SILENT_DROP

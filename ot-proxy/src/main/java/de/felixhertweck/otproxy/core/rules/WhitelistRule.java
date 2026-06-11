@@ -11,18 +11,9 @@ public class WhitelistRule implements Rule {
     public RuleResult evaluate(WriteRequest request, RegisterRuleConfig config) {
         if (!config.isAllowWrite()) {
             return RuleResult.deny(
-                    parseAction(config.getOnViolation()),
+                    ViolationAction.parse(config.getOnViolation()),
                     "Write to register " + request.registerAddress() + " is explicitly denied");
         }
         return RuleResult.allow();
-    }
-
-    static ViolationAction parseAction(String action) {
-        if (action == null) return ViolationAction.MODBUS_EXCEPTION;
-        return switch (action.toUpperCase()) {
-            case "SILENT_DROP" -> ViolationAction.SILENT_DROP;
-            case "DISCONNECT" -> ViolationAction.DISCONNECT;
-            default -> ViolationAction.MODBUS_EXCEPTION;
-        };
     }
 }

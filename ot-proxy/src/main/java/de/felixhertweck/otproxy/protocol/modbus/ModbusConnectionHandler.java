@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.ViolationAction;
@@ -18,10 +19,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Handles a single Modbus TCP client connection.
  *
- * <p>For every incoming frame: - Read requests → checked against the global read rate limit, then
- * forwarded to upstream - Write requests → evaluated by the rule pipeline first ALLOW → forwarded
- * to upstream, response relayed back MODBUS_EXCEPTION → exception frame returned to client
- * SILENT_DROP → request discarded, connection stays open DISCONNECT → connection closed immediately
+ * <p>For every incoming frame: - Read requests → checked against the per-register read rate limit,
+ * then forwarded to upstream - Write requests → evaluated by the rule pipeline first ALLOW →
+ * forwarded to upstream, response relayed back MODBUS_EXCEPTION → exception frame returned to
+ * client SILENT_DROP → request discarded, connection stays open DISCONNECT → connection closed
+ * immediately
  */
 public class ModbusConnectionHandler implements Runnable {
 
@@ -56,21 +58,26 @@ public class ModbusConnectionHandler implements Runnable {
                 ModbusFrame frame = ModbusFrame.read(in);
 
                 if (!adapter.isWriteFrame(frame)) {
-                    // Non-write (read, diagnostics, …) → throttled by the global read limit
-                    RuleResult readResult = pipeline.processRead(Instant.now());
-                    if (readResult.allowed()) {
-                        relayToUpstream(frame, out);
-                    } else {
-                        log.warn(
-                                "[BLOCKED] {} read fc={} reason={}",
-                                clientAddr,
-                                frame.functionCode(),
-                                readResult.reason());
-                        handleViolation(frame, readResult, out);
-                        if (readResult.action() == ViolationAction.DISCONNECT) {
-                            break;
+                    // Reads (FC 0x01-0x04) are throttled per register; other non-write frames
+                    // (diagnostics, …) are forwarded transparently.
+                    OptionalInt readAddress = adapter.readStartAddress(frame);
+                    if (readAddress.isPresent()) {
+                        RuleResult readResult =
+                                pipeline.processRead(readAddress.getAsInt(), Instant.now());
+                        if (!readResult.allowed()) {
+                            log.warn(
+                                    "[BLOCKED] {} read register={} reason={}",
+                                    clientAddr,
+                                    readAddress.getAsInt(),
+                                    readResult.reason());
+                            handleViolation(frame, readResult, out);
+                            if (readResult.action() == ViolationAction.DISCONNECT) {
+                                break;
+                            }
+                            continue;
                         }
                     }
+                    relayToUpstream(frame, out);
                     continue;
                 }
 

@@ -21,12 +21,13 @@ class ConfigLoaderTest {
             rules:
               default_action: DENY
               default_rate_limit:
-                max_writes: 1
-                per_millis: 100
-              read_rate_limit:
-                max_requests: 25
-                per_millis: 1000
-                on_violation: SILENT_DROP
+                write:
+                  max_requests: 1
+                  per_millis: 100
+                read:
+                  max_requests: 25
+                  per_millis: 1000
+                  on_violation: SILENT_DROP
               registers:
                 - address: 100
                   description: "Pump speed"
@@ -34,9 +35,12 @@ class ConfigLoaderTest {
                   value_range:
                     min: 0
                     max: 1500
-                  rate_limit:
-                    max_writes: 10
+                  write:
+                    max_requests: 10
                     per_millis: 60000
+                  read:
+                    max_requests: 50
+                    per_millis: 2000
                   on_violation: MODBUS_EXCEPTION
                 - address: 200
                   description: "Emergency stop"
@@ -89,31 +93,35 @@ class ConfigLoaderTest {
     }
 
     @Test
-    void parsesRateLimit() {
+    void parsesRegisterReadWriteLimits() {
         ProxyConfig config = load(YAML);
-        RateLimitConfig rl = config.getRules().getRegisters().get(0).getRateLimit();
-        assertThat(rl).isNotNull();
-        assertThat(rl.getMaxWrites()).isEqualTo(10);
-        assertThat(rl.getPerMillis()).isEqualTo(60000);
+        RegisterRuleConfig pump = config.getRules().getRegisters().get(0);
+
+        RateLimitConfig write = pump.getWrite();
+        assertThat(write).isNotNull();
+        assertThat(write.getMaxRequests()).isEqualTo(10);
+        assertThat(write.getPerMillis()).isEqualTo(60000);
+
+        RateLimitConfig read = pump.getRead();
+        assertThat(read).isNotNull();
+        assertThat(read.getMaxRequests()).isEqualTo(50);
+        assertThat(read.getPerMillis()).isEqualTo(2000);
     }
 
     @Test
     void parsesDefaultRateLimit() {
         ProxyConfig config = load(YAML);
-        RateLimitConfig rl = config.getRules().getDefaultRateLimit();
-        assertThat(rl).isNotNull();
-        assertThat(rl.getMaxWrites()).isEqualTo(1);
-        assertThat(rl.getPerMillis()).isEqualTo(100);
-    }
+        DirectionalRateLimitConfig defaults = config.getRules().getDefaultRateLimit();
+        assertThat(defaults).isNotNull();
 
-    @Test
-    void parsesReadRateLimit() {
-        ProxyConfig config = load(YAML);
-        ReadRateLimitConfig rl = config.getRules().getReadRateLimit();
-        assertThat(rl).isNotNull();
-        assertThat(rl.getMaxRequests()).isEqualTo(25);
-        assertThat(rl.getPerMillis()).isEqualTo(1000);
-        assertThat(rl.getOnViolation()).isEqualTo("SILENT_DROP");
+        assertThat(defaults.getWrite()).isNotNull();
+        assertThat(defaults.getWrite().getMaxRequests()).isEqualTo(1);
+        assertThat(defaults.getWrite().getPerMillis()).isEqualTo(100);
+
+        assertThat(defaults.getRead()).isNotNull();
+        assertThat(defaults.getRead().getMaxRequests()).isEqualTo(25);
+        assertThat(defaults.getRead().getPerMillis()).isEqualTo(1000);
+        assertThat(defaults.getRead().getOnViolation()).isEqualTo("SILENT_DROP");
     }
 
     private ProxyConfig load(String yaml) {

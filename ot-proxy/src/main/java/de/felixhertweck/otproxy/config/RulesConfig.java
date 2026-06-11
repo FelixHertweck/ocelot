@@ -5,8 +5,7 @@ import java.util.List;
 
 public class RulesConfig {
     private String defaultAction = "DENY";
-    private RateLimitConfig defaultRateLimit;
-    private ReadRateLimitConfig readRateLimit;
+    private DirectionalRateLimitConfig defaultRateLimit;
     private List<RegisterRuleConfig> registers = new ArrayList<>();
 
     public String getDefaultAction() {
@@ -18,28 +17,16 @@ public class RulesConfig {
     }
 
     /**
-     * Rate limit applied to every writable register that does not define its own {@code
-     * rate_limit}. A register-level {@code rate_limit} always takes precedence. {@code null} means
-     * no global default — registers without their own limit are then unthrottled.
+     * Read/write rate limits applied to a register that does not define its own. A register-level
+     * {@code read}/{@code write} always takes precedence. {@code null} (or a null direction) means
+     * that direction is unthrottled unless the register specifies it.
      */
-    public RateLimitConfig getDefaultRateLimit() {
+    public DirectionalRateLimitConfig getDefaultRateLimit() {
         return defaultRateLimit;
     }
 
-    public void setDefaultRateLimit(RateLimitConfig defaultRateLimit) {
+    public void setDefaultRateLimit(DirectionalRateLimitConfig defaultRateLimit) {
         this.defaultRateLimit = defaultRateLimit;
-    }
-
-    /**
-     * Global rate limit for all read (non-write) requests. {@code null} means reads are not
-     * throttled.
-     */
-    public ReadRateLimitConfig getReadRateLimit() {
-        return readRateLimit;
-    }
-
-    public void setReadRateLimit(ReadRateLimitConfig readRateLimit) {
-        this.readRateLimit = readRateLimit;
     }
 
     public List<RegisterRuleConfig> getRegisters() {
