@@ -13,6 +13,8 @@ proxy:
 
 rules:
   default_action: DENY
+  # Fallback on_violation for registers/limits that don't set their own (else MODBUS_EXCEPTION).
+  default_on_violation: MODBUS_EXCEPTION
 
   # Read/write throttle for registers without their own read/write block (ms window).
   default_rate_limit:

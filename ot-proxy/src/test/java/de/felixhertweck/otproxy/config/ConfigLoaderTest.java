@@ -20,6 +20,7 @@ class ConfigLoaderTest {
                 port: 502
             rules:
               default_action: DENY
+              default_on_violation: DISCONNECT
               default_rate_limit:
                 write:
                   max_requests: 1
@@ -61,6 +62,12 @@ class ConfigLoaderTest {
     void parsesDefaultAction() {
         ProxyConfig config = load(YAML);
         assertThat(config.getRules().getDefaultAction()).isEqualTo("DENY");
+    }
+
+    @Test
+    void parsesDefaultOnViolation() {
+        ProxyConfig config = load(YAML);
+        assertThat(config.getRules().getDefaultOnViolation()).isEqualTo("DISCONNECT");
     }
 
     @Test

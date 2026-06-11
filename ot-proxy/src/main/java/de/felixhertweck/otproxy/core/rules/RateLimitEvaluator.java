@@ -19,17 +19,13 @@ public class RateLimitEvaluator {
      * @param limit the limit to enforce, or {@code null} for "no limit"
      * @param key window key (e.g. the register address) so each register is tracked independently
      * @param now request timestamp
-     * @param fallbackOnViolation action to use when {@code limit} sets no {@code on_violation}
-     *     (e.g. the register's own action)
+     * @param onViolation fully pre-resolved action string — callers are responsible for applying
+     *     the correct precedence (register-level overrides global defaults)
      * @param subject human-readable subject for the violation message, e.g. {@code "write register
      *     40018"}
      */
     public RuleResult evaluate(
-            RateLimitConfig limit,
-            long key,
-            Instant now,
-            String fallbackOnViolation,
-            String subject) {
+            RateLimitConfig limit, long key, Instant now, String onViolation, String subject) {
         if (limit == null) return RuleResult.allow();
 
         // A block with a missing/non-positive max_requests or per_millis is treated as "no limit"
@@ -42,10 +38,8 @@ public class RateLimitEvaluator {
             return RuleResult.allow();
         }
 
-        String action =
-                limit.getOnViolation() != null ? limit.getOnViolation() : fallbackOnViolation;
         return RuleResult.deny(
-                ViolationAction.parse(action),
+                ViolationAction.parse(onViolation),
                 "Rate limit exceeded for "
                         + subject
                         + " (max "

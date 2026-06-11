@@ -7,7 +7,7 @@ public class RegisterRuleConfig {
     private ValueRangeConfig valueRange;
     private RateLimitConfig read;
     private RateLimitConfig write;
-    private String onViolation = "MODBUS_EXCEPTION";
+    private String onViolation;
 
     public int getAddress() {
         return address;
