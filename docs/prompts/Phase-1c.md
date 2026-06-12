@@ -113,7 +113,7 @@ The Base Prompt's goals (A and B), restrictions, environment, web-search allowan
 
 ## Emulator log sequence (successful run)
 
-The inverter emulator emits structured SLF4J log lines for every external Modbus read and for the Emergency Stop lifecycle. A complete, correct execution produces the following sequence (order of telemetry reads may vary):
+The inverter emulator emits structured SLF4J log lines for external Modbus FC04 reads of the health, power, and yield telemetry registers, and for the Emergency Stop lifecycle. A complete, correct execution produces the following message sequence (log prefix/format may vary; order of telemetry reads may vary):
 
 ```
 INFO  d.f.inverter.InverterEmulator - Inverter emulator started on port 502
