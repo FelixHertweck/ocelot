@@ -13,7 +13,7 @@ public class InverterEmulator {
 
     private static int PORT = 502;
     private static final int HEALTH_ADDR = 30200; // Offset for 30201
-    private static final int POWER_ADDR = 30202; // Offset for 30203
+    private static final int POWER_ADDR = 30774; // Offset for 30775 (GridMs.TotW, S32)
     private static final int YIELD_ADDR = 30516; // Offset for 30517
     private static final int ESTOP_ADDR = 39999; // Offset for 40000
 
@@ -59,6 +59,8 @@ public class InverterEmulator {
             latch.await();
             executor.shutdown();
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

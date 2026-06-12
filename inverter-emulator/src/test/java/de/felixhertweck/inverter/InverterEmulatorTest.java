@@ -64,7 +64,7 @@ public class InverterEmulatorTest {
         } while (health != 35 && System.currentTimeMillis() < deadline);
         assertThat(health).isEqualTo(35); // Fault
 
-        Register[] powerRegs = master.readMultipleRegisters(1, 30202, 2);
+        Register[] powerRegs = master.readMultipleRegisters(1, 30774, 2);
         int power = (powerRegs[0].getValue() << 16) | powerRegs[1].getValue();
         assertThat(power).isEqualTo(0); // Power is 0
 
