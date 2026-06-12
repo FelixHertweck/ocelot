@@ -1,5 +1,6 @@
 package de.felixhertweck.inverter;
 
+import com.ghgande.j2mod.modbus.procimg.SimpleInputRegister;
 import com.ghgande.j2mod.modbus.procimg.SimpleProcessImage;
 import com.ghgande.j2mod.modbus.procimg.SimpleRegister;
 import com.ghgande.j2mod.modbus.slave.ModbusSlave;
@@ -31,15 +32,20 @@ public class InverterEmulator {
         try {
             spi = new SimpleProcessImage();
 
-            // Add registers up to 40000
-            for (int i = 0; i <= 40000; i++) {
+            // Input registers (FC04) for 3xxxx telemetry addresses (read-only via Modbus)
+            for (int i = 0; i <= POWER_ADDR + 1; i++) {
+                spi.addInputRegister(new SimpleInputRegister(0));
+            }
+
+            // Holding registers (FC03/FC16) for 4xxxx control addresses
+            for (int i = 0; i <= ESTOP_ADDR; i++) {
                 spi.addRegister(new SimpleRegister(0));
             }
 
             // Initial values
-            writeU32(HEALTH_ADDR, HEALTH_OK);
-            writeU32(POWER_ADDR, basePower);
-            writeU64(YIELD_ADDR, dailyYieldWh);
+            writeInputU32(HEALTH_ADDR, HEALTH_OK);
+            writeInputU32(POWER_ADDR, basePower);
+            writeInputU64(YIELD_ADDR, dailyYieldWh);
             spi.getRegister(ESTOP_ADDR).setValue(0);
 
             // Create and start Modbus TCP Slave
@@ -72,28 +78,27 @@ public class InverterEmulator {
             int estopValue = spi.getRegister(ESTOP_ADDR).getValue();
             if (estopValue == 1) {
                 // Emergency Stop Triggered
-                int currentHealth = readU32(HEALTH_ADDR);
+                int currentHealth = readInputU32(HEALTH_ADDR);
                 if (currentHealth != HEALTH_FAULT) {
                     System.out.println("EMERGENCY STOP TRIGGERED VIA MODBUS");
-                    writeU32(HEALTH_ADDR, HEALTH_FAULT);
-                    writeU32(POWER_ADDR, 0);
+                    writeInputU32(HEALTH_ADDR, HEALTH_FAULT);
+                    writeInputU32(POWER_ADDR, 0);
                 }
             } else {
                 // Normal Operation
-                int currentHealth = readU32(HEALTH_ADDR);
+                int currentHealth = readInputU32(HEALTH_ADDR);
                 if (currentHealth == HEALTH_OK) {
                     // Fluctuate power
                     int fluctuation = (int) (Math.random() * 401) - 200; // -200 to +200
                     int currentPower = basePower + fluctuation;
-                    writeU32(POWER_ADDR, currentPower);
+                    writeInputU32(POWER_ADDR, currentPower);
 
-                    // Increment yield
                     // Power is in Watts. 1 hour = 3600 seconds.
                     // So per second, energy is Power / 3600 Watt-hours.
                     long addedYield = currentPower / 3600;
                     if (addedYield == 0) addedYield = 1;
                     dailyYieldWh += addedYield;
-                    writeU64(YIELD_ADDR, dailyYieldWh);
+                    writeInputU64(YIELD_ADDR, dailyYieldWh);
                 }
             }
         } catch (Exception e) {
@@ -101,21 +106,24 @@ public class InverterEmulator {
         }
     }
 
-    private static void writeU32(int offset, int value) {
-        spi.getRegister(offset).setValue((value >> 16) & 0xFFFF);
-        spi.getRegister(offset + 1).setValue(value & 0xFFFF);
+    private static void writeInputU32(int offset, int value) {
+        ((SimpleInputRegister) spi.getInputRegister(offset)).setValue((value >> 16) & 0xFFFF);
+        ((SimpleInputRegister) spi.getInputRegister(offset + 1)).setValue(value & 0xFFFF);
     }
 
-    private static int readU32(int offset) {
-        int high = spi.getRegister(offset).getValue() & 0xFFFF;
-        int low = spi.getRegister(offset + 1).getValue() & 0xFFFF;
+    private static int readInputU32(int offset) {
+        int high = spi.getInputRegister(offset).getValue() & 0xFFFF;
+        int low = spi.getInputRegister(offset + 1).getValue() & 0xFFFF;
         return (high << 16) | low;
     }
 
-    private static void writeU64(int offset, long value) {
-        spi.getRegister(offset).setValue((int) ((value >> 48) & 0xFFFF));
-        spi.getRegister(offset + 1).setValue((int) ((value >> 32) & 0xFFFF));
-        spi.getRegister(offset + 2).setValue((int) ((value >> 16) & 0xFFFF));
-        spi.getRegister(offset + 3).setValue((int) (value & 0xFFFF));
+    private static void writeInputU64(int offset, long value) {
+        ((SimpleInputRegister) spi.getInputRegister(offset))
+                .setValue((int) ((value >> 48) & 0xFFFF));
+        ((SimpleInputRegister) spi.getInputRegister(offset + 1))
+                .setValue((int) ((value >> 32) & 0xFFFF));
+        ((SimpleInputRegister) spi.getInputRegister(offset + 2))
+                .setValue((int) ((value >> 16) & 0xFFFF));
+        ((SimpleInputRegister) spi.getInputRegister(offset + 3)).setValue((int) (value & 0xFFFF));
     }
 }

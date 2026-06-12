@@ -3,7 +3,7 @@ package de.felixhertweck.inverter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ghgande.j2mod.modbus.facade.ModbusTCPMaster;
-import com.ghgande.j2mod.modbus.procimg.Register;
+import com.ghgande.j2mod.modbus.procimg.InputRegister;
 import com.ghgande.j2mod.modbus.procimg.SimpleRegister;
 import java.io.IOException;
 import java.net.Socket;
@@ -48,7 +48,7 @@ public class InverterEmulatorTest {
         master.connect();
 
         // 1. Check initial state
-        Register[] healthRegs = master.readMultipleRegisters(1, 30200, 2);
+        InputRegister[] healthRegs = master.readInputRegisters(1, 30200, 2);
         int health = (healthRegs[0].getValue() << 16) | healthRegs[1].getValue();
         assertThat(health).isEqualTo(307); // Ok
 
@@ -58,13 +58,13 @@ public class InverterEmulatorTest {
         // 3. Poll until E-Stop takes effect (max 3 seconds)
         long deadline = System.currentTimeMillis() + 3000;
         do {
-            healthRegs = master.readMultipleRegisters(1, 30200, 2);
+            healthRegs = master.readInputRegisters(1, 30200, 2);
             health = (healthRegs[0].getValue() << 16) | healthRegs[1].getValue();
             if (health != 35) Thread.sleep(100);
         } while (health != 35 && System.currentTimeMillis() < deadline);
         assertThat(health).isEqualTo(35); // Fault
 
-        Register[] powerRegs = master.readMultipleRegisters(1, 30774, 2);
+        InputRegister[] powerRegs = master.readInputRegisters(1, 30774, 2);
         int power = (powerRegs[0].getValue() << 16) | powerRegs[1].getValue();
         assertThat(power).isEqualTo(0); // Power is 0
 
