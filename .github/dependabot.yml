@@ -5,69 +5,45 @@ updates:
     directory: "/inverter-emulator"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "docker"
 
   # Docker: ot-proxy
   - package-ecosystem: "docker"
     directory: "/ot-proxy"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "docker"
 
   # Docker: protection-relay-emulator
   - package-ecosystem: "docker"
     directory: "/protection-relay-emulator"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "docker"
 
   # Docker: ot-management-gateway
   - package-ecosystem: "docker"
     directory: "/ot-management-gateway"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "docker"
 
   # Maven: inverter-emulator
   - package-ecosystem: "maven"
     directory: "/inverter-emulator"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "java"
 
   # Maven: ot-proxy
   - package-ecosystem: "maven"
     directory: "/ot-proxy"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "java"
 
   # Maven: protection-relay-emulator
   - package-ecosystem: "maven"
     directory: "/protection-relay-emulator"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "java"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    labels:
-      - "dependencies"
-      - "github-actions"
