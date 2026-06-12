@@ -26,6 +26,10 @@ cp -r /tmp/ocelot/config/phase-1a ./configs/phase-1a
 
 ## 2. Configure the Proxy
 
+> **Important:** Before deploying, set `proxy.upstream.host` to the IP address or hostname of your
+> upstream Modbus TCP device. The file ships with `modbus-device` as a placeholder — traffic will
+> not reach your device until this is updated.
+
 Edit `configs/phase-1a/proxy-config.yml` and set the upstream Modbus target that the proxy should forward to:
 
 ```bash
@@ -102,7 +106,7 @@ sudo openvpn --config out/<your-prefix>/openvpn/admins/admin1.ovpn
 
 `test-proxy.py` reads all allowed registers from the proxy and optionally verifies that the default DENY rule rejects unlisted registers.
 
-> **Note:** The register list in `test-proxy.py` is tailored to the **SMA Tripower inverter** described in `proxy-config-example.yml`. If you use a different device or a different `proxy-config.yml`, update the `ALLOWED_REGISTERS` list accordingly.
+> **Note:** The register list in `test-proxy.py` is tailored to the **SMA Tripower inverter** described in `proxy-config.yml`. If you use a different device or a different `proxy-config.yml`, update the `ALLOWED_REGISTERS` list accordingly.
 
 **On the `ot-proxy` VM** (SSH in or run locally on the VM):
 
