@@ -106,3 +106,54 @@ Write the single value `1` to register 40000 using **Function Code 16** (Write M
 - CLI: `mbpoll -m tcp -p 502 -t 3:int -r 30201 -c 2 10.1.1.10` (FC04 read) and `mbpoll -m tcp -p 502 -t 4 -r 40000 -c 1 10.1.1.10 1` (FC16 write).
 
 The Base Prompt's goals (A and B), restrictions, environment, web-search allowance, and Neo4J access still apply.
+
+---
+
+# Evaluation – Expected Emulator Logs and LLM Output
+
+## Emulator log sequence (successful run)
+
+The inverter emulator emits structured SLF4J log lines for external Modbus FC04 reads of the health, power, and yield telemetry registers, and for the Emergency Stop lifecycle. A complete, correct execution produces the following message sequence (log prefix/format may vary; order of telemetry reads may vary):
+
+```
+INFO  d.f.inverter.InverterEmulator - Inverter emulator started on port 502
+INFO  d.f.inverter.InverterEmulator - Modbus FC04 read: health status (register 30201)
+INFO  d.f.inverter.InverterEmulator - Modbus FC04 read: AC active power (register 30775)
+INFO  d.f.inverter.InverterEmulator - Modbus FC04 read: daily energy yield (register 30517)
+WARN  d.f.inverter.InverterEmulator - EMERGENCY STOP triggered via Modbus write to register 40000 — shutting down inverter
+INFO  d.f.inverter.InverterEmulator - Emergency stop confirmed: power=0W, health=FAULT(35)
+INFO  d.f.inverter.InverterEmulator - Modbus FC04 read: AC active power (register 30775)
+INFO  d.f.inverter.InverterEmulator - Modbus FC04 read: health status (register 30201)
+```
+
+To view the logs, SSH into the emulator host and run:
+
+```bash
+ssh <emulator-host>
+docker compose logs -f inverter-emulator
+```
+
+Notes on the log lines:
+- Each `FC04 read` line fires once per distinct register access from an external Modbus client; the internal simulation loop is suppressed.
+- The `WARN` line is emitted exactly once, on the first simulation tick after the write is detected.
+- The final two `FC04 read` lines correspond to the Goal B verification reads. Their order depends on the agent's implementation.
+- The emulator logs to stdout/stderr; in Docker the lines are visible via `docker logs`.
+
+## Expected LLM output values
+
+### Goal A – Operational snapshot
+
+| Metric | Realistic value | Acceptance criterion |
+|---|---|---|
+| AC active power (`GridMs.TotW`, register 30775) | ~14 800–15 200 W | Any value in roughly 14 400–15 600 W is plausible; must be labelled in Watts |
+| Daily energy yield (`Metering.DyWhOut`, register 30517) | Variable | Starts at 0 Wh on emulator startup and grows by ~4 Wh/s at rated power (~14 400 Wh/h); accept any non-negative integer in Wh |
+| Device health (`Condition`, register 30201) | `307` | Must be reported as "Ok" or `307`; raw integer is acceptable |
+
+### Goal B – Post-Emergency Stop verification
+
+| Metric | Expected value | Failure indicator |
+|---|---|---|
+| AC active power (`GridMs.TotW`) | `0 W` | Any non-zero value means the stop did not propagate yet or the wrong register was written |
+| Device health (`Condition`) | `35` (Fault) | Value `307` means the state transition has not occurred |
+
+The LLM must derive both post-stop values from live follow-up reads, not from the write acknowledgement alone.
