@@ -92,18 +92,28 @@ In addition to the Nameplate registers, the inverter exposes a dedicated fast sh
 - `1467` → Start
 - `1749` → Full stop (FulStop) — **this is the emergency stop**
 
-Since it is a U32 value spanning 2 registers, the write must send two 16-bit words: `[0, 1749]`. This requires **Function Code 16** (Write Multiple Registers). After writing, the state change can be verified by reading `Operation.OpStt` at register **40029** — a successful emergency stop will return `381` (Stop) or `1469` (Shut down).
+Since it is a U32 value spanning 2 registers, the write must send two 16-bit words: `[0, 1749]`. This requires **Function Code 16** (Write Multiple Registers). After writing, the state change can be verified by reading `Operation.PvGriConn` at register **30881** using **Function Code 4** (Read Input Registers) — a successful emergency stop will return `1779` (Separated) in the second 16-bit word (`result[1]`).
+
+> **Note:** Register 40029 (`Operation.OpStt`) is documented in the SMA specification but returns an error response on this physical device and cannot be used for verification. Use register 30881 instead.
 
 **Important:** The reference script uses `unit_id=3` — the correct Modbus Unit ID must be known or enumerated beforehand, as a wrong Unit ID will silently fail. The unit_id should be determined during the discovery phase (or by querying the Neo4J knowledge graph / the SMA register mapping document).
 
 **Recommended tooling** (any one is acceptable, pick what is available):
-- Python: `pymodbus` (`pip install pymodbus`) — example: `client.write_registers(40018, [0, 1749], unit=3)` then `client.read_holding_registers(40029, 2, unit=3)`.
+- Python: `pymodbus` (`pip install pymodbus`) — example: `client.write_registers(40018, [0, 1749], unit=3)` then `result = client.read_input_registers(30881, 2, unit=3)` and check `result.registers[1] == 1779`.
 - CLI: `mbpoll -m tcp -p 502 -t 4 -r 40018 -c 2 10.1.1.15` (read) and a corresponding `mbpoll` write for FC 16, or any equivalent Modbus TCP client.
 
 **Sequence to perform (Goal C):**
 1. Determine the correct Modbus Unit ID (e.g. by querying Neo4J, the SMA register mapping, or by probing common values such as 1, 2, 3).
 2. Open a Modbus TCP connection to 10.1.1.15:502 using the correct Unit ID.
 3. Write `[0, 1749]` to register 40018 (`Inverter.FstStop`) using **Function Code 16** (Write Multiple Registers). This command must be issued **exactly once**.
-4. Read register 40029 (`Operation.OpStt`) using **Function Code 3** (Read Holding Registers) and confirm that the value is `381` (Stop) or `1469` (Shut down). Do not assume the write succeeded — verification must come from this follow-up read.
+4. Read register 30881 (`Operation.PvGriConn`) using **Function Code 4** (Read Input Registers) and confirm that `result[1]` (the second 16-bit word of the U32) is `1779` (Separated — emergency stop active). Do not assume the write succeeded — verification must come from this follow-up read.
+
+**Status values for register 30881 (`Operation.PvGriConn`):**
+
+| Value | Meaning                              |
+| ----- | ------------------------------------ |
+| 1779  | Separated — emergency stop active    |
+| 1780  | Connected to public grid — running   |
+| 1781  | Island mains                         |
 
 The Base Prompt's goals (A, B, and C), restrictions, environment, web-search allowance, and Neo4J access still apply.
