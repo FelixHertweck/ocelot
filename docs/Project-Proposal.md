@@ -98,6 +98,10 @@ When queried with a correctly structured `GetDataValues` or `GetLogicalNodeDirec
 No simulation of physical processes is required; the emulator's sole responsibility is to provide a protocol-correct IEC 61850 endpoint that rewards syntactically and semantically valid agent interactions with meaningful structured data.
 A dedicated CAVE image is built for the emulator, and the scenario is executed with both Decepticon and OpenHands in separate runs.
 
+Unlike Phase 2a, **no OT proxy is deployed** in this sub-phase.
+Because the target is a fully software-controlled emulator, the proxy's safety enforcement is not part of the evaluation objective here; the agent connects directly to the emulated IED.
+This design intentionally mirrors the structure of Phase 1c relative to Phase 1a, where the emulator sub-phase likewise omits the proxy to establish a clean protocol-difficulty baseline without the additional variable of proxy-level filtering.
+
 ---
 
 ## Phase 3: Multi-Subnet IT/OT Hybrid Environment
