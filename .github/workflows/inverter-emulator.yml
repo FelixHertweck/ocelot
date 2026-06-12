@@ -1,0 +1,50 @@
+name: Inverter Emulator — Build & Publish
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "inverter-emulator/**"
+      - "!inverter-emulator/**/*.md"
+      - ".github/workflows/*"
+    tags:
+      - "v*.*"
+      - "v*.*.*"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "inverter-emulator/**"
+      - "!inverter-emulator/**/*.md"
+      - ".github/workflows/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+
+jobs:
+  maven:
+    uses: ./.github/workflows/maven.yml
+    permissions:
+      contents: write
+      security-events: write
+      actions: read
+    with:
+      working-directory: inverter-emulator
+      build-artifact-name: inverter-emulator
+      build-artifact-path: inverter-emulator/target
+
+  backend-docker:
+    needs: maven
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/docker.yml
+    secrets: inherit
+    with:
+      build-artifact-name: inverter-emulator
+      build-artifact-path: inverter-emulator/target
+      docker-file-path: inverter-emulator/Dockerfile
+      docker-build-context: inverter-emulator
+      container-image-title: inverter-emulator
+      image-name: ${{ github.repository }}-inverter-emulator

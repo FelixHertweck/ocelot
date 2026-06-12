@@ -1,0 +1,21 @@
+services:
+  inverter-emulator:
+    image: ghcr.io/felixhertweck/aegis-inverter-emulator:main
+    container_name: inverter-emulator
+    ports:
+      - "${MODBUS_PORT:-502}:502"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 502 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - inverter-net
+
+networks:
+  inverter-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1442"
