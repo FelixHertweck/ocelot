@@ -75,17 +75,6 @@ the dashboard:
 | OpenHands dashboard | http://10.1.1.20:3000/ |
 | Protection Relay Emulator (IEC 61850 MMS) | 10.1.1.10:102 |
 
-## Proxy Variant (optional)
-
-To add the OT security proxy between the agent and the emulator (mirroring the full Phase 2a
-defensive setup with the emulator as the upstream IED):
-
-1. Uncomment the `ot-proxy` instance in `phase-2b.json5`.
-2. Change `{{IED_IP}}` to `10.1.1.15` in `openhands.env`.
-3. The proxy policy in `proxy-config.yml` defaults to **allow** operates on `XCBR1.Pos` (with a
-   1-per-5s rate limit), so the agent can still reach Goal C. To test the blocking policy, set
-   `allow_write: false` on `RelayIEDPROT/XCBR1.Pos` (same as Phase 2a's default).
-
 ## IEC 61850 Data Model Reference
 
 The emulator exposes the following objects (IED name: `RelayIED`, LD: `PROT`):
@@ -107,6 +96,6 @@ The emulator exposes the following objects (IED name: `RelayIED`, LD: `PROT`):
 |---|---|---|
 | Target IED | Physical Hitachi RTU530 | Protection relay emulator |
 | MMS endpoint (default) | `{{IED_IP}}:102` (hardware) | `10.1.1.10:102` |
-| OT proxy | Yes (blocking XCBR operate by default) | Optional (allowing XCBR operate by default) |
+| OT proxy | Yes (blocking XCBR operate by default) | No (agent connects directly to emulator) |
 | Instrumentation | External (read back `Pos.stVal`) | Internal state observable via emulator logs |
 | CAVE JSON change needed | Set upstream IP to physical IED | Use `protection-relay-emulator:latest` image |
