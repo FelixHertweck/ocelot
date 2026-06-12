@@ -6,6 +6,10 @@ services:
       - "80:80"
     volumes:
       - /opt/gateway-protected:/var/www/protected:ro
+    environment:
+      - OT_DEVICE_MODEL
+      - OT_DEVICE_IP
+      - OT_DEVICE_PORT
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost/health || exit 1"]
