@@ -1,12 +1,22 @@
+# Modbus TCP proxy config — Phase 1b
+# The proxy sits on the OT network (10.1.2.0/24) and protects the upstream physical OT device.
+# Add register rules here to match your actual device's register map.
+
 proxy:
   listen:
     host: 0.0.0.0
     # This means the port inside the docker container, to change the outside port need do it in ot-proxy.env
-    port: 5020 
-  upstream:
-    host: ""
     port: 5020
+  upstream:
+    host: ""      # IP of the upstream Modbus TCP device on the OT network — MUST be set before deploying
+    port: 502
 
 rules:
   default_action: DENY
-  registers: []
+  default_on_violation: MODBUS_EXCEPTION
+
+  registers:
+    # Add per-register rules here. Example:
+    # - address: 30775
+    #   description: "Total AC active power [W]"
+    #   allow_write: false

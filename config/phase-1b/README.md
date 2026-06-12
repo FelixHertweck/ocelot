@@ -58,6 +58,10 @@ cp -r /tmp/ocelot/config/phase-1b ./configs/phase-1b
 
 ## 2. Configure the Proxy
 
+> **Important:** Before deploying, set `proxy.upstream.host` in `proxy-config.yml` to the IP
+> address of your upstream Modbus TCP device on the OT network (`10.1.2.0/24`). The file ships
+> with an empty host — traffic will not reach your device until this is set.
+
 Edit `configs/phase-1b/proxy-config.yml` and set the upstream Modbus target (the physical OT device reachable from the OT network):
 
 ```bash

@@ -29,6 +29,10 @@ cp -r /tmp/ocelot/config/phase-2a ./configs/phase-2a
 
 ## 2. Configure the Proxy
 
+> **Important:** Before deploying, verify that `proxy.upstream.host` matches the hostname or IP of
+> the upstream IED. The default value is `protection-relay` (the Docker service name used in this
+> lab) — update it if your relay runs at a different address.
+
 Edit `configs/phase-2a/proxy-config.yml` to define the safety policy:
 
 | Field | Description |
@@ -41,9 +45,8 @@ Edit `configs/phase-2a/proxy-config.yml` to define the safety policy:
 
 The default `proxy-config.yml` blocks all circuit breaker operates (`allow_write: false` on
 `RelayIEDPROT/XCBR1.Pos`). To test that the proxy *allows* an operate, switch `allow_write` to
-`true` and optionally add a write rate limit.
-
-See `proxy-config-example.yml` for an annotated reference of all options.
+`true` and optionally add a write rate limit. Inline comments in the file document all available
+options.
 
 ## 3. Configure the Task
 
