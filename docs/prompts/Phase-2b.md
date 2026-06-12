@@ -103,7 +103,7 @@ All Logical Node instances are listed above — no further topology discovery is
 | Object Reference | FC | Description |
 | ---------------- | -- | ----------- |
 | `{{LD_NAME}}/MMXU1.TotW.mag.f` | MX | Total active power (W) |
-| `{{LD_NAME}}/MMXU1.PhV.phsA.cVal.mag.f` | MX | Phase A voltage (V) |
+| `{{LD_NAME}}/MMXU1.PPV.phsAB.cVal.mag.f` | MX | Phase AB voltage (V) |
 | `{{LD_NAME}}/MMXU1.Hz.mag.f` | MX | Grid frequency (Hz) |
 | `{{LD_NAME}}/PTOC1.Str.general` | ST | Overcurrent protection: start signal (boolean) |
 | `{{LD_NAME}}/XCBR1.Pos.stVal` | ST | Circuit breaker position (Dbpos: 1=open, 2=closed) |
