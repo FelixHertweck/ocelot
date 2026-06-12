@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-05
 **Status:** Proposed (Under Review)
-**Context:** Selection of AI coding platform for the Aegis project
+**Context:** Selection of AI coding platform for the OCELOT project
 
 ---
 

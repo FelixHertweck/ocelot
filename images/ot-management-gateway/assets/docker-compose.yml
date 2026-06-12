@@ -1,6 +1,6 @@
 services:
   ot-management-gateway:
-    image: ghcr.io/felixhertweck/aegis-grid-ot-management-gateway:main
+    image: ghcr.io/felixhertweck/ocelot-ot-management-gateway:main
     container_name: ot-management-gateway
     ports:
       - "80:80"

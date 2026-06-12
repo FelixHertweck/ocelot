@@ -1,6 +1,6 @@
 services:
   inverter-emulator:
-    image: ghcr.io/felixhertweck/aegis-inverter-emulator:main
+    image: ghcr.io/felixhertweck/ocelot-inverter-emulator:main
     container_name: inverter-emulator
     ports:
       - "${MODBUS_PORT:-502}:502"

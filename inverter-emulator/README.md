@@ -35,7 +35,7 @@ java -jar target/inverter-emulator-*-jar-with-dependencies.jar 1502
 Or via Docker:
 
 ```bash
-docker run --rm -p 502:502 ghcr.io/felixhertweck/aegis-inverter-emulator:main
+docker run --rm -p 502:502 ghcr.io/felixhertweck/ocelot-inverter-emulator:main
 ```
 
 ## Building

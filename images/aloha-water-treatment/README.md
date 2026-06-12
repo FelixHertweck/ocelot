@@ -14,7 +14,7 @@ Both services start automatically via systemd (`aloha-plc.service`, `aloha-hmi.s
 ## Building the Image
 
 ```bash
-docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertweck/aegis-grid.git
+docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertweck/ocelot.git
 ```
 
 Select `aloha-water-treatment` when prompted.

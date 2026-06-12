@@ -1,4 +1,4 @@
-# Aegis Grid: AI-Driven Multi-Agent System for ICS Exploitation
+# OCELOT: OT Cyber Exploitation via LLM Orchestration Testbed
 
 Current monolithic Large Language Models (LLMs) often fail at executing multi-step attacks on Industrial Control Systems (ICS). This project implements a LangGraph-based multi-agent system specifically tailored for testing energy hardware OT devices. 
 
@@ -46,10 +46,10 @@ docker compose run --rm cave /cave/pre-build-images.sh
 ```
 
 ### 2. Build the Base Images
-Build the Aegis base images using Packer by providing this repository's URL. Make sure to build **all** required images during this interactive step.
+Build the OCELOT base images using Packer by providing this repository's URL. Make sure to build **all** required images during this interactive step.
 
 ```bash
-docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertweck/aegis-grid.git
+docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertweck/ocelot.git
 ```
 
 ### 3. Deploy Infrastructure
