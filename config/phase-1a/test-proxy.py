@@ -116,7 +116,7 @@ def test_blocked(client: ModbusTcpClient, slave: int) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Test script for aegis phase-1-openhands OT-Proxy")
+    parser = argparse.ArgumentParser(description="Test script for ocelot phase-1-openhands OT-Proxy")
     parser.add_argument("--host",         default="localhost",  help="Proxy host (default: localhost)")
     parser.add_argument("--port",         default=5020, type=int, help="Proxy port (default: 5020)")
     parser.add_argument("--slave",        default=3,    type=int, help="Modbus slave/unit ID (default: 3)")

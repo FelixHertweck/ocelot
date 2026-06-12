@@ -49,11 +49,11 @@ The upstream Modbus TCP device must be reachable from the OT network segment at 
 
 ## 1. Place the Deployment Config
 
-Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1b` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
+Clone the ocelot repository into `/tmp` and copy the entire `phase-1b` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
 
 ```bash
-git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-1b ./configs/phase-1b
+git clone https://github.com/FelixHertweck/ocelot.git /tmp/ocelot
+cp -r /tmp/ocelot/config/phase-1b ./configs/phase-1b
 ```
 
 ## 2. Configure the Proxy
@@ -107,10 +107,10 @@ To deploy non-interactively with a custom lab prefix:
 
 ```bash
 # OpenVPN
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1b/phase-1b --lab-prefix aegis-p1b
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1b/phase-1b --lab-prefix ocelot-p1b
 
 # WireGuard
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1b/phase-1b --wg --lab-prefix aegis-p1b
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1b/phase-1b --wg --lab-prefix ocelot-p1b
 ```
 
 ## 6. Connect and Access

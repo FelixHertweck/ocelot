@@ -17,11 +17,11 @@ The upstream Modbus TCP device (e.g. an Aloha Water Treatment simulator or physi
 
 ## 1. Place the Deployment Config
 
-Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1a` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
+Clone the ocelot repository into `/tmp` and copy the entire `phase-1a` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
 
 ```bash
-git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-1a ./configs/phase-1a
+git clone https://github.com/FelixHertweck/ocelot.git /tmp/ocelot
+cp -r /tmp/ocelot/config/phase-1a ./configs/phase-1a
 ```
 
 ## 2. Configure the Proxy
@@ -72,10 +72,10 @@ To deploy non-interactively with a custom lab prefix:
 
 ```bash
 # OpenVPN
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --lab-prefix aegis-p1a
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --lab-prefix ocelot-p1a
 
 # WireGuard
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --wg --lab-prefix aegis-p1a
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a --wg --lab-prefix ocelot-p1a
 ```
 
 Both VMs are fully configured automatically during deployment via `postCommand`:

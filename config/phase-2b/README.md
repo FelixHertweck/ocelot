@@ -23,8 +23,8 @@ Complete **steps 1 and 2** of the [main README](../../README.md) first — OpenS
 ## 1. Place the Deployment Config
 
 ```bash
-git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-2b ./configs/phase-2b
+git clone https://github.com/FelixHertweck/ocelot.git /tmp/ocelot
+cp -r /tmp/ocelot/config/phase-2b ./configs/phase-2b
 ```
 
 ## 2. Configure the Task
@@ -58,7 +58,7 @@ Placeholder values for this lab (default: no proxy, agent connects directly to e
 docker compose run --rm cave /cave/deploy-wrapper.sh
 
 # Non-interactive
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-2b/phase-2b --lab-prefix aegis-p2b
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-2b/phase-2b --lab-prefix ocelot-p2b
 ```
 
 ## 4. Connect and Access
