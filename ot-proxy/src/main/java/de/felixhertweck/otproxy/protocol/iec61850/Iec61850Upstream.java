@@ -2,6 +2,7 @@ package de.felixhertweck.otproxy.protocol.iec61850;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Locale;
 
 import com.beanit.iec61850bean.BasicDataAttribute;
 import com.beanit.iec61850bean.BdaBoolean;
@@ -113,7 +114,7 @@ public class Iec61850Upstream {
         if (!(ctlModel instanceof BasicDataAttribute bda)) return false;
         String v = bda.getValueString();
         if (v == null) return false;
-        v = v.toLowerCase();
+        v = v.toLowerCase(Locale.ROOT);
         // ctlModel ords: 2 = sbo-with-normal-security, 4 = sbo-with-enhanced-security.
         return v.contains("sbo") || v.equals("2") || v.equals("4");
     }

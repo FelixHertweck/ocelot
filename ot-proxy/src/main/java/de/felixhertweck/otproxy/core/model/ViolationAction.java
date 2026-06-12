@@ -20,6 +20,7 @@ public enum ViolationAction {
         return switch (action.toUpperCase(Locale.ROOT)) {
             case "SILENT_DROP" -> SILENT_DROP;
             case "DISCONNECT" -> DISCONNECT;
+            case "REJECT", "MODBUS_EXCEPTION" -> REJECT;
             default -> REJECT;
         };
     }

@@ -17,12 +17,13 @@ public class RateLimitEvaluator {
 
     /**
      * @param limit the limit to enforce, or {@code null} for "no limit"
-     * @param key window key (e.g. the register address) so each register is tracked independently
+     * @param key window key (protocol-neutral target string) so each target is tracked
+     *     independently
      * @param now request timestamp
      * @param onViolation fully pre-resolved action string — callers are responsible for applying
-     *     the correct precedence (register-level overrides global defaults)
-     * @param subject human-readable subject for the violation message, e.g. {@code "write register
-     *     40018"}
+     *     the correct precedence (point-level overrides global defaults)
+     * @param subject human-readable subject for the violation message, e.g. {@code "write target
+     *     RelayIEDPROT/XCBR1.Pos"}
      */
     public RuleResult evaluate(
             RateLimitConfig limit, String key, Instant now, String onViolation, String subject) {

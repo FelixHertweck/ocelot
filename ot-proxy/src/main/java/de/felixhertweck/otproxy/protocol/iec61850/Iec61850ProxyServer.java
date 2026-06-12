@@ -69,7 +69,7 @@ public class Iec61850ProxyServer {
     private void syncValues() {
         try {
             upstream.refreshValues();
-            ServerModel mirror = upstream.getModel();
+            ServerModel mirror = upstream.getModel().copy();
             List<BasicDataAttribute> updated = new ArrayList<>();
             for (BasicDataAttribute serverBda : exposedModel.getBasicDataAttributes()) {
                 Fc fc = serverBda.getFc();
