@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import de.felixhertweck.otproxy.config.ConfigLoader;
 import de.felixhertweck.otproxy.config.ProxyConfig;
@@ -82,11 +83,18 @@ public class Main {
                         upstream,
                         config.getRules());
 
-        Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
+        CountDownLatch latch = new CountDownLatch(1);
+        Runtime.getRuntime()
+                .addShutdownHook(
+                        new Thread(
+                                () -> {
+                                    server.stop();
+                                    latch.countDown();
+                                }));
         server.start();
 
-        // startListening returns immediately; block the main thread until interrupted.
-        Thread.currentThread().join();
+        // startListening returns immediately; block the main thread until shutdown.
+        latch.await();
     }
 
     private static ProxyConfig loadConfig(String[] args) throws IOException {

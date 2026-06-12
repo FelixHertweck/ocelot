@@ -37,8 +37,12 @@ public final class Iec61850ModelFilter {
             return upstream; // default-allow: expose the full mirror
         }
 
+        List<Iec61850PointRuleConfig> objects = rules.getObjects();
+        if (objects == null) {
+            objects = List.of();
+        }
         Set<String> allowedLnPrefixes =
-                rules.getObjects().stream()
+                objects.stream()
                         .filter(Iec61850PointRuleConfig::isAllowRead)
                         .map(Iec61850PointRuleConfig::getReference)
                         .filter(ref -> ref != null && ref.contains("."))
