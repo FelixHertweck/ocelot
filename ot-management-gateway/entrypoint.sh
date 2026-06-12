@@ -5,8 +5,9 @@ MODEL="${OT_DEVICE_MODEL:-}"
 IP="${OT_DEVICE_IP:-}"
 PORT="${OT_DEVICE_PORT:-}"
 
-# Escape a string for safe embedding in a JSON value
-json_esc() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+# Escape a string for safe embedding in a JSON value.
+# Strips ASCII control characters (0x00-0x1F), then escapes backslash and double-quote.
+json_esc() { printf '%s' "$1" | tr -d '\000-\037' | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
 mkdir -p /var/www/gateway/api/v1/ot
 
