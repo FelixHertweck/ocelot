@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SlidingWindowRateLimiter {
 
-    private final ConcurrentHashMap<Long, Deque<Instant>> windows = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Deque<Instant>> windows = new ConcurrentHashMap<>();
 
     /**
      * Records a request against {@code key} and reports whether it stays within the limit.
@@ -21,7 +21,7 @@ public class SlidingWindowRateLimiter {
      * @return {@code true} if the request is allowed (and has been recorded), {@code false} if it
      *     would exceed {@code maxRequests} within the trailing {@code windowMillis} window.
      */
-    public boolean tryAcquire(long key, int maxRequests, long windowMillis, Instant now) {
+    public boolean tryAcquire(String key, int maxRequests, long windowMillis, Instant now) {
         Instant cutoff = now.minus(Duration.ofMillis(windowMillis));
         Deque<Instant> window = windows.computeIfAbsent(key, k -> new ArrayDeque<>());
 

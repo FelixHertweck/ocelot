@@ -1,14 +1,23 @@
 # OT Proxy
 
-A protocol-agnostic proxy for OT devices that enforces write-access rules via a YAML config. Currently supports Modbus TCP; the pipeline architecture is designed to accommodate additional protocols (e.g. IEC 61850) as new adapters.
+A protocol-agnostic proxy for OT devices that enforces access rules via a YAML config. Supports
+**Modbus TCP** and **IEC 61850 (MMS)**, selected by a top-level `protocol:` classifier. The shared
+rule engine keys on a generic *target* — a Modbus register address or an IEC 61850 object reference
+— so the same whitelist / value-range / rate-limit rules apply to both.
 
 ```
-Client → [Proxy Listener] → [Pipeline] → [Upstream Connector] → Modbus Device
+Client → [Proxy Listener] → [Pipeline] → [Upstream Connector] → OT Device
                                  ↑
                            [Rule Engine]
                                  ↑
                            [YAML Config]
 ```
+
+- **Modbus** is a *transparent byte-level* proxy: it parses raw MBAP+PDU frames and forwards/blocks
+  the bytes.
+- **IEC 61850** is a *terminating application-layer* proxy (built on `com.beanit:iec61850bean`): it
+  acts as an MMS client to the real IED and an MMS server to downstream clients, mirroring the IED's
+  data model and intercepting control operations at the service layer. MMS cannot be byte-proxied.
 
 ## Requirements
 
@@ -93,6 +102,61 @@ rules:
       on_violation: DISCONNECT
 ```
 
+## IEC 61850 (MMS) configuration
+
+Set `protocol: iec61850` and list protected objects under `rules.objects`, keyed by their object
+reference (the controllable data object, e.g. `RelayIEDPROT/XCBR1.Pos`, without the `.Oper.ctlVal`
+suffix):
+
+```yaml
+protocol: iec61850
+
+proxy:
+  listen:
+    host: 0.0.0.0
+    port: 10102         # MMS port the proxy listens on
+  upstream:
+    host: 192.168.1.20  # the real IED
+    port: 102
+
+rules:
+  default_action: DENY
+  default_on_violation: REJECT
+  default_rate_limit:
+    write:
+      max_requests: 1
+      per_millis: 1000
+      on_violation: REJECT
+
+  objects:
+    - reference: "RelayIEDPROT/XCBR1.Pos"   # circuit breaker control
+      description: "Circuit breaker"
+      allow_write: false                     # block all operate commands
+      allow_read: true
+      on_violation: REJECT
+    - reference: "RelayIEDPROT/MMXU1.TotW"   # measurement: readable, not controllable
+      allow_read: true
+      allow_write: false
+```
+
+The proxy mirrors the upstream IED's data model on startup (`retrieveModel`) and keeps status/
+measurement values fresh by polling. A control Operate from a downstream client is intercepted, run
+through the rule engine (`allow_write`, `value_range`, write rate limit), and — if allowed —
+forwarded to the IED via the IEC control service (direct-operate, or Select-before-Operate when the
+object's `ctlModel` is SBO). Denied operations return an MMS `ServiceError`.
+
+### IEC 61850 limitations
+
+`iec61850bean`'s server exposes no read-interception hook, so two behaviours differ from Modbus:
+
+- **No per-request read rate-limiting.** Reads are served from the mirrored model; `read:` limits
+  apply only to Modbus.
+- **Read allow-list is enforced by model pruning.** When `default_action: DENY`, only the Logical
+  Nodes referenced by an `allow_read` object rule (plus the mandatory system nodes) are exposed;
+  everything else is absent and reads return object-not-found.
+- **Deny actions collapse to `REJECT`.** `SILENT_DROP` / `DISCONNECT` are not expressible per request
+  on the MMS server side, so every IEC denial returns a `ServiceError`.
+
 ### Rate limiting
 
 Every rate limit has the same shape — `max_requests` per sliding window of
@@ -121,9 +185,9 @@ on whether the register has its own rate-limit block:
 
 | Action | Behaviour |
 |---|---|
-| `MODBUS_EXCEPTION` | Returns Modbus exception code to client |
-| `SILENT_DROP` | Drops the request silently |
-| `DISCONNECT` | Closes the client connection |
+| `REJECT` | Rejects the request at the protocol level (Modbus exception frame / IEC MMS `ServiceError`). `MODBUS_EXCEPTION` is an accepted alias. |
+| `SILENT_DROP` | Drops the request silently (Modbus only; IEC collapses to `REJECT`) |
+| `DISCONNECT` | Closes the client connection (Modbus only; IEC collapses to `REJECT`) |
 
 ## Docker
 

@@ -1,13 +1,13 @@
 package de.felixhertweck.otproxy.config;
 
-public class RegisterRuleConfig {
+/** Modbus safety rule, keyed by a numeric register address. */
+public class RegisterRuleConfig extends PointRuleConfig {
     private int address;
-    private String description = "";
-    private boolean allowWrite = false;
-    private ValueRangeConfig valueRange;
-    private RateLimitConfig read;
-    private RateLimitConfig write;
-    private String onViolation;
+
+    @Override
+    public String key() {
+        return Integer.toString(address);
+    }
 
     public int getAddress() {
         return address;
@@ -15,53 +15,5 @@ public class RegisterRuleConfig {
 
     public void setAddress(int address) {
         this.address = address;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public boolean isAllowWrite() {
-        return allowWrite;
-    }
-
-    public void setAllowWrite(boolean allowWrite) {
-        this.allowWrite = allowWrite;
-    }
-
-    public ValueRangeConfig getValueRange() {
-        return valueRange;
-    }
-
-    public void setValueRange(ValueRangeConfig valueRange) {
-        this.valueRange = valueRange;
-    }
-
-    public RateLimitConfig getRead() {
-        return read;
-    }
-
-    public void setRead(RateLimitConfig read) {
-        this.read = read;
-    }
-
-    public RateLimitConfig getWrite() {
-        return write;
-    }
-
-    public void setWrite(RateLimitConfig write) {
-        this.write = write;
-    }
-
-    public String getOnViolation() {
-        return onViolation;
-    }
-
-    public void setOnViolation(String onViolation) {
-        this.onViolation = onViolation;
     }
 }

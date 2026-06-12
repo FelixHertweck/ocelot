@@ -49,6 +49,52 @@ class ConfigLoaderTest {
                   on_violation: DISCONNECT
             """;
 
+    private static final String IEC_YAML =
+            """
+            protocol: iec61850
+            proxy:
+              listen:
+                host: 0.0.0.0
+                port: 10102
+              upstream:
+                host: 192.168.1.20
+                port: 102
+            rules:
+              default_action: DENY
+              default_on_violation: REJECT
+              objects:
+                - reference: "RelayIEDPROT/XCBR1.Pos"
+                  description: "Circuit breaker"
+                  allow_write: false
+                  allow_read: true
+                  on_violation: REJECT
+                - reference: "RelayIEDPROT/MMXU1.TotW"
+                  allow_read: true
+            """;
+
+    @Test
+    void defaultsProtocolToModbus() {
+        assertThat(load(YAML).getProtocol()).isEqualTo("modbus");
+    }
+
+    @Test
+    void parsesIec61850Protocol() {
+        assertThat(load(IEC_YAML).getProtocol()).isEqualTo("iec61850");
+    }
+
+    @Test
+    void parsesIecObjectRules() {
+        ProxyConfig config = load(IEC_YAML);
+        assertThat(config.getRules().getObjects()).hasSize(2);
+
+        Iec61850PointRuleConfig breaker = config.getRules().getObjects().get(0);
+        assertThat(breaker.getReference()).isEqualTo("RelayIEDPROT/XCBR1.Pos");
+        assertThat(breaker.key()).isEqualTo("RelayIEDPROT/XCBR1.Pos");
+        assertThat(breaker.isAllowWrite()).isFalse();
+        assertThat(breaker.isAllowRead()).isTrue();
+        assertThat(breaker.getOnViolation()).isEqualTo("REJECT");
+    }
+
     @Test
     void parsesProxySection() {
         ProxyConfig config = load(YAML);

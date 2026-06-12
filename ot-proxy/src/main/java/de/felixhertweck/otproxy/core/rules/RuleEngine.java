@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import de.felixhertweck.otproxy.config.DirectionalRateLimitConfig;
+import de.felixhertweck.otproxy.config.PointRuleConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.ViolationAction;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
@@ -18,8 +18,8 @@ public class RuleEngine {
     private final ProxyConfig config;
     private final List<Rule> rules;
 
-    // Built once so per-request lookups are O(1) instead of scanning the register list.
-    private final Map<Integer, RegisterRuleConfig> registersByAddress;
+    // Built once so per-request lookups are O(1) instead of scanning the rule list.
+    private final Map<String, PointRuleConfig> pointsByKey;
 
     private final RateLimitConfig defaultReadLimit;
     private final String defaultOnViolation;
@@ -33,7 +33,7 @@ public class RuleEngine {
         this.defaultReadLimit = defaults != null ? defaults.getRead() : null;
         this.defaultOnViolation =
                 config.getRules() != null ? config.getRules().getDefaultOnViolation() : null;
-        this.registersByAddress = indexRegisters(config, defaultOnViolation);
+        this.pointsByKey = indexPoints(config, defaultOnViolation);
         this.rules =
                 List.of(
                         new WhitelistRule(),
@@ -41,33 +41,44 @@ public class RuleEngine {
                         new RateLimitRule(defaultWriteLimit));
     }
 
-    private static Map<Integer, RegisterRuleConfig> indexRegisters(
+    private static Map<String, PointRuleConfig> indexPoints(
             ProxyConfig config, String defaultOnViolation) {
-        Map<Integer, RegisterRuleConfig> index = new HashMap<>();
-        if (config.getRules() != null && config.getRules().getRegisters() != null) {
-            for (RegisterRuleConfig register : config.getRules().getRegisters()) {
-                // Resolve the rules-level default into registers that don't set their own action.
-                if (register.getOnViolation() == null) {
-                    register.setOnViolation(defaultOnViolation);
-                }
-                // First entry wins on duplicate addresses, matching the previous findFirst scan.
-                index.putIfAbsent(register.getAddress(), register);
+        Map<String, PointRuleConfig> index = new HashMap<>();
+        if (config.getRules() == null) {
+            return index;
+        }
+        // Modbus register rules and IEC 61850 object rules live in separate typed lists but share
+        // the same string-keyed index; their key spaces (numeric vs object reference) never
+        // collide.
+        List<PointRuleConfig> points = new java.util.ArrayList<>();
+        if (config.getRules().getRegisters() != null) {
+            points.addAll(config.getRules().getRegisters());
+        }
+        if (config.getRules().getObjects() != null) {
+            points.addAll(config.getRules().getObjects());
+        }
+        for (PointRuleConfig point : points) {
+            // Resolve the rules-level default into points that don't set their own action.
+            if (point.getOnViolation() == null) {
+                point.setOnViolation(defaultOnViolation);
             }
+            // First entry wins on duplicate keys, matching the previous findFirst scan.
+            index.putIfAbsent(point.key(), point);
         }
         return index;
     }
 
     public RuleResult evaluate(WriteRequest request) {
-        RegisterRuleConfig registerConfig = findRegisterConfig(request.registerAddress());
+        PointRuleConfig registerConfig = findRegisterConfig(request.target());
 
         if (registerConfig == null) {
-            // Register not explicitly configured — apply default action
+            // Target not explicitly configured — apply default action
             String defaultAction =
                     config.getRules() != null ? config.getRules().getDefaultAction() : "DENY";
             if ("DENY".equalsIgnoreCase(defaultAction)) {
                 return RuleResult.deny(
                         ViolationAction.parse(defaultOnViolation),
-                        "Register " + request.registerAddress() + " is not in the whitelist");
+                        request.target() + " is not in the whitelist");
             }
             return RuleResult.allow();
         }
@@ -82,11 +93,11 @@ public class RuleEngine {
     }
 
     /**
-     * Applies the read rate limit for a read of {@code address}: the register's own {@code read}
-     * limit, else the rules default. Returns {@link RuleResult#allow()} when neither is configured.
+     * Applies the read rate limit for a read of {@code target}: the point's own {@code read} limit,
+     * else the rules default. Returns {@link RuleResult#allow()} when neither is configured.
      */
-    public RuleResult evaluateRead(int address, Instant now) {
-        RegisterRuleConfig registerConfig = findRegisterConfig(address);
+    public RuleResult evaluateRead(String target, Instant now) {
+        PointRuleConfig registerConfig = findRegisterConfig(target);
         boolean hasOwnLimit = registerConfig != null && registerConfig.getRead() != null;
         RateLimitConfig limit = hasOwnLimit ? registerConfig.getRead() : defaultReadLimit;
         String onViolation;
@@ -111,10 +122,10 @@ public class RuleEngine {
                     defaultReadLimit != null ? defaultReadLimit.getOnViolation() : null;
             onViolation = globalAction != null ? globalAction : defaultOnViolation;
         }
-        return readEvaluator.evaluate(limit, address, now, onViolation, "read register " + address);
+        return readEvaluator.evaluate(limit, target, now, onViolation, "read " + target);
     }
 
-    private RegisterRuleConfig findRegisterConfig(int address) {
-        return registersByAddress.get(address);
+    private PointRuleConfig findRegisterConfig(String target) {
+        return pointsByKey.get(target);
     }
 }

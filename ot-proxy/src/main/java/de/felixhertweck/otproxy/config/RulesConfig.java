@@ -8,6 +8,7 @@ public class RulesConfig {
     private String defaultOnViolation;
     private DirectionalRateLimitConfig defaultRateLimit;
     private List<RegisterRuleConfig> registers = new ArrayList<>();
+    private List<Iec61850PointRuleConfig> objects = new ArrayList<>();
 
     public String getDefaultAction() {
         return defaultAction;
@@ -48,5 +49,14 @@ public class RulesConfig {
 
     public void setRegisters(List<RegisterRuleConfig> registers) {
         this.registers = registers;
+    }
+
+    /** IEC 61850 object rules, keyed by object reference. */
+    public List<Iec61850PointRuleConfig> getObjects() {
+        return objects;
+    }
+
+    public void setObjects(List<Iec61850PointRuleConfig> objects) {
+        this.objects = objects;
     }
 }

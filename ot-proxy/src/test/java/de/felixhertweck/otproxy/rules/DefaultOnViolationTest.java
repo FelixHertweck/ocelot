@@ -53,8 +53,8 @@ class DefaultOnViolationTest {
         RuleEngine engine = engine("DISCONNECT", readLimit);
         Instant now = Instant.parse("2024-01-01T00:00:00Z");
 
-        assertThat(engine.evaluateRead(999, now).allowed()).isTrue();
-        RuleResult blocked = engine.evaluateRead(999, now);
+        assertThat(engine.evaluateRead("999", now).allowed()).isTrue();
+        RuleResult blocked = engine.evaluateRead("999", now);
         assertThat(blocked.allowed()).isFalse();
         assertThat(blocked.action()).isEqualTo(ViolationAction.DISCONNECT);
     }
@@ -84,11 +84,13 @@ class DefaultOnViolationTest {
         RuleEngine engine = new RuleEngine(config);
 
         Instant base = Instant.parse("2024-01-01T00:00:00Z");
-        assertThat(engine.evaluate(new WriteRequest("modbus", 100, 1, "127.0.0.1", base)).allowed())
+        assertThat(
+                        engine.evaluate(new WriteRequest("modbus", "100", 1, "127.0.0.1", base))
+                                .allowed())
                 .isTrue();
         RuleResult blocked =
                 engine.evaluate(
-                        new WriteRequest("modbus", 100, 1, "127.0.0.1", base.plusMillis(10)));
+                        new WriteRequest("modbus", "100", 1, "127.0.0.1", base.plusMillis(10)));
         assertThat(blocked.allowed()).isFalse();
         assertThat(blocked.action()).isEqualTo(ViolationAction.DISCONNECT);
     }
@@ -109,8 +111,8 @@ class DefaultOnViolationTest {
         RuleEngine engine = engine(null, globalRead, reg);
         Instant now = Instant.parse("2024-01-01T00:00:00Z");
 
-        assertThat(engine.evaluateRead(200, now).allowed()).isTrue();
-        RuleResult blocked = engine.evaluateRead(200, now);
+        assertThat(engine.evaluateRead("200", now).allowed()).isTrue();
+        RuleResult blocked = engine.evaluateRead("200", now);
         assertThat(blocked.allowed()).isFalse();
         assertThat(blocked.action()).isEqualTo(ViolationAction.DISCONNECT);
     }
@@ -131,7 +133,7 @@ class DefaultOnViolationTest {
     }
 
     private WriteRequest write(int address) {
-        return new WriteRequest("modbus", address, 1, "127.0.0.1", Instant.now());
+        return new WriteRequest("modbus", Integer.toString(address), 1, "127.0.0.1", Instant.now());
     }
 
     private RuleEngine engine(
