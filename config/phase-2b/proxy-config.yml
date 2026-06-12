@@ -1,0 +1,63 @@
+protocol: iec61850
+
+proxy:
+  listen:
+    host: 0.0.0.0
+    port: 102
+  upstream:
+    host: protection-relay
+    port: 102
+
+rules:
+  default_action: DENY
+  default_on_violation: REJECT
+
+  default_rate_limit:
+    write:
+      max_requests: 1
+      per_millis: 5000
+      on_violation: REJECT
+
+  objects:
+    # Circuit breaker control — operates allowed (permissive policy for emulator validation)
+    - reference: "RelayIEDPROT/XCBR1.Pos"
+      description: "Circuit breaker (XCBR) — operate allowed"
+      allow_write: true
+      allow_read: true
+      write:
+        max_requests: 1
+        per_millis: 5000
+        on_violation: REJECT
+      on_violation: REJECT
+
+    # Measurements — readable, no control
+    - reference: "RelayIEDPROT/MMXU1.Hz"
+      description: "Grid frequency"
+      allow_read: true
+      allow_write: false
+
+    - reference: "RelayIEDPROT/MMXU1.TotW"
+      description: "Total active power"
+      allow_read: true
+      allow_write: false
+
+    - reference: "RelayIEDPROT/MMXU1.A"
+      description: "Phase currents"
+      allow_read: true
+      allow_write: false
+
+    - reference: "RelayIEDPROT/MMXU1.PPV"
+      description: "Phase-to-phase voltages"
+      allow_read: true
+      allow_write: false
+
+    # Protection status — readable, no control
+    - reference: "RelayIEDPROT/PTOC1.Str"
+      description: "Overcurrent protection start signal"
+      allow_read: true
+      allow_write: false
+
+    - reference: "RelayIEDPROT/PTOC1.Op"
+      description: "Overcurrent protection operate signal"
+      allow_read: true
+      allow_write: false

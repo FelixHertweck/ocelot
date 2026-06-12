@@ -1,0 +1,67 @@
+{
+  firstOctet: 10,
+  wireguardCidr: "10.253.0.0/16",
+  globalInstances: [
+    {
+      name: "vpn",
+      type: "vpn-server",
+      image: "vpn:latest",
+      flavor: "server-small",
+      hostname: "vpn",
+      fqdn: "vpn.cave.lab",
+    },
+    {
+      type: "dns-server",
+      image: "dns:latest",
+      name: "dns",
+      flavor: "server-small",
+      lastOctet: 254,
+      hostname: "dns.cave.lab",
+      fqdn: "dns.cave.lab",
+    },
+  ],
+  labs: [
+    {
+      name: "phase-2b",
+      times: 1,
+      virtualNetworks: [
+        {
+          internalDns: false,
+          id: 1,
+        },
+      ],
+      dnsConfig: [],
+      instances: [
+        // Target: Protection Relay Emulator (RelayIED, MMS port 102)
+        {
+          type: "linux",
+          image: "protection-relay-emulator:latest",
+          post: "protection-relay-emulator",
+          networks: [ 1 ],
+          lastOctet: 10,
+          macAddress: null,
+          name: "protection-relay",
+          flavor: "server-small",
+          hostname: "protection-relay",
+          postCommand: "/home/ubuntu/run.sh",
+        },
+        // Attacker: OpenHands AI agent
+        {
+          type: "linux",
+          image: "openhands:latest",
+          post: "openhands",
+          networks: [ 1 ],
+          lastOctet: 20,
+          name: "openhands",
+          flavor: "server-large",
+          hostname: "openhands",
+          configFiles: [
+            { source: "/cave/backend/configs/phase-2b/openhands.env", destination: "/home/ubuntu/.env" },
+            { source: "/cave/backend/configs/phase-2b/mcp-servers.json", destination: "/home/ubuntu/mcp-servers.json" },
+          ],
+          postCommand: "/home/ubuntu/run.sh",
+        },
+      ],
+    },
+  ],
+}
