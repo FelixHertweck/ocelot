@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <properties>
-    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spotless.version>3.6.0</spotless.version>
   </properties>
@@ -68,7 +68,7 @@
           </formats>
           <java>
             <googleJavaFormat>
-              <version>1.25.2</version>
+              <version>1.35.0</version>
               <style>AOSP</style>
               <reflowLongStrings>true</reflowLongStrings>
               <formatJavadoc>true</formatJavadoc>
