@@ -1,8 +1,8 @@
 # OCELOT: OT Cyber Exploitation via LLM Orchestration Testbed
 
-Current monolithic Large Language Models (LLMs) often fail at executing multi-step attacks on Industrial Control Systems (ICS). This project implements a LangGraph-based multi-agent system specifically tailored for testing energy hardware OT devices. 
+This project evaluates the capability of AI-driven agents to execute multi-step attacks against Industrial Control Systems (ICS). It provides an Infrastructure-as-Code (IaC) testbed that deploys attack scenarios against standard base images, targeting both physical OT hardware and software emulations.
 
-It provides an Infrastructure-as-Code (IaC) testbed that dynamically loads attack scenarios against standard base images (using physical hardware and custom software emulations).
+Scenarios use [OpenHands](https://github.com/All-Hands-AI/OpenHands) as the autonomous attacker agent. The testbed is protocol-agnostic: current scenarios cover Modbus TCP (Phases 0–1) and IEC 61850 MMS (Phase 2).
 
 **Important:** This project is designed for **OpenStack** environments and utilizes the [**CAVE**](https://gitlab.opencode.de/BSI-Bund/cave) infrastructure for deployment.
 
@@ -11,15 +11,23 @@ It provides an Infrastructure-as-Code (IaC) testbed that dynamically loads attac
 ## Project Structure
 
 * **`.github/`**: GitHub Actions workflows for CI/CD.
-* **`config/`**: Configuration files for the cave deployment.
+* **`config/`**: Deployment configurations for each test scenario (one subdirectory per phase).
 * **`docs/`**: Project documentation.
   * **`adrs/`**: Architecture Decision Records.
-* **`images/`**: Packer configurations to build the VM images for the ICS testbed (inspired by `cave-infrastructure-docker`).
-  * **`attacker/`**: Attacker image — installs Kali Linux with VNC, noVNC, MCP server, AI agent tooling, and scenario-specific attack tools. Must be built for the attacker VM.
-* **`src/`**: Source code for the AI agents and knowledge graph.
-  * **`agents/`**: LangGraph orchestration, Recon Agent, and Execution Agent.
-  * **`kg/`**: Knowledge Graph integration and schema definitions.
-* **`tests/`**: Unit and integration tests for agents and emulators.
+  * **`evaluation/`**: Evaluation criteria and phase result logs.
+  * **`prompts/`**: Reference prompts for each phase.
+* **`images/`**: Packer configurations to build the VM images.
+  * **`aloha-water-treatment/`**: Modbus TCP water treatment plant simulator.
+  * **`decepticon/`**: Decepticon red-team agent image.
+  * **`inverter-emulator/`**: SMA solar inverter emulator image.
+  * **`openhands/`**: OpenHands AI agent image.
+  * **`ot-management-gateway/`**: OT management gateway image (HTTP admin + SSH).
+  * **`ot-proxy/`**: Modbus TCP and IEC 61850 security proxy image.
+  * **`protection-relay-emulator/`**: IEC 61850 protection relay emulator image.
+* **`inverter-emulator/`**: Source code for the SMA solar inverter emulator (Java/Maven).
+* **`ot-management-gateway/`**: Source code for the OT management gateway (nginx + web app).
+* **`ot-proxy/`**: Source code for the Modbus TCP / IEC 61850 security proxy (Java/Maven).
+* **`protection-relay-emulator/`**: Source code for the IEC 61850 protection relay emulator (Java/Maven).
 
 ## Getting Started
 
@@ -56,5 +64,12 @@ docker compose run --rm cave /cave/build-images.sh https://github.com/FelixHertw
 
 For deployment guides see the specific scenario documentation:
 
-- [Phase 0 — Decepticon vs. Aloha Water Treatment](config/phase-0/README.md)
-- [Phase 0 — OpenHands vs. Aloha Water Treatment](config/phase-0-openhands/README.md)
+| Phase | Scenario | Protocol |
+|---|---|---|
+| [Phase 0 — Decepticon](config/phase-0/Decepticon.md) | Decepticon vs. Aloha Water Treatment | Modbus TCP |
+| [Phase 0 — OpenHands](config/phase-0/Openhands.md) | OpenHands vs. Aloha Water Treatment | Modbus TCP |
+| [Phase 1a](config/phase-1a/README.md) | OpenHands vs. OT-Proxy | Modbus TCP |
+| [Phase 1b](config/phase-1b/README.md) | OpenHands: OT Gateway Exploitation and Register Mapping | Modbus TCP |
+| [Phase 1c](config/phase-1c/README.md) | OpenHands vs. SMA Inverter Emulator | Modbus TCP |
+| [Phase 2a](config/phase-2a/README.md) | OpenHands vs. OT-Proxy (IEC 61850) | IEC 61850 MMS |
+| [Phase 2b](config/phase-2b/README.md) | OpenHands vs. Protection Relay Emulator (IEC 61850) | IEC 61850 MMS |
