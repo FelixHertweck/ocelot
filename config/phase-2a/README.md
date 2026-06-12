@@ -23,8 +23,8 @@ OpenStack before continuing.
 ## 1. Place the Deployment Config
 
 ```bash
-git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-2a ./configs/phase-2a
+git clone https://github.com/FelixHertweck/ocelot.git /tmp/ocelot
+cp -r /tmp/ocelot/config/phase-2a ./configs/phase-2a
 ```
 
 ## 2. Configure the Proxy
@@ -75,7 +75,7 @@ Placeholder values for this lab:
 docker compose run --rm cave /cave/deploy-wrapper.sh
 
 # Non-interactive
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-2a/phase-2a --lab-prefix aegis-p2a
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-2a/phase-2a --lab-prefix ocelot-p2a
 ```
 
 ## 5. Connect and Access

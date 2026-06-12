@@ -15,11 +15,11 @@ Complete **steps 1 and 2** of the [main README](../../README.md) first — OpenS
 
 ## 1. Place the Deployment Config
 
-Clone the aegis-grid repository into `/tmp` and copy the entire `phase-1c` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
+Clone the ocelot repository into `/tmp` and copy the entire `phase-1c` folder into the `configs/` directory of your `cave-infrastructure-docker` checkout:
 
 ```bash
-git clone https://github.com/FelixHertweck/aegis-grid.git /tmp/aegis-grid
-cp -r /tmp/aegis-grid/config/phase-1c ./configs/phase-1c
+git clone https://github.com/FelixHertweck/ocelot.git /tmp/ocelot
+cp -r /tmp/ocelot/config/phase-1c ./configs/phase-1c
 ```
 
 ## 2. Configure the Task
@@ -50,10 +50,10 @@ To deploy non-interactively with a custom lab prefix:
 
 ```bash
 # OpenVPN
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c --lab-prefix aegis-p1c
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c --lab-prefix ocelot-p1c
 
 # WireGuard
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c --wg --lab-prefix aegis-p1c
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c --wg --lab-prefix ocelot-p1c
 ```
 
 Both VMs are fully configured automatically during deployment via `postCommand`:
