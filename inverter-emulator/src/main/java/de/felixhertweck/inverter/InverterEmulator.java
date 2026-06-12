@@ -1,5 +1,6 @@
 package de.felixhertweck.inverter;
 
+import com.ghgande.j2mod.modbus.ModbusException;
 import com.ghgande.j2mod.modbus.procimg.InputRegister;
 import com.ghgande.j2mod.modbus.procimg.SimpleInputRegister;
 import com.ghgande.j2mod.modbus.procimg.SimpleProcessImage;
@@ -28,7 +29,7 @@ public class InverterEmulator {
 
     private static SimpleProcessImage spi;
     private static long dailyYieldWh = 0;
-    private static int basePower = 15000;
+    private static final int basePower = 15000;
 
     // Set once the simulation thread starts; used to skip logging for internal register accesses.
     private static volatile Thread simulationThread;
@@ -46,18 +47,22 @@ public class InverterEmulator {
                             // internal simulation loop.
                             if (simulationThread != null
                                     && Thread.currentThread() != simulationThread) {
-                                if (ref == HEALTH_ADDR) {
-                                    log.info(
-                                            "Modbus FC04 read: health status (register {})",
-                                            ref + 1);
-                                } else if (ref == POWER_ADDR) {
-                                    log.info(
-                                            "Modbus FC04 read: AC active power (register {})",
-                                            ref + 1);
-                                } else if (ref == YIELD_ADDR) {
-                                    log.info(
-                                            "Modbus FC04 read: daily energy yield (register {})",
-                                            ref + 1);
+                                switch (ref) {
+                                    case HEALTH_ADDR ->
+                                            log.info(
+                                                    "Modbus FC04 read: health status (register {})",
+                                                    ref + 1);
+                                    case POWER_ADDR ->
+                                            log.info(
+                                                    "Modbus FC04 read: AC active power (register"
+                                                            + " {})",
+                                                    ref + 1);
+                                    case YIELD_ADDR ->
+                                            log.info(
+                                                    "Modbus FC04 read: daily energy yield (register"
+                                                            + " {})",
+                                                    ref + 1);
+                                    default -> {}
                                 }
                             }
                             return super.getInputRegister(ref);
@@ -87,18 +92,15 @@ public class InverterEmulator {
 
             log.info("Inverter emulator started on port {}", PORT);
 
-            // Simulation Engine
-            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-            executor.scheduleAtFixedRate(
-                    () -> {
-                        if (simulationThread == null) {
-                            simulationThread = Thread.currentThread();
-                        }
-                        simulationLoop();
-                    },
-                    1,
-                    1,
-                    TimeUnit.SECONDS);
+            // Simulation Engine — capture the thread reference at creation time so that
+            // external FC04 reads during the initial 1s delay are already logged correctly.
+            ScheduledExecutorService executor =
+                    Executors.newSingleThreadScheduledExecutor(
+                            r -> {
+                                simulationThread = new Thread(r, "simulation-loop");
+                                return simulationThread;
+                            });
+            executor.scheduleAtFixedRate(InverterEmulator::simulationLoop, 1, 1, TimeUnit.SECONDS);
 
             // Block until JVM shutdown
             CountDownLatch latch = new CountDownLatch(1);
@@ -108,7 +110,7 @@ public class InverterEmulator {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (ModbusException | RuntimeException e) {
             log.error("Fatal error starting inverter emulator", e);
             System.exit(1);
         }
@@ -149,7 +151,7 @@ public class InverterEmulator {
                     writeInputU64(YIELD_ADDR, dailyYieldWh);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Simulation loop error", e);
         }
     }
