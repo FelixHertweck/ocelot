@@ -1,7 +1,7 @@
 package de.felixhertweck.otproxy.core.rules;
 
+import de.felixhertweck.otproxy.config.PointRuleConfig;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
-import de.felixhertweck.otproxy.config.RegisterRuleConfig;
 import de.felixhertweck.otproxy.core.model.RuleResult;
 import de.felixhertweck.otproxy.core.model.WriteRequest;
 
@@ -24,7 +24,7 @@ public class RateLimitRule implements Rule {
     }
 
     @Override
-    public RuleResult evaluate(WriteRequest request, RegisterRuleConfig config) {
+    public RuleResult evaluate(WriteRequest request, PointRuleConfig config) {
         boolean hasOwnLimit = config.getWrite() != null;
         RateLimitConfig limit = hasOwnLimit ? config.getWrite() : defaultWriteLimit;
         String onViolation;
@@ -45,9 +45,9 @@ public class RateLimitRule implements Rule {
         }
         return evaluator.evaluate(
                 limit,
-                request.registerAddress(),
+                request.target(),
                 request.timestamp(),
                 onViolation,
-                "write register " + request.registerAddress());
+                "write " + request.target());
     }
 }

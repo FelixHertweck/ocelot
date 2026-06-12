@@ -25,7 +25,7 @@ public class RateLimitEvaluator {
      *     40018"}
      */
     public RuleResult evaluate(
-            RateLimitConfig limit, long key, Instant now, String onViolation, String subject) {
+            RateLimitConfig limit, String key, Instant now, String onViolation, String subject) {
         if (limit == null) return RuleResult.allow();
 
         // A block with a missing/non-positive max_requests or per_millis is treated as "no limit"

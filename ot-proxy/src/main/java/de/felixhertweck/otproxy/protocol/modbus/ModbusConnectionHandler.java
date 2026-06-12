@@ -63,7 +63,8 @@ public class ModbusConnectionHandler implements Runnable {
                     OptionalInt readAddress = adapter.readStartAddress(frame);
                     if (readAddress.isPresent()) {
                         RuleResult readResult =
-                                pipeline.processRead(readAddress.getAsInt(), Instant.now());
+                                pipeline.processRead(
+                                        Integer.toString(readAddress.getAsInt()), Instant.now());
                         if (!readResult.allowed()) {
                             log.warn(
                                     "[BLOCKED] {} read register={} reason={}",
@@ -96,7 +97,7 @@ public class ModbusConnectionHandler implements Runnable {
                     log.warn(
                             "[BLOCKED] {} register={} value={} reason={}",
                             clientAddr,
-                            request.get().registerAddress(),
+                            request.get().target(),
                             request.get().value(),
                             result.reason());
                     handleViolation(frame, result, out);
@@ -131,7 +132,7 @@ public class ModbusConnectionHandler implements Runnable {
     private void handleViolation(ModbusFrame frame, RuleResult result, OutputStream out)
             throws IOException {
         switch (result.action()) {
-            case MODBUS_EXCEPTION -> {
+            case REJECT -> {
                 out.write(frame.toExceptionResponse(EX_ILLEGAL_DATA_ADDRESS));
                 out.flush();
             }

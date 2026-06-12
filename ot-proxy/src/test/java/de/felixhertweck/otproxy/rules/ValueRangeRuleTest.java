@@ -50,7 +50,8 @@ class ValueRangeRuleTest {
     }
 
     private WriteRequest request(int address, int value) {
-        return new WriteRequest("modbus", address, value, "127.0.0.1", Instant.now());
+        return new WriteRequest(
+                "modbus", Integer.toString(address), value, "127.0.0.1", Instant.now());
     }
 
     private RegisterRuleConfig config(int min, int max) {

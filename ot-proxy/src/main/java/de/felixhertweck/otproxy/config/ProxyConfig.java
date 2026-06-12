@@ -1,8 +1,21 @@
 package de.felixhertweck.otproxy.config;
 
 public class ProxyConfig {
+    /**
+     * Protocol classifier: {@code modbus} (default) or {@code iec61850}. Selects the proxy stack.
+     */
+    private String protocol = "modbus";
+
     private ProxySection proxy = new ProxySection();
     private RulesConfig rules = new RulesConfig();
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
 
     public ProxySection getProxy() {
         return proxy;

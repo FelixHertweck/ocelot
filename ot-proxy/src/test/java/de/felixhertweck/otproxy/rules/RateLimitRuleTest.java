@@ -160,7 +160,7 @@ class RateLimitRuleTest {
     }
 
     private WriteRequest request(int address, int value, Instant timestamp) {
-        return new WriteRequest("modbus", address, value, "127.0.0.1", timestamp);
+        return new WriteRequest("modbus", Integer.toString(address), value, "127.0.0.1", timestamp);
     }
 
     private RateLimitConfig rateLimit(int maxRequests, int perMillis) {

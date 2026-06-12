@@ -23,8 +23,8 @@ public class RequestPipeline {
         return result;
     }
 
-    /** Applies the read rate limit for a read of {@code address}. */
-    public RuleResult processRead(int address, Instant now) {
-        return ruleEngine.evaluateRead(address, now);
+    /** Applies the read rate limit for a read of {@code target}. */
+    public RuleResult processRead(String target, Instant now) {
+        return ruleEngine.evaluateRead(target, now);
     }
 }
