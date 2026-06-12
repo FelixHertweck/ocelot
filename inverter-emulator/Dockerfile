@@ -1,4 +1,4 @@
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copy the pre-built JAR file into the container
