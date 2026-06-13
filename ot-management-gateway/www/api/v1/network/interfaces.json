@@ -12,7 +12,8 @@
       "ip": "192.168.10.1",
       "subnet": "255.255.255.0",
       "network": "OT",
-      "status": "up"
+      "status": "up",
+      "inventory": "/api/v1/ot/assets"
     }
   ]
 }
