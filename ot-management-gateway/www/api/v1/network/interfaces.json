@@ -1,15 +1,15 @@
 {
   "interfaces": [
     {
-      "name": "eth0",
-      "ip": "10.0.1.1",
+      "name": "ens3",
+      "ip": "10.1.1.10",
       "subnet": "255.255.255.0",
       "network": "IT",
       "status": "up"
     },
     {
-      "name": "eth1",
-      "ip": "192.168.10.1",
+      "name": "ens4",
+      "ip": "10.1.2.10",
       "subnet": "255.255.255.0",
       "network": "OT",
       "status": "up",

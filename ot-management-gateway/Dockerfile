@@ -13,6 +13,7 @@ RUN chmod +x /entrypoint.sh
 
 # /var/www/protected must be volume-mounted at runtime and contain gateway_rsa (chmod 644)
 # OT_DEVICE_MODEL, OT_DEVICE_IP, OT_DEVICE_PORT (all optional) populate /api/v1/ot/assets at startup; unset MODEL serves an empty registry
+# IT_IFACE_NAME, IT_IFACE_IP, OT_IFACE_NAME, OT_IFACE_IP (all optional, CIDR notation) populate /api/v1/network/interfaces at startup
 
 EXPOSE 80
 

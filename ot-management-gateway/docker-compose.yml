@@ -6,6 +6,11 @@ services:
     container_name: ot-management-gateway
     ports:
       - "80:80"
+    environment:
+      IT_IFACE_NAME: ens3
+      IT_IFACE_IP: 10.1.1.10/24
+      OT_IFACE_NAME: ens4
+      OT_IFACE_IP: 10.1.2.10/24
     volumes:
       - ./protected:/var/www/protected:ro
     restart: unless-stopped
