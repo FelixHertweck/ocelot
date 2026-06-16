@@ -60,6 +60,24 @@ public class ModelNodeWriter {
         writeBreakerState(reference, closed ? BreakerState.CLOSED : BreakerState.OPEN);
     }
 
+    public float readFloat32(String reference) {
+        FcModelNode node = (FcModelNode) model.findModelNode(reference, Fc.MX);
+        if (node instanceof BdaFloat32 bda) {
+            return bda.getFloat();
+        }
+        logger.warn("Node not found or wrong type for float32 read: {}", reference);
+        return Float.NaN;
+    }
+
+    public Boolean readBoolean(String reference, Fc fc) {
+        FcModelNode node = (FcModelNode) model.findModelNode(reference, fc);
+        if (node instanceof BdaBoolean bda) {
+            return bda.getValue();
+        }
+        logger.warn("Node not found or wrong type for boolean read: {}", reference);
+        return null;
+    }
+
     private void publish(BasicDataAttribute bda) {
         try {
             sap.setValues(Collections.singletonList(bda));

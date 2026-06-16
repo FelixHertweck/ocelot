@@ -12,7 +12,7 @@ import com.beanit.iec61850bean.ServerModel;
 import com.beanit.iec61850bean.ServerSap;
 import de.felixhertweck.emulator.model.Iec61850References;
 import de.felixhertweck.emulator.server.BreakerControlListener;
-import de.felixhertweck.emulator.server.ResetHttpServer;
+import de.felixhertweck.emulator.server.ManagementHttpServer;
 import de.felixhertweck.emulator.service.IcdFileLoader;
 import de.felixhertweck.emulator.service.ModelNodeWriter;
 import de.felixhertweck.emulator.simulation.MeasurementGenerator;
@@ -35,7 +35,7 @@ public class ProtectionRelayEmulator {
     private ScheduledExecutorService scheduler;
     private MeasurementGenerator measurements;
     private ProtectionSimulator protection;
-    private ResetHttpServer resetHttpServer;
+    private ManagementHttpServer resetHttpServer;
 
     public ProtectionRelayEmulator(int port, int restPort) {
         this.port = port;
@@ -56,7 +56,7 @@ public class ProtectionRelayEmulator {
 
         logger.info("Protection Relay Emulator started and listening on port {}", port);
 
-        resetHttpServer = new ResetHttpServer(restPort, this::reset);
+        resetHttpServer = new ManagementHttpServer(restPort, this::reset, this::getStatusJson);
         resetHttpServer.start();
 
         // Publish the initial breaker position
@@ -82,6 +82,61 @@ public class ProtectionRelayEmulator {
             serverSap.stop();
             logger.info("Protection Relay Emulator stopped.");
         }
+    }
+
+    private String getStatusJson() {
+        boolean closed = breakerClosed.get();
+        Boolean ptocStart = writer.readBoolean(Iec61850References.PTOC_STR_GENERAL, Fc.ST);
+        Boolean ptocOperate = writer.readBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST);
+        float hz = writer.readFloat32(Iec61850References.MMXU_HZ_MAG_F);
+        float totW = writer.readFloat32(Iec61850References.MMXU_TOTW_MAG_F);
+        float iA = writer.readFloat32(Iec61850References.MMXU_A_PHSA_MAG_F);
+        float iB = writer.readFloat32(Iec61850References.MMXU_A_PHSB_MAG_F);
+        float iC = writer.readFloat32(Iec61850References.MMXU_A_PHSC_MAG_F);
+        float uAB = writer.readFloat32(Iec61850References.MMXU_PPV_PHSAB_MAG_F);
+        float uBC = writer.readFloat32(Iec61850References.MMXU_PPV_PHSBC_MAG_F);
+        float uCA = writer.readFloat32(Iec61850References.MMXU_PPV_PHSCA_MAG_F);
+        return "{"
+                + "\"breakerClosed\":"
+                + closed
+                + ","
+                + "\"ptocStart\":"
+                + String.valueOf(ptocStart)
+                + ","
+                + "\"ptocOperate\":"
+                + String.valueOf(ptocOperate)
+                + ","
+                + "\"frequencyHz\":"
+                + f(hz)
+                + ","
+                + "\"totalPowerW\":"
+                + f(totW)
+                + ","
+                + "\"currentA\":{"
+                + "\"phsA\":"
+                + f(iA)
+                + ","
+                + "\"phsB\":"
+                + f(iB)
+                + ","
+                + "\"phsC\":"
+                + f(iC)
+                + "},"
+                + "\"voltageV\":{"
+                + "\"phsAB\":"
+                + f(uAB)
+                + ","
+                + "\"phsBC\":"
+                + f(uBC)
+                + ","
+                + "\"phsCA\":"
+                + f(uCA)
+                + "}"
+                + "}";
+    }
+
+    private static String f(float v) {
+        return Float.isFinite(v) ? String.valueOf(v) : "null";
     }
 
     void reset() {
