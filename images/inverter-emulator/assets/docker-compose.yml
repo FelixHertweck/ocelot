@@ -4,6 +4,7 @@ services:
     container_name: inverter-emulator
     ports:
       - "${MODBUS_PORT:-502}:502"
+      - "${REST_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 502 || exit 1"]
       interval: 10s

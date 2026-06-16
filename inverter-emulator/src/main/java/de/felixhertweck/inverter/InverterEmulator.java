@@ -7,6 +7,7 @@ import com.ghgande.j2mod.modbus.procimg.SimpleProcessImage;
 import com.ghgande.j2mod.modbus.procimg.SimpleRegister;
 import com.ghgande.j2mod.modbus.slave.ModbusSlave;
 import com.ghgande.j2mod.modbus.slave.ModbusSlaveFactory;
+import de.felixhertweck.inverter.server.ResetHttpServer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -92,6 +93,16 @@ public class InverterEmulator {
 
             log.info("Inverter emulator started on port {}", PORT);
 
+            int restPort = 8080;
+            String restPortEnv = System.getenv("REST_PORT");
+            if (restPortEnv != null) {
+                restPort = Integer.parseInt(restPortEnv);
+            }
+            ResetHttpServer resetHttpServer =
+                    new ResetHttpServer(
+                            restPort, InverterEmulator::reset, InverterEmulator::getStatusJson);
+            resetHttpServer.start();
+
             // Simulation Engine — capture the thread reference at creation time so that
             // external FC04 reads during the initial 1s delay are already logged correctly.
             ScheduledExecutorService executor =
@@ -110,10 +121,40 @@ public class InverterEmulator {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (ModbusException | RuntimeException e) {
+        } catch (ModbusException | RuntimeException | java.io.IOException e) {
             log.error("Fatal error starting inverter emulator", e);
             System.exit(1);
         }
+    }
+
+    private static synchronized String getStatusJson() {
+        boolean emergencyStop = spi.getRegister(ESTOP_ADDR).getValue() == 1;
+        int health = readInputU32(HEALTH_ADDR);
+        String healthLabel =
+                health == HEALTH_OK ? "OK" : health == HEALTH_FAULT ? "FAULT" : "UNKNOWN";
+        int powerW = readInputU32(POWER_ADDR);
+        return "{"
+                + "\"emergencyStop\":"
+                + emergencyStop
+                + ","
+                + "\"health\":\""
+                + healthLabel
+                + "\","
+                + "\"powerW\":"
+                + powerW
+                + ","
+                + "\"dailyYieldWh\":"
+                + dailyYieldWh
+                + "}";
+    }
+
+    private static synchronized void reset() {
+        spi.getRegister(ESTOP_ADDR).setValue(0);
+        writeInputU32(HEALTH_ADDR, HEALTH_OK);
+        writeInputU32(POWER_ADDR, basePower);
+        log.info(
+                "Inverter state reset: emergency stop cleared, health restored to OK({})",
+                HEALTH_OK);
     }
 
     private static void simulationLoop() {
