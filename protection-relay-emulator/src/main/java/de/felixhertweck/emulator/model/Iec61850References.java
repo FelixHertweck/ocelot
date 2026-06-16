@@ -24,4 +24,5 @@ public final class Iec61850References {
     // XCBR
     public static final String XCBR_POS_STVAL = "RelayIEDPROT/XCBR1.Pos.stVal";
     public static final String XCBR_POS_OPER_CTLVAL = "RelayIEDPROT/XCBR1.Pos.Oper.ctlVal";
+    public static final String XCBR_POS_CTL_MODEL = "RelayIEDPROT/XCBR1.Pos.ctlModel";
 }

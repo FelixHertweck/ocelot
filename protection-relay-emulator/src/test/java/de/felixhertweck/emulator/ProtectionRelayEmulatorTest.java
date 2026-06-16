@@ -1,16 +1,23 @@
 package de.felixhertweck.emulator;
 
+import java.net.InetAddress;
 import java.net.ServerSocket;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.beanit.iec61850bean.BdaBitString;
+import com.beanit.iec61850bean.BdaBoolean;
 import com.beanit.iec61850bean.BdaFloat32;
+import com.beanit.iec61850bean.BdaInt8;
+import com.beanit.iec61850bean.ClientAssociation;
+import com.beanit.iec61850bean.ClientSap;
 import com.beanit.iec61850bean.Fc;
 import com.beanit.iec61850bean.FcModelNode;
 import com.beanit.iec61850bean.ServerModel;
+import de.felixhertweck.emulator.model.Iec61850References;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +25,7 @@ import org.junit.jupiter.api.Test;
 class ProtectionRelayEmulatorTest {
 
     private ProtectionRelayEmulator emulator;
+    private int port;
 
     private int findFreePort() throws Exception {
         try (ServerSocket socket = new ServerSocket(0)) {
@@ -27,7 +35,7 @@ class ProtectionRelayEmulatorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        int port = findFreePort();
+        port = findFreePort();
         emulator = new ProtectionRelayEmulator(port);
         emulator.start();
     }
@@ -121,6 +129,59 @@ class ProtectionRelayEmulatorTest {
             }
         }
         assertTrue(seenLowValue, "TotW should drop below 5 W with breaker open");
+    }
+
+    @Test
+    void testXcbr1PosCtlModelIsDirectWithNormalSecurity() {
+        FcModelNode node =
+                (FcModelNode)
+                        emulator.getServerModel()
+                                .findModelNode(Iec61850References.XCBR_POS_CTL_MODEL, Fc.CF);
+        assertNotNull(node, "XCBR1.Pos ctlModel node should exist");
+        assertEquals(
+                (byte) 1,
+                ((BdaInt8) node).getValue(),
+                "ctlModel must be 1 (direct-with-normal-security) so MMS clients can issue an"
+                        + " operate");
+    }
+
+    @Test
+    void testOperateViaClientWriteOpensBreakerAndUpdatesPos() throws Exception {
+        assertTrue(emulator.isBreakerClosed(), "Breaker should start closed");
+
+        ClientSap clientSap = new ClientSap();
+        ClientAssociation association =
+                clientSap.associate(InetAddress.getByName("127.0.0.1"), port, null, null);
+        try {
+            ServerModel clientModel = association.retrieveModel();
+
+            FcModelNode posNode =
+                    (FcModelNode) clientModel.findModelNode("RelayIEDPROT/XCBR1.Pos", Fc.CO);
+            assertNotNull(posNode, "Pos (CO) node should exist in client model");
+
+            BdaBoolean ctlVal =
+                    (BdaBoolean)
+                            clientModel.findModelNode(
+                                    Iec61850References.XCBR_POS_OPER_CTLVAL, Fc.CO);
+            assertNotNull(ctlVal, "Pos.Oper.ctlVal node should exist");
+            ctlVal.setValue(false);
+
+            association.operate(posNode);
+
+            Thread.sleep(100);
+        } finally {
+            association.close();
+        }
+
+        assertFalse(emulator.isBreakerClosed(), "Breaker should be open after operate command");
+
+        FcModelNode posNode =
+                (FcModelNode)
+                        emulator.getServerModel()
+                                .findModelNode(Iec61850References.XCBR_POS_STVAL, Fc.ST);
+        assertTrue(
+                (((BdaBitString) posNode).getValue()[0] & 0xFF) == 0x40,
+                "XCBR Pos.stVal should reflect OPEN state (0x40)");
     }
 
     @Test
