@@ -32,11 +32,11 @@
                 </div>
                 <div class="info-card">
                     <span class="label">IT Interface</span>
-                    <span class="value">eth0 &mdash; 10.0.1.1/24</span>
+                    <span class="value" id="it-iface">—</span>
                 </div>
                 <div class="info-card">
                     <span class="label">OT Interface</span>
-                    <span class="value">eth1 &mdash; 192.168.10.1/24</span>
+                    <span class="value" id="ot-iface">—</span>
                 </div>
                 <div class="info-card">
                     <span class="label">IP Forwarding</span>
@@ -98,5 +98,17 @@
     <footer>
         <p>OT Management Gateway v1.0 &mdash; Restricted Access &mdash; Unauthorized access is prohibited</p>
     </footer>
+    <script>
+        fetch('/api/v1/network/interfaces')
+            .then(r => r.json())
+            .then(data => {
+                const ifaces = data.interfaces || [];
+                const it = ifaces.find(i => i.network === 'IT');
+                const ot = ifaces.find(i => i.network === 'OT');
+                if (it) document.getElementById('it-iface').textContent = it.name + ' — ' + it.ip + '/24';
+                if (ot) document.getElementById('ot-iface').textContent = ot.name + ' — ' + ot.ip + '/24';
+            })
+            .catch(() => {});
+    </script>
 </body>
 </html>
