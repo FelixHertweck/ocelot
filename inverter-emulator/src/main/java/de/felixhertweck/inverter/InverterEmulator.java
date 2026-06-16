@@ -170,7 +170,7 @@ public class InverterEmulator {
                 HEALTH_OK);
     }
 
-    private static void simulationLoop() {
+    private static synchronized void simulationLoop() {
         try {
             int estopValue = spi.getRegister(ESTOP_ADDR).getValue();
             if (estopValue == 1) {

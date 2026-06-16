@@ -37,7 +37,7 @@ Returns the current emulator state.
 }
 ```
 
-`health` is either `"OK"` or `"FAULT"`.
+`health` is `"OK"`, `"FAULT"`, or `"UNKNOWN"` (if the register holds an unexpected value).
 
 ### `POST /reset`
 
