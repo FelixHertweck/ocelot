@@ -112,7 +112,7 @@ The XCBR at `RelayIEDPROT/XCBR1` uses control model **`direct-with-normal-securi
 - `3` = bad-state
 
 **Recommended tooling** (any one is acceptable):
-- Python: `python-iec61850` (`pip install python-iec61850`) — provides `IedConnection`, `readObject`, `operate` bindings; see libIEC61850 Python examples for control sequences.
+- Python: `pyiec61850` (`pip install pyiec61850`) — provides `IedConnection`, `readObject`, `operate` bindings; see libIEC61850 Python examples for control sequences.
 - CLI: `iec61850_client_example` from libIEC61850 (build from source or use pre-built binary) — supports `GetServerDirectory`, `GetLogicalNodeDirectory`, `GetDataValues`, and control operations.
 - For the control model lookup: read `RelayIEDPROT/XCBR1.Pos` with FC=CF to retrieve the `ctlModel` configuration attribute before issuing the operate command.
 
