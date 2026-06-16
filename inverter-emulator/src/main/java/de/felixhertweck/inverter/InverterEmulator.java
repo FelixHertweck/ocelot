@@ -7,7 +7,7 @@ import com.ghgande.j2mod.modbus.procimg.SimpleProcessImage;
 import com.ghgande.j2mod.modbus.procimg.SimpleRegister;
 import com.ghgande.j2mod.modbus.slave.ModbusSlave;
 import com.ghgande.j2mod.modbus.slave.ModbusSlaveFactory;
-import de.felixhertweck.inverter.server.ResetHttpServer;
+import de.felixhertweck.inverter.server.InverterHttpServer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,7 +29,7 @@ public class InverterEmulator {
     private static final int HEALTH_FAULT = 35;
 
     private static SimpleProcessImage spi;
-    private static long dailyYieldWh = 0;
+    private static volatile long dailyYieldWh = 0;
     private static final int basePower = 15000;
 
     // Set once the simulation thread starts; used to skip logging for internal register accesses.
@@ -96,12 +96,19 @@ public class InverterEmulator {
             int restPort = 8080;
             String restPortEnv = System.getenv("REST_PORT");
             if (restPortEnv != null) {
-                restPort = Integer.parseInt(restPortEnv);
+                try {
+                    restPort = Integer.parseInt(restPortEnv);
+                } catch (NumberFormatException e) {
+                    log.warn(
+                            "Invalid REST_PORT value '{}', using default {}",
+                            restPortEnv,
+                            restPort);
+                }
             }
-            ResetHttpServer resetHttpServer =
-                    new ResetHttpServer(
+            InverterHttpServer httpServer =
+                    new InverterHttpServer(
                             restPort, InverterEmulator::reset, InverterEmulator::getStatusJson);
-            resetHttpServer.start();
+            httpServer.start();
 
             // Simulation Engine — capture the thread reference at creation time so that
             // external FC04 reads during the initial 1s delay are already logged correctly.
@@ -115,7 +122,13 @@ public class InverterEmulator {
 
             // Block until JVM shutdown
             CountDownLatch latch = new CountDownLatch(1);
-            Runtime.getRuntime().addShutdownHook(new Thread(latch::countDown));
+            Runtime.getRuntime()
+                    .addShutdownHook(
+                            new Thread(
+                                    () -> {
+                                        httpServer.stop();
+                                        latch.countDown();
+                                    }));
             latch.await();
             executor.shutdown();
 
