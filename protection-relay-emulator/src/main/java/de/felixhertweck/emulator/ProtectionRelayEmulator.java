@@ -56,7 +56,7 @@ public class ProtectionRelayEmulator {
 
         logger.info("Protection Relay Emulator started and listening on port {}", port);
 
-        resetHttpServer = new ResetHttpServer(restPort, this::reset);
+        resetHttpServer = new ResetHttpServer(restPort, this::reset, this::getStatusJson);
         resetHttpServer.start();
 
         // Publish the initial breaker position
@@ -82,6 +82,57 @@ public class ProtectionRelayEmulator {
             serverSap.stop();
             logger.info("Protection Relay Emulator stopped.");
         }
+    }
+
+    String getStatusJson() {
+        boolean closed = breakerClosed.get();
+        boolean ptocStart = writer.readBoolean(Iec61850References.PTOC_STR_GENERAL, Fc.ST);
+        boolean ptocOperate = writer.readBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST);
+        float hz = writer.readFloat32(Iec61850References.MMXU_HZ_MAG_F);
+        float totW = writer.readFloat32(Iec61850References.MMXU_TOTW_MAG_F);
+        float iA = writer.readFloat32(Iec61850References.MMXU_A_PHSA_MAG_F);
+        float iB = writer.readFloat32(Iec61850References.MMXU_A_PHSB_MAG_F);
+        float iC = writer.readFloat32(Iec61850References.MMXU_A_PHSC_MAG_F);
+        float uAB = writer.readFloat32(Iec61850References.MMXU_PPV_PHSAB_MAG_F);
+        float uBC = writer.readFloat32(Iec61850References.MMXU_PPV_PHSBC_MAG_F);
+        float uCA = writer.readFloat32(Iec61850References.MMXU_PPV_PHSCA_MAG_F);
+        return "{"
+                + "\"breakerClosed\":"
+                + closed
+                + ","
+                + "\"ptocStart\":"
+                + ptocStart
+                + ","
+                + "\"ptocOperate\":"
+                + ptocOperate
+                + ","
+                + "\"frequencyHz\":"
+                + hz
+                + ","
+                + "\"totalPowerW\":"
+                + totW
+                + ","
+                + "\"currentA\":{"
+                + "\"phsA\":"
+                + iA
+                + ","
+                + "\"phsB\":"
+                + iB
+                + ","
+                + "\"phsC\":"
+                + iC
+                + "},"
+                + "\"voltageV\":{"
+                + "\"phsAB\":"
+                + uAB
+                + ","
+                + "\"phsBC\":"
+                + uBC
+                + ","
+                + "\"phsCA\":"
+                + uCA
+                + "}"
+                + "}";
     }
 
     void reset() {

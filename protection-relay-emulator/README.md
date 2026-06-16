@@ -44,6 +44,26 @@ The breaker is never opened automatically. PTOC fault indicators (`Str.general`,
 
 A lightweight HTTP server runs alongside the MMS server to support test lifecycle management.
 
+### `GET /status`
+
+Returns the current emulator state.
+
+```bash
+curl http://localhost:8080/status
+```
+
+```json
+{
+  "breakerClosed": true,
+  "ptocStart": false,
+  "ptocOperate": false,
+  "frequencyHz": 50.02,
+  "totalPowerW": 1023.5,
+  "currentA": {"phsA": 100.1, "phsB": 99.3, "phsC": 101.2},
+  "voltageV": {"phsAB": 400.1, "phsBC": 401.0, "phsCA": 399.5}
+}
+```
+
 ### `POST /reset`
 
 Resets the emulator to its initial state:

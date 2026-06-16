@@ -3,6 +3,7 @@ package de.felixhertweck.emulator.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.function.Supplier;
 
 import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
@@ -13,7 +14,8 @@ public class ResetHttpServer {
     private static final Logger logger = LoggerFactory.getLogger(ResetHttpServer.class);
     private final HttpServer server;
 
-    public ResetHttpServer(int port, Runnable resetCallback) throws IOException {
+    public ResetHttpServer(int port, Runnable resetCallback, Supplier<String> statusSupplier)
+            throws IOException {
         server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext(
                 "/reset",
@@ -31,6 +33,21 @@ public class ResetHttpServer {
                         os.write(body);
                     }
                     logger.info("Emulator state reset via REST endpoint.");
+                });
+        server.createContext(
+                "/status",
+                exchange -> {
+                    if (!"GET".equals(exchange.getRequestMethod())) {
+                        exchange.sendResponseHeaders(405, -1);
+                        exchange.close();
+                        return;
+                    }
+                    byte[] body = statusSupplier.get().getBytes();
+                    exchange.getResponseHeaders().set("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(200, body.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(body);
+                    }
                 });
     }
 
