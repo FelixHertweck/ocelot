@@ -55,6 +55,8 @@
           networks: [ 1 ],
           lastOctet: 20,
           name: "openhands",
+          // For larger instances, if want more conversations at a time use bigger flavor
+          // flavor: "server-xlarge",
           flavor: "server-large",
           hostname: "openhands",
           configFiles: [
