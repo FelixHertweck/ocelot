@@ -32,20 +32,7 @@
       ],
       dnsConfig: [],
       instances: [
-        // Upstream IED: Protection Relay Emulator (RelayIED, MMS port 102)
-        {
-          type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
-          networks: [ 1 ],
-          lastOctet: 10,
-          macAddress: null,
-          name: "protection-relay",
-          flavor: "server-small",
-          hostname: "protection-relay",
-          postCommand: "/home/ubuntu/run.sh",
-        },
-        // OT proxy: IEC 61850 terminating proxy sitting between OpenHands and the relay
+        // OT proxy: IEC 61850 terminating proxy sitting between OpenHands and the physical IED
         {
           type: "linux",
           image: "ot-proxy:latest",
