@@ -2,7 +2,8 @@ services:
   ot-proxy:
     image: ghcr.io/felixhertweck/ocelot-ot-proxy:main
     ports:
-      - "5021:5021"
+      - "5020:5020"
+      - "1020:102"
     volumes:
       # Mount a custom config to override the bundled default
       - ./proxy-config.yml:/app/proxy-config.yml:ro

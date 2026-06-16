@@ -3,7 +3,8 @@ services:
     image: ghcr.io/felixhertweck/ocelot-ot-proxy:main
     container_name: ot-proxy
     ports:
-      - "${OT_PROXY_PORT:-5020}:5020"
+      - "${OT_PROXY_MODBUS_PORT:-5020}:5020"
+      - "${OT_PROXY_IEC61850_PORT:-102}:102"
     volumes:
       - ./proxy-config.yml:/app/proxy-config.yml:ro
     env_file:
