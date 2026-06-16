@@ -20,33 +20,39 @@ public class ResetHttpServer {
         server.createContext(
                 "/reset",
                 exchange -> {
-                    if (!"POST".equals(exchange.getRequestMethod())) {
-                        exchange.sendResponseHeaders(405, -1);
-                        exchange.close();
-                        return;
+                    try (exchange) {
+                        exchange.getRequestBody().close();
+                        if (!"POST".equals(exchange.getRequestMethod())) {
+                            exchange.sendResponseHeaders(405, -1);
+                            return;
+                        }
+                        resetCallback.run();
+                        byte[] body = "{\"status\":\"ok\"}".getBytes();
+                        exchange.getResponseHeaders().set("Content-Type", "application/json");
+                        exchange.sendResponseHeaders(200, body.length);
+                        try (OutputStream os = exchange.getResponseBody()) {
+                            os.write(body);
+                        }
+                        logger.info("Emulator state reset via REST endpoint.");
                     }
-                    resetCallback.run();
-                    byte[] body = "{\"status\":\"ok\"}".getBytes();
-                    exchange.getResponseHeaders().set("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, body.length);
-                    try (OutputStream os = exchange.getResponseBody()) {
-                        os.write(body);
-                    }
-                    logger.info("Emulator state reset via REST endpoint.");
                 });
         server.createContext(
                 "/status",
                 exchange -> {
-                    if (!"GET".equals(exchange.getRequestMethod())) {
-                        exchange.sendResponseHeaders(405, -1);
-                        exchange.close();
-                        return;
-                    }
-                    byte[] body = statusSupplier.get().getBytes();
-                    exchange.getResponseHeaders().set("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, body.length);
-                    try (OutputStream os = exchange.getResponseBody()) {
-                        os.write(body);
+                    try (exchange) {
+                        if (!"GET".equals(exchange.getRequestMethod())) {
+                            exchange.sendResponseHeaders(405, -1);
+                            return;
+                        }
+                        byte[] body = statusSupplier.get().getBytes();
+                        exchange.getResponseHeaders().set("Content-Type", "application/json");
+                        exchange.sendResponseHeaders(200, body.length);
+                        try (OutputStream os = exchange.getResponseBody()) {
+                            os.write(body);
+                        }
+                    } catch (IOException | RuntimeException e) {
+                        logger.error("Error handling /status request", e);
+                        exchange.sendResponseHeaders(500, -1);
                     }
                 });
     }

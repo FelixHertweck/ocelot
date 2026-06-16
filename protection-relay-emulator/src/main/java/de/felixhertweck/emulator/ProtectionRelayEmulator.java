@@ -84,7 +84,7 @@ public class ProtectionRelayEmulator {
         }
     }
 
-    String getStatusJson() {
+    private String getStatusJson() {
         boolean closed = breakerClosed.get();
         boolean ptocStart = writer.readBoolean(Iec61850References.PTOC_STR_GENERAL, Fc.ST);
         boolean ptocOperate = writer.readBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST);
@@ -107,32 +107,36 @@ public class ProtectionRelayEmulator {
                 + ptocOperate
                 + ","
                 + "\"frequencyHz\":"
-                + hz
+                + f(hz)
                 + ","
                 + "\"totalPowerW\":"
-                + totW
+                + f(totW)
                 + ","
                 + "\"currentA\":{"
                 + "\"phsA\":"
-                + iA
+                + f(iA)
                 + ","
                 + "\"phsB\":"
-                + iB
+                + f(iB)
                 + ","
                 + "\"phsC\":"
-                + iC
+                + f(iC)
                 + "},"
                 + "\"voltageV\":{"
                 + "\"phsAB\":"
-                + uAB
+                + f(uAB)
                 + ","
                 + "\"phsBC\":"
-                + uBC
+                + f(uBC)
                 + ","
                 + "\"phsCA\":"
-                + uCA
+                + f(uCA)
                 + "}"
                 + "}";
+    }
+
+    private static String f(float v) {
+        return Float.isFinite(v) ? String.valueOf(v) : "null";
     }
 
     void reset() {
