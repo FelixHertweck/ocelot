@@ -4,6 +4,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.beanit.iec61850bean.BdaInt8;
+import com.beanit.iec61850bean.Fc;
+import com.beanit.iec61850bean.FcModelNode;
 import com.beanit.iec61850bean.SclParser;
 import com.beanit.iec61850bean.ServerModel;
 import com.beanit.iec61850bean.ServerSap;
@@ -38,6 +41,8 @@ public class ProtectionRelayEmulator {
     public void start() throws Exception {
         String icdPath = icdLoader.extractToTemp();
         serverModel = SclParser.parse(icdPath).get(0);
+
+        initCtlModel();
 
         serverSap = new ServerSap(port, 0, null, serverModel, null);
         writer = new ModelNodeWriter(serverModel, serverSap);
@@ -84,6 +89,18 @@ public class ProtectionRelayEmulator {
      */
     void triggerBreakerCommand(boolean close) {
         onBreakerCommand(close);
+    }
+
+    private void initCtlModel() {
+        FcModelNode node =
+                (FcModelNode)
+                        serverModel.findModelNode(Iec61850References.XCBR_POS_CTL_MODEL, Fc.CF);
+        if (node instanceof BdaInt8 bda) {
+            bda.setValue((byte) 1); // 1 = direct-with-normal-security
+        } else {
+            logger.warn(
+                    "Could not initialize ctlModel for XCBR1.Pos — node not found or wrong type");
+        }
     }
 
     private void onBreakerCommand(boolean close) {
