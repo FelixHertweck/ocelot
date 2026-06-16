@@ -7,6 +7,7 @@ import com.ghgande.j2mod.modbus.procimg.SimpleProcessImage;
 import com.ghgande.j2mod.modbus.procimg.SimpleRegister;
 import com.ghgande.j2mod.modbus.slave.ModbusSlave;
 import com.ghgande.j2mod.modbus.slave.ModbusSlaveFactory;
+import de.felixhertweck.inverter.server.InverterHttpServer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,7 +29,7 @@ public class InverterEmulator {
     private static final int HEALTH_FAULT = 35;
 
     private static SimpleProcessImage spi;
-    private static long dailyYieldWh = 0;
+    private static volatile long dailyYieldWh = 0;
     private static final int basePower = 15000;
 
     // Set once the simulation thread starts; used to skip logging for internal register accesses.
@@ -92,6 +93,23 @@ public class InverterEmulator {
 
             log.info("Inverter emulator started on port {}", PORT);
 
+            int restPort = 8080;
+            String restPortEnv = System.getenv("REST_PORT");
+            if (restPortEnv != null) {
+                try {
+                    restPort = Integer.parseInt(restPortEnv);
+                } catch (NumberFormatException e) {
+                    log.warn(
+                            "Invalid REST_PORT value '{}', using default {}",
+                            restPortEnv,
+                            restPort);
+                }
+            }
+            InverterHttpServer httpServer =
+                    new InverterHttpServer(
+                            restPort, InverterEmulator::reset, InverterEmulator::getStatusJson);
+            httpServer.start();
+
             // Simulation Engine — capture the thread reference at creation time so that
             // external FC04 reads during the initial 1s delay are already logged correctly.
             ScheduledExecutorService executor =
@@ -104,19 +122,55 @@ public class InverterEmulator {
 
             // Block until JVM shutdown
             CountDownLatch latch = new CountDownLatch(1);
-            Runtime.getRuntime().addShutdownHook(new Thread(latch::countDown));
+            Runtime.getRuntime()
+                    .addShutdownHook(
+                            new Thread(
+                                    () -> {
+                                        httpServer.stop();
+                                        latch.countDown();
+                                    }));
             latch.await();
             executor.shutdown();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (ModbusException | RuntimeException e) {
+        } catch (ModbusException | RuntimeException | java.io.IOException e) {
             log.error("Fatal error starting inverter emulator", e);
             System.exit(1);
         }
     }
 
-    private static void simulationLoop() {
+    private static synchronized String getStatusJson() {
+        boolean emergencyStop = spi.getRegister(ESTOP_ADDR).getValue() == 1;
+        int health = readInputU32(HEALTH_ADDR);
+        String healthLabel =
+                health == HEALTH_OK ? "OK" : health == HEALTH_FAULT ? "FAULT" : "UNKNOWN";
+        int powerW = readInputU32(POWER_ADDR);
+        return "{"
+                + "\"emergencyStop\":"
+                + emergencyStop
+                + ","
+                + "\"health\":\""
+                + healthLabel
+                + "\","
+                + "\"powerW\":"
+                + powerW
+                + ","
+                + "\"dailyYieldWh\":"
+                + dailyYieldWh
+                + "}";
+    }
+
+    private static synchronized void reset() {
+        spi.getRegister(ESTOP_ADDR).setValue(0);
+        writeInputU32(HEALTH_ADDR, HEALTH_OK);
+        writeInputU32(POWER_ADDR, basePower);
+        log.info(
+                "Inverter state reset: emergency stop cleared, health restored to OK({})",
+                HEALTH_OK);
+    }
+
+    private static synchronized void simulationLoop() {
         try {
             int estopValue = spi.getRegister(ESTOP_ADDR).getValue();
             if (estopValue == 1) {

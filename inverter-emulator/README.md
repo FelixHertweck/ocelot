@@ -20,7 +20,35 @@ When `1` is written to register 40000, the emulator transitions on the next simu
 - `Condition` → `35` (Fault)
 - `GridMs.TotW` → `0`
 
-The fault state is permanent for the lifetime of the process.
+## REST API
+
+The emulator exposes a REST API on port `8080` (configurable via `REST_PORT` env var).
+
+### `GET /status`
+
+Returns the current emulator state.
+
+```json
+{
+  "emergencyStop": false,
+  "health": "OK",
+  "powerW": 14823,
+  "dailyYieldWh": 1234
+}
+```
+
+`health` is `"OK"`, `"FAULT"`, or `"UNKNOWN"` (if the register holds an unexpected value).
+
+### `POST /reset`
+
+Clears the emergency stop and restores normal operation.
+
+```bash
+curl -X POST http://localhost:8080/reset
+# → {"status":"ok"}
+```
+
+After a successful reset the simulation loop resumes power fluctuation on the next tick (≤ 1 s).
 
 ## Running
 
@@ -35,7 +63,7 @@ java -jar target/inverter-emulator-*-jar-with-dependencies.jar 1502
 Or via Docker:
 
 ```bash
-docker run --rm -p 502:502 ghcr.io/felixhertweck/ocelot-inverter-emulator:main
+docker run --rm -p 502:502 -p 8080:8080 ghcr.io/felixhertweck/ocelot-inverter-emulator:main
 ```
 
 ## Building

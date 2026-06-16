@@ -6,4 +6,5 @@ WORKDIR /app
 COPY target/*-jar-with-dependencies.jar ./emulator.jar
 
 EXPOSE 502
+EXPOSE 8080
 CMD ["java", "-jar", "emulator.jar"]
