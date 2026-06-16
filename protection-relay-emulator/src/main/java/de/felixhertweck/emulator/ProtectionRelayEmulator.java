@@ -58,7 +58,7 @@ public class ProtectionRelayEmulator {
         // Start dynamic simulations
         scheduler = Executors.newScheduledThreadPool(2);
         measurements = new MeasurementGenerator(writer, breakerClosed::get);
-        protection = new ProtectionSimulator(writer, this::onBreakerCommand);
+        protection = new ProtectionSimulator(writer);
 
         measurements.scheduleOn(scheduler);
         protection.scheduleOn(scheduler);

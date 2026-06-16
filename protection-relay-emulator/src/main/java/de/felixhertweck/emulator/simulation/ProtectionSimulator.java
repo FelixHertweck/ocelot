@@ -3,7 +3,6 @@ package de.felixhertweck.emulator.simulation;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import com.beanit.iec61850bean.Fc;
 import de.felixhertweck.emulator.model.Iec61850References;
@@ -15,7 +14,6 @@ public class ProtectionSimulator implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ProtectionSimulator.class);
     private final ModelNodeWriter writer;
-    private final Consumer<Boolean> breakerCommandCallback;
     private final Random random = new Random();
 
     private final long initialDelay;
@@ -27,13 +25,12 @@ public class ProtectionSimulator implements Runnable {
 
     private ScheduledExecutorService scheduler;
 
-    public ProtectionSimulator(ModelNodeWriter writer, Consumer<Boolean> breakerCommandCallback) {
-        this(writer, breakerCommandCallback, 15, 30, TimeUnit.SECONDS, 0.3, 1, 4);
+    public ProtectionSimulator(ModelNodeWriter writer) {
+        this(writer, 15, 30, TimeUnit.SECONDS, 0.3, 1, 4);
     }
 
     public ProtectionSimulator(
             ModelNodeWriter writer,
-            Consumer<Boolean> breakerCommandCallback,
             long initialDelay,
             long period,
             TimeUnit timeUnit,
@@ -41,7 +38,6 @@ public class ProtectionSimulator implements Runnable {
             long operateDelaySeconds,
             long clearDelaySeconds) {
         this.writer = writer;
-        this.breakerCommandCallback = breakerCommandCallback;
         this.initialDelay = initialDelay;
         this.period = period;
         this.timeUnit = timeUnit;
@@ -79,9 +75,8 @@ public class ProtectionSimulator implements Runnable {
 
         scheduler.schedule(
                 () -> {
-                    logger.info("PTOC operated (Op=true): opening circuit breaker");
+                    logger.info("PTOC operated (Op=true)");
                     writer.writeBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST, true);
-                    breakerCommandCallback.accept(false);
                 },
                 operateDelaySeconds,
                 TimeUnit.SECONDS);
