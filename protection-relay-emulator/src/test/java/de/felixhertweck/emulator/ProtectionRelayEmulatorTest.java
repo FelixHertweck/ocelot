@@ -36,7 +36,8 @@ class ProtectionRelayEmulatorTest {
     @BeforeEach
     void setUp() throws Exception {
         port = findFreePort();
-        emulator = new ProtectionRelayEmulator(port);
+        int restPort = findFreePort();
+        emulator = new ProtectionRelayEmulator(port, restPort);
         emulator.start();
     }
 

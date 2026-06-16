@@ -12,6 +12,7 @@ import com.beanit.iec61850bean.ServerModel;
 import com.beanit.iec61850bean.ServerSap;
 import de.felixhertweck.emulator.model.Iec61850References;
 import de.felixhertweck.emulator.server.BreakerControlListener;
+import de.felixhertweck.emulator.server.ResetHttpServer;
 import de.felixhertweck.emulator.service.IcdFileLoader;
 import de.felixhertweck.emulator.service.ModelNodeWriter;
 import de.felixhertweck.emulator.simulation.MeasurementGenerator;
@@ -24,6 +25,7 @@ public class ProtectionRelayEmulator {
     private static final Logger logger = LoggerFactory.getLogger(ProtectionRelayEmulator.class);
 
     private final int port;
+    private final int restPort;
     private final IcdFileLoader icdLoader = new IcdFileLoader();
     private final AtomicBoolean breakerClosed = new AtomicBoolean(true);
 
@@ -33,9 +35,11 @@ public class ProtectionRelayEmulator {
     private ScheduledExecutorService scheduler;
     private MeasurementGenerator measurements;
     private ProtectionSimulator protection;
+    private ResetHttpServer resetHttpServer;
 
-    public ProtectionRelayEmulator(int port) {
+    public ProtectionRelayEmulator(int port, int restPort) {
         this.port = port;
+        this.restPort = restPort;
     }
 
     public void start() throws Exception {
@@ -51,6 +55,9 @@ public class ProtectionRelayEmulator {
         serverSap.startListening(listener);
 
         logger.info("Protection Relay Emulator started and listening on port {}", port);
+
+        resetHttpServer = new ResetHttpServer(restPort, this::reset);
+        resetHttpServer.start();
 
         // Publish the initial breaker position
         publishInitialBreakerState();
@@ -68,10 +75,21 @@ public class ProtectionRelayEmulator {
         if (scheduler != null) {
             scheduler.shutdownNow();
         }
+        if (resetHttpServer != null) {
+            resetHttpServer.stop();
+        }
         if (serverSap != null) {
             serverSap.stop();
             logger.info("Protection Relay Emulator stopped.");
         }
+    }
+
+    void reset() {
+        breakerClosed.set(true);
+        writer.writeBreakerState(Iec61850References.XCBR_POS_STVAL, true);
+        writer.writeBoolean(Iec61850References.PTOC_STR_GENERAL, Fc.ST, false);
+        writer.writeBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST, false);
+        logger.info("Emulator state reset: circuit breaker closed, PTOC indicators cleared.");
     }
 
     public ServerModel getServerModel() {
@@ -120,7 +138,13 @@ public class ProtectionRelayEmulator {
                 port = Integer.parseInt(portEnv);
             }
 
-            ProtectionRelayEmulator emulator = new ProtectionRelayEmulator(port);
+            int restPort = 8080;
+            String restPortEnv = System.getenv("REST_PORT");
+            if (restPortEnv != null) {
+                restPort = Integer.parseInt(restPortEnv);
+            }
+
+            ProtectionRelayEmulator emulator = new ProtectionRelayEmulator(port, restPort);
             emulator.start();
 
             Runtime.getRuntime().addShutdownHook(new Thread(emulator::stop));
