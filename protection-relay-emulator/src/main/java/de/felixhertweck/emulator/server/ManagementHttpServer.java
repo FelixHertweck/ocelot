@@ -3,18 +3,19 @@ package de.felixhertweck.emulator.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Supplier;
 
 import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ResetHttpServer {
+public class ManagementHttpServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResetHttpServer.class);
+    private static final Logger logger = LoggerFactory.getLogger(ManagementHttpServer.class);
     private final HttpServer server;
 
-    public ResetHttpServer(int port, Runnable resetCallback, Supplier<String> statusSupplier)
+    public ManagementHttpServer(int port, Runnable resetCallback, Supplier<String> statusSupplier)
             throws IOException {
         server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext(
@@ -27,8 +28,9 @@ public class ResetHttpServer {
                             return;
                         }
                         resetCallback.run();
-                        byte[] body = "{\"status\":\"ok\"}".getBytes();
-                        exchange.getResponseHeaders().set("Content-Type", "application/json");
+                        byte[] body = "{\"status\":\"ok\"}".getBytes(StandardCharsets.UTF_8);
+                        exchange.getResponseHeaders()
+                                .set("Content-Type", "application/json; charset=utf-8");
                         exchange.sendResponseHeaders(200, body.length);
                         try (OutputStream os = exchange.getResponseBody()) {
                             os.write(body);
@@ -44,8 +46,9 @@ public class ResetHttpServer {
                             exchange.sendResponseHeaders(405, -1);
                             return;
                         }
-                        byte[] body = statusSupplier.get().getBytes();
-                        exchange.getResponseHeaders().set("Content-Type", "application/json");
+                        byte[] body = statusSupplier.get().getBytes(StandardCharsets.UTF_8);
+                        exchange.getResponseHeaders()
+                                .set("Content-Type", "application/json; charset=utf-8");
                         exchange.sendResponseHeaders(200, body.length);
                         try (OutputStream os = exchange.getResponseBody()) {
                             os.write(body);
@@ -59,7 +62,7 @@ public class ResetHttpServer {
 
     public void start() {
         server.start();
-        logger.info("Reset HTTP server listening on port {}", server.getAddress().getPort());
+        logger.info("Management HTTP server listening on port {}", server.getAddress().getPort());
     }
 
     public void stop() {

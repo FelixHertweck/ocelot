@@ -12,7 +12,7 @@ import com.beanit.iec61850bean.ServerModel;
 import com.beanit.iec61850bean.ServerSap;
 import de.felixhertweck.emulator.model.Iec61850References;
 import de.felixhertweck.emulator.server.BreakerControlListener;
-import de.felixhertweck.emulator.server.ResetHttpServer;
+import de.felixhertweck.emulator.server.ManagementHttpServer;
 import de.felixhertweck.emulator.service.IcdFileLoader;
 import de.felixhertweck.emulator.service.ModelNodeWriter;
 import de.felixhertweck.emulator.simulation.MeasurementGenerator;
@@ -35,7 +35,7 @@ public class ProtectionRelayEmulator {
     private ScheduledExecutorService scheduler;
     private MeasurementGenerator measurements;
     private ProtectionSimulator protection;
-    private ResetHttpServer resetHttpServer;
+    private ManagementHttpServer resetHttpServer;
 
     public ProtectionRelayEmulator(int port, int restPort) {
         this.port = port;
@@ -56,7 +56,7 @@ public class ProtectionRelayEmulator {
 
         logger.info("Protection Relay Emulator started and listening on port {}", port);
 
-        resetHttpServer = new ResetHttpServer(restPort, this::reset, this::getStatusJson);
+        resetHttpServer = new ManagementHttpServer(restPort, this::reset, this::getStatusJson);
         resetHttpServer.start();
 
         // Publish the initial breaker position
@@ -86,8 +86,8 @@ public class ProtectionRelayEmulator {
 
     private String getStatusJson() {
         boolean closed = breakerClosed.get();
-        boolean ptocStart = writer.readBoolean(Iec61850References.PTOC_STR_GENERAL, Fc.ST);
-        boolean ptocOperate = writer.readBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST);
+        Boolean ptocStart = writer.readBoolean(Iec61850References.PTOC_STR_GENERAL, Fc.ST);
+        Boolean ptocOperate = writer.readBoolean(Iec61850References.PTOC_OP_GENERAL, Fc.ST);
         float hz = writer.readFloat32(Iec61850References.MMXU_HZ_MAG_F);
         float totW = writer.readFloat32(Iec61850References.MMXU_TOTW_MAG_F);
         float iA = writer.readFloat32(Iec61850References.MMXU_A_PHSA_MAG_F);
@@ -101,10 +101,10 @@ public class ProtectionRelayEmulator {
                 + closed
                 + ","
                 + "\"ptocStart\":"
-                + ptocStart
+                + String.valueOf(ptocStart)
                 + ","
                 + "\"ptocOperate\":"
-                + ptocOperate
+                + String.valueOf(ptocOperate)
                 + ","
                 + "\"frequencyHz\":"
                 + f(hz)

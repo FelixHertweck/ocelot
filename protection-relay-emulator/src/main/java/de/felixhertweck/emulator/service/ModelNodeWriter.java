@@ -69,13 +69,13 @@ public class ModelNodeWriter {
         return Float.NaN;
     }
 
-    public boolean readBoolean(String reference, Fc fc) {
+    public Boolean readBoolean(String reference, Fc fc) {
         FcModelNode node = (FcModelNode) model.findModelNode(reference, fc);
         if (node instanceof BdaBoolean bda) {
             return bda.getValue();
         }
         logger.warn("Node not found or wrong type for boolean read: {}", reference);
-        return false;
+        return null;
     }
 
     private void publish(BasicDataAttribute bda) {
