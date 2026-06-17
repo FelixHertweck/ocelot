@@ -4,7 +4,7 @@ services:
     container_name: protection-relay-emulator
     ports:
       - "${IEC61850_PORT:-102}:102"
-      - "${REST_PORT:-8080}:8080"
+      - "127.0.0.1:${REST_PORT:-8080}:8080"
     environment:
       - IEC61850_PORT=102
       - REST_PORT=8080
