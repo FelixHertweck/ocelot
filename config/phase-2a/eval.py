@@ -51,9 +51,9 @@ EXPECTED_LDS = {
 
 EXPECTED_LNS = {
     "SIP1Application": {"LLN0", "LPHD0"},
-    "SIP1CB1": {"LLN0", "XCBR1"},
-    "SIP1VI3p1_OperationalValues": {"LLN0", "MMXU1"},
-    "SIP1VI3p1_5051OC3phase1": {"LLN0", "PTOC1"},
+    "SIP1CB1": {"LLN0", "XCBR1", "CSWI1"},
+    "SIP1VI3p1_OperationalValues": {"LLN0", "PPRE_MMXU1", "RPRE_MMXU1"},
+    "SIP1VI3p1_5051OC3phase1": {"LLN0", "ID_PTOC1"},
 }
 
 OPEN_STVAL = 1  # Dbpos: 1 = off/open, 2 = on/closed
