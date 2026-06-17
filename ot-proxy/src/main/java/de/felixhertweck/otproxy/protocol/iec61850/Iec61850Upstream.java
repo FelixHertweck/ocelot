@@ -47,14 +47,18 @@ public class Iec61850Upstream {
      */
     public void connect() throws IOException, ServiceError {
         synchronized (lock) {
-            clientSap = new ClientSap();
-            association =
-                    clientSap.associate(
-                            InetAddress.getByName(host), port, null, new NoOpClientEventListener());
-            model = association.retrieveModel();
-            association.getAllDataValues();
+            connectUnderLock();
             log.info("IEC 61850 upstream connected to {}:{}", host, port);
         }
+    }
+
+    private void connectUnderLock() throws IOException, ServiceError {
+        clientSap = new ClientSap();
+        association =
+                clientSap.associate(
+                        InetAddress.getByName(host), port, null, new NoOpClientEventListener());
+        model = association.retrieveModel();
+        association.getAllDataValues();
     }
 
     /** The mirrored upstream model. Never {@code null} once {@link #connect()} has succeeded. */
@@ -69,7 +73,17 @@ public class Iec61850Upstream {
             try {
                 association.getAllDataValues();
             } catch (IOException | ServiceError e) {
-                log.warn("Upstream value poll failed: {}", e.getMessage());
+                log.warn("Upstream value poll failed: {} — reconnecting", e.getMessage());
+                association.close();
+                association = null;
+                try {
+                    connectUnderLock();
+                    log.info("Reconnected to upstream IED at {}:{}", host, port);
+                } catch (IOException | ServiceError re) {
+                    log.warn(
+                            "Reconnect to upstream failed, will retry next poll: {}",
+                            re.getMessage());
+                }
             }
         }
     }
