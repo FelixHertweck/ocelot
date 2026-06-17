@@ -207,17 +207,30 @@ python reset.py
 
 ## 8. IEC 61850 Data Model Reference
 
-The physical IED is expected to expose the following objects as observed during lab setup
-(IED name: `RelayIED`, LD: `PROT`). Verify with `GetServerDirectory` / `GetLogicalDeviceDirectory`
-before each run — the actual model depends on the device's DIGSI configuration.
+The physical SIPROTEC 5 (IED name: `SIP1`) exposes 21 Logical Devices. Task-relevant LNs
+(all others contain only `LLN0`):
+
+| Logical Device | Logical Nodes |
+|---|---|
+| `SIP1Application` | `LLN0`, `LPHD0` |
+| `SIP1CB1` | `LLN0`, `XCBR1`, `CSWI1` |
+| `SIP1VI3p1_OperationalValues` | `LLN0`, `PPRE_MMXU1`, `RPRE_MMXU1` |
+| `SIP1VI3p1_5051OC3phase1` | `LLN0`, `ID_PTOC1` |
+
+Key Data Object references (from a read-only directory scan of the device):
 
 | Object reference | FC | Description |
 |---|---|---|
-| `RelayIEDPROT/XCBR1.Pos` | CO | Circuit breaker — controllable (direct-with-normal-security) |
-| `RelayIEDPROT/XCBR1.Pos.stVal` | ST | Breaker position (Dbpos: 1=open, 2=closed) |
-| `RelayIEDPROT/MMXU1.Hz.mag.f` | MX | Grid frequency [Hz] |
-| `RelayIEDPROT/MMXU1.TotW.mag.f` | MX | Total active power [W] |
-| `RelayIEDPROT/MMXU1.A.phsA.cVal.mag.f` | MX | Phase A current [A] |
-| `RelayIEDPROT/MMXU1.PPV.phsAB.cVal.mag.f` | MX | Phase AB voltage [V] |
-| `RelayIEDPROT/PTOC1.Str.general` | ST | Overcurrent protection: start |
-| `RelayIEDPROT/PTOC1.Op.general` | ST | Overcurrent protection: operate |
+| `SIP1CB1/XCBR1.Pos` | CO | Circuit breaker — controllable (direct-with-normal-security) |
+| `SIP1CB1/XCBR1.Pos.stVal` | ST | Breaker position (Dbpos BIT_STRING: 1=open, 2=closed) |
+| `SIP1CB1/CSWI1.Pos` | CO | Switch controller — read-only via proxy |
+| `SIP1VI3p1_OperationalValues/PPRE_MMXU1.Hz.mag.f` | MX | Grid frequency [Hz] |
+| `SIP1VI3p1_OperationalValues/PPRE_MMXU1.TotW.mag.f` | MX | Total active power [W] |
+| `SIP1VI3p1_OperationalValues/RPRE_MMXU1.A.phsA.cVal.mag.f` | MX | Phase A current [A] |
+| `SIP1VI3p1_OperationalValues/RPRE_MMXU1.PPV.phsAB.cVal.mag.f` | MX | Phase AB voltage [V] |
+| `SIP1VI3p1_5051OC3phase1/ID_PTOC1.Str.general` | ST | Overcurrent protection: start |
+| `SIP1VI3p1_5051OC3phase1/ID_PTOC1.Op.general` | ST | Overcurrent protection: operate |
+
+Note: Siemens SIPROTEC 5 uses LN prefixes — `PPRE_` (power/frequency) and `RPRE_` (currents/voltages)
+on MMXU, `ID_` on PTOC. `Pos.stVal` is MMS `BIT_STRING(2)`; use
+`MmsValue_getBitStringAsInteger()` to decode, not `MmsValue_toUint32()`.
