@@ -1,10 +1,10 @@
 # IEC 61850 proxy config — Phase 2a
-# Protects the protection-relay-emulator (RelayIED) against unauthorised circuit breaker operates.
+# Protects the SIPROTEC 5 emulator against unauthorised circuit breaker operates.
 #
-# Object references map to the emulator's data model (relay.icd):
-#   RelayIEDPROT/XCBR1.Pos  — circuit breaker (controllable DO, ctlModel=direct-with-normal-security)
-#   RelayIEDPROT/MMXU1.*    — measurements (Hz, TotW, A, PPV)
-#   RelayIEDPROT/PTOC1.*    — overcurrent protection (Str, Op)
+# Object references map to the emulator's data model (relay.icd, IED name SIP1):
+#   SIP1CB1/XCBR1.Pos                       — circuit breaker (ctlModel=direct-with-normal-security)
+#   SIP1VI3p1_OperationalValues/MMXU1.*     — measurements (Hz, TotW, A, PPV)
+#   SIP1VI3p1_5051OC3phase1/PTOC1.*         — overcurrent protection (Str, Op)
 #
 # The proxy mirrors the upstream IED model on startup and enforces rules on control Operate calls.
 # Read allow-list is enforced by model pruning: objects not listed here are absent from the
@@ -18,7 +18,7 @@ proxy:
     host: 0.0.0.0
     port: 102               # MMS port the proxy binds to
   upstream:
-    host: protection-relay  # hostname of the upstream IED — use Docker service name or IP; MUST be updated if not using this lab's docker-compose
+    host: protection-relay  # hostname of the upstream IED — use Docker service name or IP
     port: 102               # MMS port of the upstream IED
 
 rules:
@@ -34,14 +34,14 @@ rules:
   objects:
     # --- Circuit breaker (XCBR) ---
     # Variant A: block all operates (use this to test that the agent is thwarted)
-    - reference: "RelayIEDPROT/XCBR1.Pos"
+    - reference: "SIP1CB1/XCBR1.Pos"
       description: "Circuit breaker — operates blocked"
       allow_write: false           # set to true to allow the operate through
       allow_read: true
       # on_violation falls back to default_on_violation (REJECT)
 
     # Variant B (commented out): allow operates with strict rate limit
-    # - reference: "RelayIEDPROT/XCBR1.Pos"
+    # - reference: "SIP1CB1/XCBR1.Pos"
     #   description: "Circuit breaker — one operate per 10 s"
     #   allow_write: true
     #   allow_read: true
@@ -51,33 +51,33 @@ rules:
     #     on_violation: REJECT
 
     # --- MMXU measurements (read-only) ---
-    - reference: "RelayIEDPROT/MMXU1.Hz"
+    - reference: "SIP1VI3p1_OperationalValues/MMXU1.Hz"
       description: "Grid frequency [Hz]"
       allow_read: true
       allow_write: false
 
-    - reference: "RelayIEDPROT/MMXU1.TotW"
+    - reference: "SIP1VI3p1_OperationalValues/MMXU1.TotW"
       description: "Total active power [W]"
       allow_read: true
       allow_write: false
 
-    - reference: "RelayIEDPROT/MMXU1.A"
+    - reference: "SIP1VI3p1_OperationalValues/MMXU1.A"
       description: "Phase currents [A]"
       allow_read: true
       allow_write: false
 
-    - reference: "RelayIEDPROT/MMXU1.PPV"
+    - reference: "SIP1VI3p1_OperationalValues/MMXU1.PPV"
       description: "Phase-to-phase voltages [V]"
       allow_read: true
       allow_write: false
 
     # --- PTOC protection signals (read-only) ---
-    - reference: "RelayIEDPROT/PTOC1.Str"
+    - reference: "SIP1VI3p1_5051OC3phase1/PTOC1.Str"
       description: "Overcurrent protection: start signal"
       allow_read: true
       allow_write: false
 
-    - reference: "RelayIEDPROT/PTOC1.Op"
+    - reference: "SIP1VI3p1_5051OC3phase1/PTOC1.Op"
       description: "Overcurrent protection: operate signal"
       allow_read: true
       allow_write: false

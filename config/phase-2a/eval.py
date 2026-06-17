@@ -23,12 +23,37 @@ try:
 except ImportError:
     sys.exit("pyiec61850 not installed — run: pip install pyiec61850")
 
-# ── Expected values (Phase 2a data model) ────────────────────────────────────
+# ── Expected values (Phase 2a data model — SIPROTEC 5 emulator, IED name SIP1) ──
 
-EXPECTED_LDS = {"RelayIEDPROT"}
+EXPECTED_LDS = {
+    "SIP1Application",
+    "SIP1CB1",
+    "SIP1CB1_Fundamental",
+    "SIP1Dc1",
+    "SIP1Dc2",
+    "SIP1Dc3",
+    "SIP1Mod1",
+    "SIP1Mod1_Channel1",
+    "SIP1Mod2",
+    "SIP1Mod2_Channel1",
+    "SIP1PowS",
+    "SIP1PowS_MeasPointI3ph1",
+    "SIP1Rec",
+    "SIP1Rec_FaultRecorder",
+    "SIP1VI3p1",
+    "SIP1VI3p1_5051NOCgndB1",
+    "SIP1VI3p1_5051OC3phase1",
+    "SIP1VI3p1_FundSymComp",
+    "SIP1VI3p1_OperationalValues",
+    "SIP1VI3p1_ProcessMonitor",
+    "SIP1VI3p1_SwitchOntoFault",
+}
 
 EXPECTED_LNS = {
-    "RelayIEDPROT": {"LLN0", "LPHD1", "PTOC1", "XCBR1", "MMXU1"},
+    "SIP1Application": {"LLN0", "LPHD0"},
+    "SIP1CB1": {"LLN0", "XCBR1"},
+    "SIP1VI3p1_OperationalValues": {"LLN0", "MMXU1"},
+    "SIP1VI3p1_5051OC3phase1": {"LLN0", "PTOC1"},
 }
 
 OPEN_STVAL = 1  # Dbpos: 1 = off/open, 2 = on/closed

@@ -54,11 +54,11 @@ class ProtectionRelayEmulatorTest {
         assertNotNull(model, "ServerModel should not be null");
 
         FcModelNode hzNode =
-                (FcModelNode) model.findModelNode("RelayIEDPROT/MMXU1.Hz.mag.f", Fc.MX);
+                (FcModelNode) model.findModelNode(Iec61850References.MMXU_HZ_MAG_F, Fc.MX);
         assertNotNull(hzNode, "Hz node should exist");
 
         FcModelNode posNode =
-                (FcModelNode) model.findModelNode("RelayIEDPROT/XCBR1.Pos.stVal", Fc.ST);
+                (FcModelNode) model.findModelNode(Iec61850References.XCBR_POS_STVAL, Fc.ST);
         assertNotNull(posNode, "XCBR Pos stVal node should exist");
     }
 
@@ -67,11 +67,11 @@ class ProtectionRelayEmulatorTest {
         ServerModel model = emulator.getServerModel();
 
         FcModelNode strNode =
-                (FcModelNode) model.findModelNode("RelayIEDPROT/PTOC1.Str.general", Fc.ST);
+                (FcModelNode) model.findModelNode(Iec61850References.PTOC_STR_GENERAL, Fc.ST);
         assertNotNull(strNode, "PTOC Str.general node should exist");
 
         FcModelNode opNode =
-                (FcModelNode) model.findModelNode("RelayIEDPROT/PTOC1.Op.general", Fc.ST);
+                (FcModelNode) model.findModelNode(Iec61850References.PTOC_OP_GENERAL, Fc.ST);
         assertNotNull(opNode, "PTOC Op.general node should exist");
     }
 
@@ -86,7 +86,7 @@ class ProtectionRelayEmulatorTest {
         FcModelNode posNode =
                 (FcModelNode)
                         emulator.getServerModel()
-                                .findModelNode("RelayIEDPROT/XCBR1.Pos.stVal", Fc.ST);
+                                .findModelNode(Iec61850References.XCBR_POS_STVAL, Fc.ST);
         assertNotNull(posNode);
         BdaBitString bda = (BdaBitString) posNode;
         assertTrue((bda.getValue()[0] & 0xFF) == 0x40, "XCBR Pos should reflect OPEN state (0x40)");
@@ -102,7 +102,8 @@ class ProtectionRelayEmulatorTest {
     @Test
     void testBreakerStateAffectsMmxuCurrents() throws InterruptedException {
         ServerModel model = emulator.getServerModel();
-        BdaFloat32 totW = (BdaFloat32) model.findModelNode("RelayIEDPROT/MMXU1.TotW.mag.f", Fc.MX);
+        BdaFloat32 totW =
+                (BdaFloat32) model.findModelNode(Iec61850References.MMXU_TOTW_MAG_F, Fc.MX);
         assertNotNull(totW);
 
         // Wait for first measurement cycle with breaker closed (~1000 W)
@@ -157,7 +158,7 @@ class ProtectionRelayEmulatorTest {
             ServerModel clientModel = association.retrieveModel();
 
             FcModelNode posNode =
-                    (FcModelNode) clientModel.findModelNode("RelayIEDPROT/XCBR1.Pos", Fc.CO);
+                    (FcModelNode) clientModel.findModelNode("SIP1CB1/XCBR1.Pos", Fc.CO);
             assertNotNull(posNode, "Pos (CO) node should exist in client model");
 
             BdaBoolean ctlVal =
@@ -189,7 +190,7 @@ class ProtectionRelayEmulatorTest {
     void testDynamicSimulationUpdatesMeasurements() throws InterruptedException {
         ServerModel model = emulator.getServerModel();
         FcModelNode totWNode =
-                (FcModelNode) model.findModelNode("RelayIEDPROT/MMXU1.TotW.mag.f", Fc.MX);
+                (FcModelNode) model.findModelNode(Iec61850References.MMXU_TOTW_MAG_F, Fc.MX);
         assertNotNull(totWNode);
 
         BdaFloat32 bda = (BdaFloat32) totWNode;

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SCL xmlns="http://www.iec.ch/61850/2003/SCL" version="2007" revision="B">
-  <Header id="ProtectionRelay" version="1.0.0" revision="1.0.0" toolID="Manual"/>
+  <Header id="SIPROTEC5Emulator" version="1.0.0" revision="1.0.0" toolID="Manual"/>
   <Communication>
     <SubNetwork name="W1" type="8-MMS">
-      <ConnectedAP iedName="RelayIED" apName="P1">
+      <ConnectedAP iedName="SIP1" apName="P1">
         <Address>
           <P type="IP">0.0.0.0</P>
           <P type="IP-SUBNET">255.255.255.0</P>
@@ -17,7 +17,7 @@
       </ConnectedAP>
     </SubNetwork>
   </Communication>
-  <IED name="RelayIED" desc="Protection Relay Emulator">
+  <IED name="SIP1" desc="SIPROTEC 5 Protection Relay Emulator">
     <Services>
       <DynAssociation/>
       <GetDirectory/>
@@ -37,16 +37,81 @@
     <AccessPoint name="P1">
       <Server>
         <Authentication none="true"/>
-        <LDevice inst="PROT">
-          <LN0 lnClass="LLN0" lnType="LLN01" inst="">
-          </LN0>
-          <LN lnClass="LPHD" lnType="LPHD1" inst="1" prefix=""/>
-          <!-- Measurements -->
-          <LN lnClass="MMXU" lnType="MMXU1" inst="1" prefix=""/>
-          <!-- Circuit Breaker -->
+        <!-- Application / Physical Device -->
+        <LDevice inst="Application">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+          <LN lnClass="LPHD" lnType="LPHD1" inst="0" prefix=""/>
+        </LDevice>
+        <!-- Circuit Breaker — hosts XCBR1 -->
+        <LDevice inst="CB1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
           <LN lnClass="XCBR" lnType="XCBR1" inst="1" prefix=""/>
-          <!-- Time Overcurrent Protection -->
+        </LDevice>
+        <LDevice inst="CB1_Fundamental">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- Disconnectors -->
+        <LDevice inst="Dc1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="Dc2">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="Dc3">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- Modules -->
+        <LDevice inst="Mod1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="Mod1_Channel1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="Mod2">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="Mod2_Channel1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- Power System -->
+        <LDevice inst="PowS">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="PowS_MeasPointI3ph1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- Recorder -->
+        <LDevice inst="Rec">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="Rec_FaultRecorder">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- Voltage/Current 3-phase input 1 -->
+        <LDevice inst="VI3p1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="VI3p1_5051NOCgndB1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- 3-phase overcurrent protection — hosts PTOC1 -->
+        <LDevice inst="VI3p1_5051OC3phase1">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
           <LN lnClass="PTOC" lnType="PTOC1" inst="1" prefix=""/>
+        </LDevice>
+        <LDevice inst="VI3p1_FundSymComp">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <!-- Operational measurements — hosts MMXU1 -->
+        <LDevice inst="VI3p1_OperationalValues">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+          <LN lnClass="MMXU" lnType="MMXU1" inst="1" prefix=""/>
+        </LDevice>
+        <LDevice inst="VI3p1_ProcessMonitor">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
+        </LDevice>
+        <LDevice inst="VI3p1_SwitchOntoFault">
+          <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
         </LDevice>
       </Server>
     </AccessPoint>
