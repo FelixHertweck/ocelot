@@ -73,6 +73,7 @@ public class RuleEnforcingServerListener implements ServerEventListener {
                     ServiceError.ACCESS_NOT_ALLOWED_IN_CURRENT_STATE, result.reason());
         }
 
+        log.debug("[ALLOWED] {} value={}", req.target(), req.value());
         try {
             upstream.forwardControl(req.target(), req.value() != 0);
             return null;

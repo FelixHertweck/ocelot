@@ -5,6 +5,8 @@
         </encoder>
     </appender>
 
+    <logger name="de.felixhertweck.otproxy" level="${OT_LOG_LEVEL:-INFO}" />
+
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
