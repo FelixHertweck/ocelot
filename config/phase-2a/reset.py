@@ -103,7 +103,7 @@ def read_stval(con, ld: str, ln: str) -> int | None:
     val, err = iec61850.IedConnection_readObject(con, ref, iec61850.IEC61850_FC_ST)
     if err != iec61850.IED_ERROR_OK or val is None:
         return None
-    return iec61850.MmsValue_toUint32(val)
+    return iec61850.MmsValue_getBitStringAsInteger(val)
 
 
 # ── Operate ───────────────────────────────────────────────────────────────────

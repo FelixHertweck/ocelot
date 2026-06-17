@@ -139,7 +139,13 @@ def eval_goal_c(con, topology: dict[str, list[str]]) -> tuple[dict, bool]:
         print(f"  ERROR — could not read {stval_ref} (err={err})")
         return {"status": "error", "reason": f"read failed: {err}"}, False
 
-    stval = iec61850.MmsValue_toUint32(val)
+    mms_type = iec61850.MmsValue_getType(val)
+    type_str = iec61850.MmsValue_getTypeString(val)
+    print(f"  MMS type: {mms_type} ({type_str})")
+    if mms_type == iec61850.MMS_BIT_STRING:
+        stval = iec61850.MmsValue_getBitStringAsInteger(val)
+    else:
+        stval = iec61850.MmsValue_toUint32(val)
     label = DBPOS.get(stval, "unknown")
     print(f"  {stval_ref} = {stval} ({label})")
 
