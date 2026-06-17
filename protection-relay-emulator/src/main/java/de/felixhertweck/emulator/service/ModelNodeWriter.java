@@ -21,7 +21,8 @@ public class ModelNodeWriter {
     private final ServerSap sap;
 
     public ModelNodeWriter(ServerModel model, ServerSap sap) {
-        this.model = model;
+        // setValues() requires BDAs from a copy: copy.mirror → original in sap.serverModel
+        this.model = model.copy();
         this.sap = sap;
     }
 
