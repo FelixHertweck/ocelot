@@ -42,10 +42,11 @@
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
           <LN lnClass="LPHD" lnType="LPHD1" inst="0" prefix=""/>
         </LDevice>
-        <!-- Circuit Breaker — hosts XCBR1 -->
+        <!-- Circuit Breaker — hosts XCBR1 (breaker) and CSWI1 (switch controller) -->
         <LDevice inst="CB1">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
           <LN lnClass="XCBR" lnType="XCBR1" inst="1" prefix=""/>
+          <LN lnClass="CSWI" lnType="CSWI1" inst="1" prefix=""/>
         </LDevice>
         <LDevice inst="CB1_Fundamental">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
@@ -94,18 +95,19 @@
         <LDevice inst="VI3p1_5051NOCgndB1">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
         </LDevice>
-        <!-- 3-phase overcurrent protection — hosts PTOC1 -->
+        <!-- 3-phase overcurrent protection — hosts ID_PTOC1 (definite-time 50/51 stage) -->
         <LDevice inst="VI3p1_5051OC3phase1">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
-          <LN lnClass="PTOC" lnType="PTOC1" inst="1" prefix=""/>
+          <LN lnClass="PTOC" lnType="PTOC1" inst="1" prefix="ID_"/>
         </LDevice>
         <LDevice inst="VI3p1_FundSymComp">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
         </LDevice>
-        <!-- Operational measurements — hosts MMXU1 -->
+        <!-- Operational measurements — PPRE_MMXU1 (power/frequency), RPRE_MMXU1 (currents/voltages) -->
         <LDevice inst="VI3p1_OperationalValues">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
-          <LN lnClass="MMXU" lnType="MMXU1" inst="1" prefix=""/>
+          <LN lnClass="MMXU" lnType="MMXU_P" inst="1" prefix="PPRE_"/>
+          <LN lnClass="MMXU" lnType="MMXU_R" inst="1" prefix="RPRE_"/>
         </LDevice>
         <LDevice inst="VI3p1_ProcessMonitor">
           <LN0 lnClass="LLN0" lnType="LLN01" inst=""/>
@@ -128,7 +130,8 @@
       <DO name="PhyHealth" type="INS_1_Beh" />
       <DO name="Proxy" type="SPS_1_Proxy" />
     </LNodeType>
-    <LNodeType id="MMXU1" lnClass="MMXU">
+    <!-- PPRE_MMXU1: power and frequency measurements -->
+    <LNodeType id="MMXU_P" lnClass="MMXU">
       <DO name="Mod" type="INC_1_Mod" />
       <DO name="Beh" type="INS_1_Beh" />
       <DO name="Health" type="INS_1_Beh" />
@@ -136,8 +139,24 @@
       <DO name="TotW" type="MV_1_TotW" />
       <DO name="TotVAr" type="MV_1_TotW" />
       <DO name="Hz" type="MV_1_TotW" />
-      <DO name="PPV" type="DEL_1_PPV" />
+    </LNodeType>
+    <!-- RPRE_MMXU1: current and voltage measurements -->
+    <LNodeType id="MMXU_R" lnClass="MMXU">
+      <DO name="Mod" type="INC_1_Mod" />
+      <DO name="Beh" type="INS_1_Beh" />
+      <DO name="Health" type="INS_1_Beh" />
+      <DO name="NamPlt" type="LPL_2_NamPlt" />
       <DO name="A" type="WYE_1_A" />
+      <DO name="PPV" type="DEL_1_PPV" />
+      <DO name="PhV" type="WYE_1_PhV" />
+    </LNodeType>
+    <LNodeType id="CSWI1" lnClass="CSWI">
+      <DO name="Mod" type="INC_1_Mod" />
+      <DO name="Beh" type="INS_1_Beh" />
+      <DO name="Health" type="INS_1_Beh" />
+      <DO name="NamPlt" type="LPL_2_NamPlt" />
+      <DO name="Loc" type="SPS_1_Proxy" />
+      <DO name="Pos" type="DPC_1_Pos" />
     </LNodeType>
     <LNodeType id="XCBR1" lnClass="XCBR">
       <DO name="Mod" type="INC_1_Mod" />
@@ -200,6 +219,11 @@
       <SDO name="phsB" type="CMV_1_phsA" />
       <SDO name="phsC" type="CMV_1_phsA" />
       <SDO name="neut" type="CMV_1_phsA" />
+    </DOType>
+    <DOType id="WYE_1_PhV" cdc="WYE">
+      <SDO name="phsA" type="CMV_1_phsA" />
+      <SDO name="phsB" type="CMV_1_phsA" />
+      <SDO name="phsC" type="CMV_1_phsA" />
     </DOType>
     <DOType id="DEL_1_PPV" cdc="DEL">
       <SDO name="phsAB" type="CMV_1_phsA" />
