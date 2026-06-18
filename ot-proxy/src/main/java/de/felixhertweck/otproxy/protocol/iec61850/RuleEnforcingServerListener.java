@@ -77,7 +77,10 @@ public class RuleEnforcingServerListener implements ServerEventListener {
         try {
             upstream.forwardControl(req.target(), req.value() != 0);
             return null;
-        } catch (IOException | ServiceError e) {
+        } catch (ServiceError e) {
+            log.error("Upstream control forward failed for {}: {}", req.target(), e.getMessage());
+            return e;
+        } catch (IOException e) {
             log.error("Upstream control forward failed for {}: {}", req.target(), e.getMessage());
             return new ServiceError(
                     ServiceError.FAILED_DUE_TO_COMMUNICATIONS_CONSTRAINT,
