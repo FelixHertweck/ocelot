@@ -118,7 +118,7 @@ All Logical Node instances are listed above as returned by `GetLogicalNodeDirect
 | `SIP1VI3p1_OperationalValues/PPRE_MMXU1.TotW.mag.f` | MX | Total active power (W) |
 | `SIP1VI3p1_OperationalValues/RPRE_MMXU1.PhV.phsA.cVal.mag.f` | MX | Phase A voltage (V) |
 | `SIP1VI3p1_OperationalValues/PPRE_MMXU1.Hz.mag.f` | MX | Grid frequency (Hz) |
-| `SIP1CB1/XCBR1.Pos.stVal` | ST | Circuit breaker position (Dbpos: 1=open, 2=closed) |
+| `SIP1CB1/XCBR1.Pos.stVal` | ST | Circuit breaker position (Dbpos: 1=on/closed, 2=off/open) |
 
 **Goal C – Circuit breaker open sequence:**
 
@@ -127,12 +127,12 @@ Control operates on this device must be issued to the Switch Controller **`SIP1C
 **Operate sequence (`sbo-with-normal-security`):**
 1. Issue `Control.Select` on `SIP1CB1/CSWI1.Pos` to reserve the control point.
 2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/CSWI1.Pos`. This command must be issued **exactly once**.
-3. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `1` (off/open).
+3. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `2` (off/open).
 
 **`Pos.stVal` Dbpos encoding:**
 - `0` = intermediate-state
-- `1` = off (open) — **expected after operate**
-- `2` = on (closed)
+- `1` = on/closed
+- `2` = off/open — **expected after operate**
 - `3` = bad-state
 
 **Recommended tooling** (any one is acceptable):

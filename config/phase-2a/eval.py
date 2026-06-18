@@ -27,8 +27,10 @@ try:
 except ImportError:
     sys.exit("pyiec61850 not installed — run: pip install pyiec61850")
 
-OPEN_STVAL = 1  # Dbpos: 1 = off/open, 2 = on/closed
-DBPOS = {0: "intermediate-state", 1: "off/open", 2: "on/closed", 3: "bad-state"}
+OPEN_STVAL = 2  # Dbpos: 2 = off/open; 0 and 3 are fixed, 1/2 may be inverted
+# NOTE: the exact Dbpos 1/2 bit-string mapping could not be confirmed from documentation
+# and may be the other way around depending on device firmware (1=off/open, 2=on/closed).
+DBPOS = {0: "intermediate-state", 1: "on/closed", 2: "off/open", 3: "bad-state"}
 
 
 # ── IEC 61850 helpers ─────────────────────────────────────────────────────────
