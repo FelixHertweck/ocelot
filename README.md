@@ -25,6 +25,7 @@ Scenarios use [OpenHands](https://github.com/All-Hands-AI/OpenHands) as the auto
   * **`ot-proxy/`**: Modbus TCP and IEC 61850 security proxy image.
   * **`protection-relay-emulator/`**: IEC 61850 protection relay emulator image.
 * **`inverter-emulator/`**: Source code for the SMA solar inverter emulator (Java/Maven).
+* **`openhands_exporter/`**: Script to convert OpenHands conversation export ZIPs into readable Markdown files.
 * **`ot-management-gateway/`**: Source code for the OT management gateway (nginx + web app).
 * **`ot-proxy/`**: Source code for the Modbus TCP / IEC 61850 security proxy (Java/Maven).
 * **`protection-relay-emulator/`**: Source code for the IEC 61850 protection relay emulator (Java/Maven).
