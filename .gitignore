@@ -11,3 +11,7 @@
 # Python
 __pycache__/
 .venv/
+
+# openhands-exporter
+openhands_exporter/input
+openhands_exporter/output
