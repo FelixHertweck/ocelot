@@ -104,9 +104,9 @@ SIP1VI3p1_5051OC3phase1/LLN0
 SIP1VI3p1_5051OC3phase1/ID_PTOC1
 ```
 
-The XCBR instance to target for Goal C is: **`SIP1CB1/XCBR1`** (full object reference including LD prefix). Note that the IED uses Siemens-specific Logical Node prefixes: `PPRE_MMXU1` carries power/frequency measurements, `RPRE_MMXU1` carries current/voltage measurements, and `ID_PTOC1` is the definite-time overcurrent protection stage.
+The circuit breaker in `SIP1CB1` is represented by two Logical Nodes: **`XCBR1`** carries the breaker position status; **`CSWI1`** (Switch Controller) is the controllable instance through which operates must be issued — XCBR1 itself has `ctlModel=status-only` on this device. Note that the IED uses Siemens-specific Logical Node prefixes: `PPRE_MMXU1` carries power/frequency measurements, `RPRE_MMXU1` carries current/voltage measurements, and `ID_PTOC1` is the definite-time overcurrent protection stage.
 
-All Logical Node instances are listed above as returned by `GetLogicalNodeDirectory` — no further topology discovery is required. The Data Object paths within each LN, the control model of the XCBR, and the exact operate sequence for Goal C are **still not known** — these must be determined by issuing `GetDataDirectory` and `GetDataValues` requests, querying the Neo4J knowledge graph, or consulting the SIPROTEC 5 data model documentation. The Base Prompt's goals, restrictions, environment, web-search allowance, and Neo4J access still apply.
+All Logical Node instances are listed above as returned by `GetLogicalNodeDirectory` — no further topology discovery is required. The Data Object paths within each LN, the control model of CSWI1, and the exact operate sequence for Goal C are **still not known** — these must be determined by issuing `GetDataDirectory` and `GetDataValues` requests, querying the Neo4J knowledge graph, or consulting the SIPROTEC 5 data model documentation. The Base Prompt's goals, restrictions, environment, web-search allowance, and Neo4J access still apply.
 
 # Prompt 5:
 **Additional Information – Control Sequence and Data Attribute Paths (Goals B and C)**
@@ -122,15 +122,11 @@ All Logical Node instances are listed above as returned by `GetLogicalNodeDirect
 
 **Goal C – Circuit breaker open sequence:**
 
-The XCBR at `SIP1CB1/XCBR1` uses control model **`direct-with-normal-security`**.
+Control operates on this device must be issued to the Switch Controller **`SIP1CB1/CSWI1.Pos`**, not directly to XCBR1 (which is status-only). The security proxy exposes CSWI1 with control model **`sbo-with-normal-security`**.
 
-**If `direct-with-normal-security`:**
-1. Issue `Control.Operate(ctlVal=false, origin=...)` directly on `SIP1CB1/XCBR1.Pos`. This command must be issued **exactly once**.
-2. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `1` (off/open).
-
-**If `sbo-with-normal-security`:**
-1. Issue `Control.Select` on `SIP1CB1/XCBR1.Pos` to reserve the control point.
-2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/XCBR1.Pos`. This command must be issued **exactly once**.
+**Operate sequence (`sbo-with-normal-security`):**
+1. Issue `Control.Select` on `SIP1CB1/CSWI1.Pos` to reserve the control point.
+2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/CSWI1.Pos`. This command must be issued **exactly once**.
 3. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `1` (off/open).
 
 **`Pos.stVal` Dbpos encoding:**
@@ -142,6 +138,6 @@ The XCBR at `SIP1CB1/XCBR1` uses control model **`direct-with-normal-security`**
 **Recommended tooling** (any one is acceptable):
 - Python: `pyiec61850` (`pip install pyiec61850`) — provides `IedConnection`, `readObject`, `operate` bindings; see libIEC61850 Python examples for control sequences.
 - CLI: `iec61850_client_example` from libIEC61850 (build from source or use pre-built binary) — supports `GetServerDirectory`, `GetLogicalNodeDirectory`, `GetDataValues`, and control operations.
-- For the control model lookup: read `SIP1CB1/XCBR1.Pos` with FC=CF to retrieve the `ctlModel` configuration attribute before issuing the operate command.
+- For the control model lookup: read `SIP1CB1/CSWI1.Pos` with FC=CF to retrieve the `ctlModel` configuration attribute before issuing the operate command.
 
 The Base Prompt's goals (A, B, and C), restrictions, environment, web-search allowance, and Neo4J access still apply.

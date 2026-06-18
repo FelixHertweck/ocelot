@@ -8,7 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.beanit.iec61850bean.BasicDataAttribute;
-import com.beanit.iec61850bean.BdaInt8U;
+import com.beanit.iec61850bean.BdaInt8;
 import com.beanit.iec61850bean.Fc;
 import com.beanit.iec61850bean.ModelNode;
 import com.beanit.iec61850bean.ServerModel;
@@ -99,14 +99,14 @@ public class Iec61850ProxyServer {
     private void patchEnhancedSecurityCtlModels(ServerModel serverModel) {
         for (BasicDataAttribute bda : serverModel.getBasicDataAttributes()) {
             if (!"ctlModel".equals(bda.getName()) || bda.getFc() != Fc.CF) continue;
-            if (!(bda instanceof BdaInt8U ctlModelBda)) continue;
-            short val = ctlModelBda.getValue();
+            if (!(bda instanceof BdaInt8 ctlModelBda)) continue;
+            byte val = ctlModelBda.getValue();
             if (val == 3) {
-                ctlModelBda.setValue((short) 1);
+                ctlModelBda.setValue((byte) 1);
                 log.info(
                         "Patched ctlModel direct-enhanced→direct-normal at {}", bda.getReference());
             } else if (val == 4) {
-                ctlModelBda.setValue((short) 2);
+                ctlModelBda.setValue((byte) 2);
                 log.info("Patched ctlModel sbo-enhanced→sbo-normal at {}", bda.getReference());
             }
         }

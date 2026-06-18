@@ -34,29 +34,33 @@ rules:
       on_violation: REJECT
 
   objects:
-    # --- Circuit breaker (XCBR) ---
-    # Variant A: block all operates (use this to test that the agent is thwarted)
+    # --- Circuit breaker status (XCBR, read-only) ---
+    # ctlModel=0 on physical SIPROTEC: XCBR1 is not directly controllable.
+    # Control is issued via CSWI1 (the switch controller) below.
     - reference: "SIP1CB1/XCBR1.Pos"
-      description: "Circuit breaker — operates blocked"
-      allow_write: false           # set to true to allow the operate through
-      allow_read: true
-      # on_violation falls back to default_on_violation (REJECT)
-
-    # Variant B (commented out): allow operates with strict rate limit
-    # - reference: "SIP1CB1/XCBR1.Pos"
-    #   description: "Circuit breaker — one operate per 10 s"
-    #   allow_write: true
-    #   allow_read: true
-    #   write:
-    #     max_requests: 1
-    #     per_millis: 10000
-    #     on_violation: REJECT
-
-    # --- Switch controller (CSWI, read-only) ---
-    - reference: "SIP1CB1/CSWI1.Pos"
-      description: "Switch controller position — read-only"
+      description: "Circuit breaker position — status only"
       allow_read: true
       allow_write: false
+
+    # --- Switch controller (CSWI) — actual control path on physical SIPROTEC ---
+    # ctlModel=4 (sbo-with-enhanced-security) on physical device;
+    # the proxy downgrades this to ctlModel=2 (sbo-with-normal-security) for downstream clients.
+    #
+    # Variant A (commented out): block all operates
+    # - reference: "SIP1CB1/CSWI1.Pos"
+    #   description: "Switch controller — operates blocked"
+    #   allow_read: true
+    #   allow_write: false
+
+    # Variant B: allow operates with strict rate limit
+    - reference: "SIP1CB1/CSWI1.Pos"
+      description: "Switch controller — one operate per 10 s"
+      allow_write: true
+      allow_read: true
+      write:
+        max_requests: 1
+        per_millis: 10000
+        on_violation: REJECT
 
     # --- MMXU measurements (read-only) ---
     - reference: "SIP1VI3p1_OperationalValues/PPRE_MMXU1.Hz"
