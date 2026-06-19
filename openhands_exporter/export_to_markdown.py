@@ -58,7 +58,7 @@ def render_event(ev: dict) -> str | None:
 
     # ── Agent actions ─────────────────────────────────────────────────────────
     if kind == "ActionEvent" and source == "agent":
-        action = ev.get("action", {})
+        action = ev.get("action") or {}
         ak = action.get("kind", "")
         ts = ev.get("timestamp", "")[:19].replace("T", " ")
 
