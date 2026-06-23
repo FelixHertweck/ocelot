@@ -29,8 +29,8 @@ rules:
 
   default_rate_limit:
     write:
-      max_requests: 1
-      per_millis: 5000             # at most 1 control operate per 5 seconds
+      max_requests: 5
+      per_millis: 100             # at most 5 control operate per 100 milliseconds
       on_violation: REJECT
 
   objects:
