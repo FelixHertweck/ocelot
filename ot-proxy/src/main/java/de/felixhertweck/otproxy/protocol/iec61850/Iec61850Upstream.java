@@ -2,12 +2,16 @@ package de.felixhertweck.otproxy.protocol.iec61850;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.Locale;
 
 import com.beanit.iec61850bean.BasicDataAttribute;
 import com.beanit.iec61850bean.BdaBoolean;
+import com.beanit.iec61850bean.BdaInt8U;
+import com.beanit.iec61850bean.BdaTimestamp;
 import com.beanit.iec61850bean.ClientAssociation;
 import com.beanit.iec61850bean.ClientSap;
+import com.beanit.iec61850bean.ConstructedDataAttribute;
 import com.beanit.iec61850bean.Fc;
 import com.beanit.iec61850bean.FcModelNode;
 import com.beanit.iec61850bean.ModelNode;
@@ -111,26 +115,65 @@ public class Iec61850Upstream {
 
             ctlValBda.setValue(ctlVal);
 
-            if (isSelectBeforeOperate(doRef)) {
+            int ctlModelOrd = resolveCtlModelOrd(doRef);
+            if (ctlModelOrd == 2) {
+                // sbo-with-normal-security: read SBO attribute to reserve the object
                 if (!association.select(controlDo)) {
                     throw new ServiceError(
                             ServiceError.CONTROL_MUST_BE_SELECTED, "Select rejected for " + doRef);
                 }
+            } else if (ctlModelOrd == 4) {
+                // sbo-with-enhanced-security: SelectWithValues writes to SBOw (includes ctlVal)
+                selectWithValues(controlDo, ctlVal);
             }
             association.operate(controlDo);
             log.info("Forwarded control {}.Oper.ctlVal={} to upstream", doRef, ctlVal);
         }
     }
 
-    /** Reads {@code ctlModel} (FC=CF) and reports whether the object uses select-before-operate. */
-    private boolean isSelectBeforeOperate(String doRef) {
+    /**
+     * SelectWithValues for sbo-with-enhanced-security (ctlModel=4): writes control values to the
+     * {@code SBOw} structure. Throws {@link ServiceError} if the IED rejects the reservation.
+     */
+    private void selectWithValues(FcModelNode controlDo, boolean ctlVal)
+            throws ServiceError, IOException {
+        ConstructedDataAttribute sbOw = (ConstructedDataAttribute) controlDo.getChild("SBOw");
+        if (sbOw == null) {
+            throw new ServiceError(
+                    ServiceError.INSTANCE_NOT_AVAILABLE,
+                    "No SBOw node for enhanced-security select at " + controlDo.getReference());
+        }
+        ((BdaBoolean) sbOw.getChild("ctlVal")).setValue(ctlVal);
+        ((BdaInt8U) sbOw.getChild("ctlNum")).setValue((short) 1);
+        ((BdaTimestamp) sbOw.getChild("T")).setInstant(Instant.now());
+        association.setDataValues(sbOw);
+    }
+
+    /**
+     * Returns the {@code ctlModel} ordinal for the given DO reference (FC=CF). Returns 1
+     * (direct-with-normal-security) when the attribute is absent or unrecognised.
+     *
+     * <ul>
+     *   <li>1 = direct-with-normal-security
+     *   <li>2 = sbo-with-normal-security
+     *   <li>3 = direct-with-enhanced-security
+     *   <li>4 = sbo-with-enhanced-security
+     * </ul>
+     */
+    private int resolveCtlModelOrd(String doRef) {
         ModelNode ctlModel = model.findModelNode(doRef + ".ctlModel", Fc.CF);
-        if (!(ctlModel instanceof BasicDataAttribute bda)) return false;
+        if (!(ctlModel instanceof BasicDataAttribute bda)) return 1;
         String v = bda.getValueString();
-        if (v == null) return false;
-        v = v.toLowerCase(Locale.ROOT);
-        // ctlModel ords: 2 = sbo-with-normal-security, 4 = sbo-with-enhanced-security.
-        return v.contains("sbo") || v.equals("2") || v.equals("4");
+        if (v == null) return 1;
+        v = v.trim().toLowerCase(Locale.ROOT);
+        if (v.equals("2") || v.contains("sbo-with-normal")) return 2;
+        if (v.equals("4") || v.contains("sbo-with-enhanced")) return 4;
+        if (v.equals("3") || v.contains("direct-with-enhanced")) return 3;
+        try {
+            return Integer.parseInt(v);
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 
     public void close() {
