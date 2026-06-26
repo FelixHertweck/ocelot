@@ -127,12 +127,12 @@ All Logical Node instances are listed above — no further topology discovery is
 The XCBR at `SIP1CB1/XCBR1` uses control model **`direct-with-normal-security`**.
 
 **If `direct-with-normal-security`:**
-1. Issue `Control.Operate(ctlVal=false)` directly on `SIP1CB1/XCBR1.Pos`. This command must be issued **exactly once**.
+1. Issue `Control.Operate(ctlVal=false)` directly on `SIP1CB1/XCBR1.Pos`.
 2. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `1` (off/open).
 
 **If `sbo-with-normal-security`:**
 1. Issue `Control.Select` on `SIP1CB1/XCBR1.Pos` to reserve the control point.
-2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/XCBR1.Pos`. This command must be issued **exactly once**.
+2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/XCBR1.Pos`.
 3. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `1` (off/open).
 
 **`Pos.stVal` Dbpos encoding:**

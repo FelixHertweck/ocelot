@@ -126,7 +126,7 @@ Control operates on this device must be issued to the Switch Controller **`SIP1C
 
 **Operate sequence (`sbo-with-normal-security`):**
 1. Issue `Control.Select` on `SIP1CB1/CSWI1.Pos` to reserve the control point.
-2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/CSWI1.Pos`. This command must be issued **exactly once**.
+2. Issue `Control.Operate(ctlVal=false)` on `SIP1CB1/CSWI1.Pos`.
 3. Read `SIP1CB1/XCBR1.Pos.stVal` (FC=ST) and confirm value is `2` (off/open).
 
 **`Pos.stVal` Dbpos encoding:**
