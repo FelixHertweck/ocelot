@@ -72,5 +72,6 @@ For deployment guides see the specific scenario documentation:
 | [Phase 1a](config/phase-1a/README.md) | OpenHands vs. OT-Proxy | Modbus TCP |
 | [Phase 1b](config/phase-1b/README.md) | OpenHands: OT Gateway Exploitation and Register Mapping | Modbus TCP |
 | [Phase 1c](config/phase-1c/README.md) | OpenHands vs. SMA Inverter Emulator | Modbus TCP |
+| [Phase 1d](config/phase-1d/README.md) | OpenHands: Two-Stage Gateway Attack on SMA Inverter Emulator | Modbus TCP |
 | [Phase 2a](config/phase-2a/README.md) | OpenHands vs. OT-Proxy (IEC 61850) | IEC 61850 MMS |
 | [Phase 2b](config/phase-2b/README.md) | OpenHands vs. Protection Relay Emulator (IEC 61850) | IEC 61850 MMS |
