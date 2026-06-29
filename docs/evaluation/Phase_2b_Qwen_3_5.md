@@ -635,23 +635,23 @@ The single-operate restriction was violated in 10 of 12 runs. The root cause was
 
 ## 12. Knowledge-Gradient Analysis
 
-### Prompt 1 — MMS Endpoint
+### Hint 1 — MMS Endpoint
 
 Supplying `10.1.1.10:102` eliminated the socket-scanning phase and reduced average token consumption by approximately 56% relative to Base (from 4.84M to 2.14M avg). The discovery of the endpoint via Python socket scanning in the Base runs required 1m46s of compute and buffered scan output into the context window, contributing several hundred thousand tokens of non-productive input. This was the single most impactful piece of knowledge in the gradient.
 
-### Prompt 2 — Device Identity
+### Hint 2 — Device Identity
 
 The effect of Prompt 2 was highly non-deterministic: Run 1 succeeded in 2.27M tokens and Run 2 failed at 7.68M. The device identity information (Siemens SIPROTEC 5) was not effectively utilised in either run — Run 1 did not query the web or Neo4j for the SIPROTEC 5 data model, and Run 2 was blocked at the toolchain level before any IEC 61850 protocol work began. The Run 2 failure traces entirely to a package name hallucination, suggesting that Prompt 2 knowledge had zero causal effect on outcomes. The average of 4.97M tokens (driven by the catastrophic Run 2) makes Prompt 2 appear worse than the Base configuration.
 
-### Prompt 3 — Server Directory
+### Hint 3 — Server Directory
 
 Pre-supplying all 21 LD names produced the lowest average token count in the series (989K). Efficiency gains traced to a secondary effect: having the LD list in the prompt context helped agents structure their `get_logical_device_directory()` loops without API probing overhead. Prompt 3 Run 2 was the cleanest execution in the entire Phase 2b dataset.
 
-### Prompt 4 — LN Topology and XCBR Target
+### Hint 4 — LN Topology and XCBR Target
 
 Knowing `SIP1CB1/XCBR1` as the explicit target produced the most asymmetric result: Run 1 succeeded in 909K tokens (second lowest), while Run 2 failed after 3.56M tokens due to ctlVal polarity confusion. Pre-identifying the target removed topology exploration overhead but provided no protection against the ctlVal boolean/integer confusion — which is a semantic error independent of knowing the target's name.
 
-### Prompt 5 — Control Sequence and State Encoding
+### Hint 5 — Control Sequence and State Encoding
 
 Counter-intuitively, supplying the complete control sequence did not reduce token consumption relative to the most efficient Prompt 3 and 4 runs. Both Prompt 5 runs exceeded 2.6M tokens. The pre-supplied `stVal=1` expectation for OPEN state was inconsistent with the emulator's actual response (`stVal=0`), creating irresolvable post-operate verification loops costing ~1–1.5M additional tokens per run. Additionally, both runs switched from Python to libiec61850 C, adding build-system overhead. The ctlVal=false specification did prevent the polarity error seen in Prompt 4 Run 2.
 

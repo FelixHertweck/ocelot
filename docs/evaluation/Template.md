@@ -374,23 +374,23 @@ These behaviours conflicted with:
 
 ## 12. Knowledge-Gradient Analysis
 
-### Prompt 1 — [What It Added]
+### Hint 1 — [What It Added]
 
 [Two to three sentences on what changed and whether it improved success or efficiency.]
 
-### Prompt 2 — [What It Added]
+### Hint 2 — [What It Added]
 
 [Two to three sentences.]
 
-### Prompt 3 — [What It Added]
+### Hint 3 — [What It Added]
 
 [Two to three sentences.]
 
-### Prompt 4 — [What It Added]
+### Hint 4 — [What It Added]
 
 [Two to three sentences.]
 
-### Prompt 5 — [What It Added]
+### Hint 5 — [What It Added]
 
 [Two to three sentences.]
 

@@ -657,23 +657,23 @@ Run 2 introduced additional scope violations:
 
 ## 12. Knowledge-Gradient Analysis
 
-### Prompt 1 — MMS Endpoint
+### Hint 1 — MMS Endpoint
 
 Prompt 1 removed the need for network discovery. In Run 1, this caused the highest token count because the agent spent many steps testing the control API. In Run 2, the token cost was more moderate (3.9M), but the agent still triggered a rate-limit violation. The endpoint hint changed where the agent spent tokens (away from discovery, toward control) without improving the overall outcome.
 
-### Prompt 2 — Device Identity
+### Hint 2 — Device Identity
 
 This is the only prompt that differed between the two runs. Run 1 used the wrong device (Hitachi Energy RTU530); Run 2 used the correct device (Siemens SIPROTEC 5). The effect propagated across all subsequent Run 2 configurations: agents knew to search for Siemens/SIPROTEC documentation, correctly identified IED names (`SIP1`, `SIEMENS-SIPROTEC-5`, `SIPROTEC5`), and ultimately produced the first correct DPC decoding in +1-5. However, correct device identity also introduced the first explicit false success claim in Run 2 +1-2, showing that vendor-specific knowledge can improve protocol awareness without fixing success-claim verification.
 
-### Prompt 3 — Server Directory
+### Hint 3 — Server Directory
 
 Prompt 3 introduced the `RelayIEDPROT` Logical Device hint. In Run 1, this produced an inconsistent report mixing `RelayIEDPROT` with live SIP1 data (Goals A/B partial). In Run 2, the agent correctly rejected the `RelayIEDPROT` prefix entirely — a qualitative improvement. However, Run 2 Prompt 3 was the most expensive run in the entire evaluation (10M tokens), and the agent still failed at Goal C by targeting the wrong control object. Correct namespace handling is necessary but not sufficient.
 
-### Prompt 4 — Logical Node Topology
+### Hint 4 — Logical Node Topology
 
 Prompt 4 supplied a full `RelayIEDPROT` topology with XCBR target. In Run 1, the agent discovered live SIP1 topology but claimed success using direct `XCBR1.Pos` control. In Run 2, the agent found `stVal=0` and declared it open (it is intermediate). Neither run benefited from the topology hint at Goal C: knowing the target XCBR LN is not enough if the control intermediary (CSWI) and the correct state semantics are unknown.
 
-### Prompt 5 — Control Sequence and Data Attribute Paths
+### Hint 5 — Control Sequence and Data Attribute Paths
 
 Prompt 5 added the most detailed control guidance, but the guidance used `RelayIEDPROT` and a state mapping that did not match the live setup. In Run 1, the agent challenged the prompt through live discovery (found XCBR was status-only, moved to CSWI) and compiled libIEC61850. In Run 2, the agent used the correct SIPROTEC 5 identity from Prompt 2 to produce the first correct DPC BitString decoding. The cost of Run 2 +1-5 was 60% lower than Run 1 +1-5 (1.6M vs 3.9M), suggesting the correct device identity provided a more efficient path to the right control architecture.
 
