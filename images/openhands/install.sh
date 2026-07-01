@@ -27,3 +27,6 @@ docker pull --quiet mcp/neo4j-cypher
 # Install the run wrapper
 cp /tmp/assets/run.sh  ~/run.sh
 chmod +x ~/run.sh
+
+cp /tmp/assets/reset.sh ~/reset.sh
+chmod +x ~/reset.sh
