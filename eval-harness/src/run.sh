@@ -5,15 +5,81 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ── Colors ────────────────────────────────────────────────────────────────────
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+print_info() {
+    echo -e "${YELLOW}ℹ $1${NC}" >&2
+}
+
+# ── Config selection ──────────────────────────────────────────────────────────
+select_config() {
+    local config_dir="/app/config"
+    local default_config="${CONFIG:-config.yml}"
+    local -a configs=()
+
+    if [ -d "$config_dir" ]; then
+        local f
+        while IFS= read -r f; do
+            [ -n "$f" ] && configs+=("$f")
+        done < <(find "$config_dir" -maxdepth 1 -name "*.yml" -type f -printf '%f\n' 2>/dev/null | sort)
+    fi
+
+    local selection=""
+    if [ ${#configs[@]} -gt 0 ]; then
+        print_info "Available configurations in $config_dir:"
+        local i
+        for i in "${!configs[@]}"; do
+            if [ "${configs[$i]}" = "$default_config" ]; then
+                echo "  $((i+1))) ${configs[$i]} (default)" >&2
+            else
+                echo "  $((i+1))) ${configs[$i]}" >&2
+            fi
+        done
+        echo "" >&2
+        if [ -n "$default_config" ]; then
+            echo -n "Select config by number, or press Enter for default [$default_config]: " >&2
+        else
+            echo -n "Select config by number: " >&2
+        fi
+        read -r selection
+        selection="${selection:-$default_config}"
+
+        # Numeric input maps to a listed config
+        if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le ${#configs[@]} ]; then
+            selection="${configs[$((selection-1))]}"
+        fi
+    else
+        print_info "No config files found in $config_dir"
+        if [ -n "$default_config" ]; then
+            echo -n "Config filename [$default_config]: " >&2
+            read -r selection
+            selection="${selection:-$default_config}"
+        else
+            echo -n "Config filename: " >&2
+            read -r selection
+        fi
+    fi
+
+    if [ -z "$selection" ]; then
+        selection="$default_config"
+    fi
+    echo "$selection"
+}
+
 # ── Argument parsing ───────────────────────────────────────────────────────────
-CONFIG_FILE="/app/config/${CONFIG:-config.yml}"
+CONFIG_FILE="/app/config/config.yml"
 SKIP_DEPLOY=false
 KEEP_DEPLOYMENT=false
 RESUME=false
+CONFIG_SELECTED=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --config|-c)       CONFIG_FILE="$2"; shift 2 ;;
+    --config|-c)       CONFIG_FILE="/app/config/$2"; CONFIG_SELECTED=true; shift 2 ;;
     --skip-deploy)     SKIP_DEPLOY=true; shift ;;
     --keep-deployment) KEEP_DEPLOYMENT=true; shift ;;
     --resume)          RESUME=true; shift ;;
@@ -24,6 +90,12 @@ while [[ $# -gt 0 ]]; do
     *) echo "ERROR: Unknown option: $1" >&2; exit 1 ;;
   esac
 done
+
+# Interactive config selection if not provided via --config
+if [ "$CONFIG_SELECTED" = false ]; then
+    CONFIG_FILENAME=$(select_config)
+    CONFIG_FILE="/app/config/$CONFIG_FILENAME"
+fi
 
 echo "╔══════════════════════════════════════╗"
 echo "║       OCELOT Eval-Harness            ║"
