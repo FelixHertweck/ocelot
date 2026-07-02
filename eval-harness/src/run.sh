@@ -297,8 +297,11 @@ STATUSEOF
   if [[ $i -lt $((PROMPT_COUNT - 1)) ]]; then
     if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
       log "  Running cleanup script ($CLEANUP_CMD)..."
-      (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD") \
-        || log "  WARNING: cleanup script exited non-zero"
+      if ! (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD"); then
+        log "ERROR: cleanup script failed — aborting run (environment may be in inconsistent state)"
+        log "NOTE: CAVE deployment will still be torn down via cleanup trap (exterminate-wrapper.sh)"
+        exit 1
+      fi
     fi
   fi
 
