@@ -36,6 +36,9 @@ $EDITOR config/config-myrun.yml
 docker compose run --rm eval
 CONFIG=config-myrun.yml docker compose run --rm eval
 
+# 4b. Run in background (container keeps running after terminal closes)
+docker compose run -d eval && docker compose logs -f eval
+
 # 5. Skip deploy (already-running lab)
 docker compose run --rm eval run.sh --skip-deploy
 
@@ -358,6 +361,34 @@ If the `evaluation.md` output looks incorrect or incomplete:
 ---
 
 ## Troubleshooting
+
+### Background Execution
+
+If you want the eval-harness to keep running after you close your terminal, use:
+
+```bash
+docker compose run -d eval && docker compose logs -f eval
+```
+
+This command:
+1. **`docker compose run -d`** — starts the container in **detached mode** (background)
+2. **`docker compose logs -f`** — streams logs in real-time (follows the output)
+
+When you close the logs (Ctrl+C), the container continues running. To check logs later:
+
+```bash
+docker compose logs -f eval
+```
+
+To see container status:
+
+```bash
+docker compose ps
+```
+
+---
+
+### Common Issues
 
 | Symptom | Likely cause |
 |---|---|
