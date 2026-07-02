@@ -11,3 +11,9 @@
 # Python
 __pycache__/
 .venv/
+
+# Eval-Harness run artifacts (large, potentially sensitive)
+eval-harness/docker/results/*
+!eval-harness/docker/results/.gitkeep
+eval-harness/docker/.env
+eval-harness/src/.port-locks/

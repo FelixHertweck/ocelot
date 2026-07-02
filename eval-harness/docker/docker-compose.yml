@@ -1,0 +1,20 @@
+# Host path of cave-infrastructure-docker.
+# (required for CAVE compose's relative paths to resolve identically).
+x-cave-wrapper-dir: &cave_wrapper_dir /path/to/cave-infrastructure-dockers
+
+services:
+  eval:
+    image: ghcr.io/felixhertweck/ocelot-eval-harness:test
+    environment:
+      CONFIG: config.yml            # config file to load from ./config/
+      CAVE_WRAPPER_DIR: *cave_wrapper_dir
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock   # docker socket for CAVE deploy
+      - ./config:/app/config:ro                     # scenario configs, prompts, templates
+      - ./results:/app/results                      # run output and evaluation results
+      - type: bind                                  # CAVE infra + scenario scripts
+        source: *cave_wrapper_dir
+        target: *cave_wrapper_dir
+      - /dev/net/tun:/dev/net/tun                   # TUN device for OpenVPN
+    cap_add:
+      - NET_ADMIN                                   # required for VPN tunnel setup

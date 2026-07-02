@@ -1,0 +1,317 @@
+#!/usr/bin/env bash
+# OCELOT Eval-Harness — Main orchestration script
+# Deploys scenario, runs OpenHands for each prompt configuration, collects artifacts.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ── Argument parsing ───────────────────────────────────────────────────────────
+CONFIG_FILE="/app/config/${CONFIG:-config.yml}"
+SKIP_DEPLOY=false
+KEEP_DEPLOYMENT=false
+RESUME=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config|-c)       CONFIG_FILE="$2"; shift 2 ;;
+    --skip-deploy)     SKIP_DEPLOY=true; shift ;;
+    --keep-deployment) KEEP_DEPLOYMENT=true; shift ;;
+    --resume)          RESUME=true; shift ;;
+    --help|-h)
+      echo "Usage: run.sh [--config FILE] [--skip-deploy] [--keep-deployment] [--resume]"
+      exit 0
+      ;;
+    *) echo "ERROR: Unknown option: $1" >&2; exit 1 ;;
+  esac
+done
+
+echo "╔══════════════════════════════════════╗"
+echo "║       OCELOT Eval-Harness            ║"
+echo "╚══════════════════════════════════════╝"
+echo "Config: $CONFIG_FILE"
+
+# ── Load config ────────────────────────────────────────────────────────────────
+[[ -f "$CONFIG_FILE" ]] || { echo "ERROR: Config not found: $CONFIG_FILE" >&2; exit 1; }
+eval "$(python3 "$SCRIPT_DIR/lib/config.py" export "$CONFIG_FILE")"
+CAVE_WRAPPER_DIR="${CAVE_WRAPPER_DIR%/}"
+
+# ── Validate required env vars ─────────────────────────────────────────────────
+if [[ -z "$EVAL_LLM_API_KEY" ]]; then
+  if [[ -z "${!EVAL_LLM_API_KEY_ENV:-}" ]]; then
+    echo "ERROR: No LLM API key configured. Set 'evaluation.llm.api_key' in config.yml or set the env var '$EVAL_LLM_API_KEY_ENV'." >&2
+    exit 1
+  fi
+fi
+
+# ── Generate run-id and lab_prefix ────────────────────────────────────────────
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RUN_ID="${CAVE_CONFIG_NAME}_${TIMESTAMP}"
+if [[ "$LAB_PREFIX_CONFIG" == "auto" ]]; then
+  LAB_PREFIX="${CAVE_CONFIG_NAME}-${TIMESTAMP}"
+else
+  LAB_PREFIX="$LAB_PREFIX_CONFIG"
+fi
+
+# ── Results directory + logging ────────────────────────────────────────────────
+RUN_DIR="${EVAL_OUTPUT_DIR}/${LAB_PREFIX}"
+mkdir -p "$RUN_DIR"
+LOG_FILE="$RUN_DIR/run.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+log "Run: $RUN_ID  prefix=$LAB_PREFIX  skip_deploy=$SKIP_DEPLOY"
+
+# ── Port selection ─────────────────────────────────────────────────────────────
+LOCK_DIR="$SCRIPT_DIR/.port-locks"
+mkdir -p "$LOCK_DIR"
+
+pick_free_port() {
+  local start="${PORT_POOL%-*}" end="${PORT_POOL#*-}"
+  for port in $(seq "$start" "$end"); do
+    local lock="$LOCK_DIR/$port.lock"
+    if [[ ! -f "$lock" ]] && ! ss -ltn 2>/dev/null | grep -q ":$port "; then
+      echo $$ > "$lock"
+      echo "$port"
+      return 0
+    fi
+  done
+  echo "ERROR: No free port available in range $PORT_POOL" >&2
+  return 1
+}
+
+if [[ "$VPN_PORT_CONFIG" == "auto" ]]; then
+  VPN_PORT=$(pick_free_port)
+  log "Auto-selected VPN port: $VPN_PORT"
+else
+  VPN_PORT="$VPN_PORT_CONFIG"
+fi
+
+# ── Cleanup trap ───────────────────────────────────────────────────────────────
+VPN_PID=""
+DEPLOYED=false
+TEARDOWN_DONE=false
+cleanup() {
+  log "--- Cleanup ---"
+  if [[ -n "$VPN_PID" ]] && kill -0 "$VPN_PID" 2>/dev/null; then
+    log "Stopping VPN (PID $VPN_PID)..."
+    kill "$VPN_PID" 2>/dev/null || true
+  fi
+  if [[ "$VPN_PORT_CONFIG" == "auto" ]]; then
+    rm -f "$LOCK_DIR/$VPN_PORT.lock"
+  fi
+  if [[ "$DEPLOYED" == "true" && "$TEARDOWN_DONE" == "false" ]]; then
+    TEARDOWN_DONE=true
+    if [[ "$KEEP_DEPLOYMENT" == "true" ]]; then
+      log "Teardown SKIPPED (--keep-deployment, lab_prefix=$LAB_PREFIX)"
+    else
+      log "Tearing down deployment (lab_prefix=$LAB_PREFIX)..."
+      (
+        cd "$CAVE_WRAPPER_DIR"
+        set +e
+        yes | docker compose exec -T cave /cave/exterminate-wrapper.sh "$LAB_PREFIX"
+        status=$?
+        set -e
+        exit "$status"
+      ) || log "  WARNING: exterminate-wrapper.sh exited non-zero"
+      log "Teardown complete."
+    fi
+  fi
+  log "Cleanup done."
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# ── Step 1: CAVE Deploy ────────────────────────────────────────────────────────
+if [[ "$SKIP_DEPLOY" == "false" ]]; then
+  log "=== Step 1: CAVE Deploy ==="
+  (
+    cd "$CAVE_WRAPPER_DIR"
+    # Auto-confirm deploy-wrapper.sh's interactive prompt; ignore yes's SIGPIPE exit.
+    set +e
+    yes | docker compose run --rm -T cave /cave/deploy-wrapper.sh \
+      "$CAVE_CONFIG_NAME" \
+      --lab-prefix "$LAB_PREFIX" \
+      --public-vpn-port "$VPN_PORT" \
+      --wait-time "$DEPLOY_WAIT_TIME"
+    status="${PIPESTATUS[1]}"
+    set -e
+    exit "$status"
+  )
+  DEPLOYED=true
+  log "Deploy complete."
+else
+  log "=== Step 1: Deploy SKIPPED (--skip-deploy) ==="
+fi
+
+cat > "$RUN_DIR/meta.json" <<META
+{
+  "run_id": "$RUN_ID",
+  "lab_prefix": "$LAB_PREFIX",
+  "cave_config_name": "$CAVE_CONFIG_NAME",
+  "vpn_port": $VPN_PORT,
+  "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "skip_deploy": $SKIP_DEPLOY
+}
+META
+
+# ── Step 1b: VPN Tunnel ────────────────────────────────────────────────────────
+if [[ "$SKIP_DEPLOY" == "false" ]]; then
+  # prov.ovpn is pre-patched by make_it_so.sh to use the internal host IP+port,
+  # so it works from the OpenStack host without hairpin NAT issues.
+  VPN_CFG="$CAVE_WRAPPER_DIR/out/$LAB_PREFIX/openvpn/admins/prov.ovpn"
+  [[ -f "$VPN_CFG" ]] || { log "ERROR: VPN config not found: $VPN_CFG"; exit 1; }
+
+  log "Starting VPN: $VPN_CFG"
+  openvpn --config "$VPN_CFG" --log /tmp/openvpn.log &
+  VPN_PID=$!
+  log "Waiting for VPN tunnel tun0 (PID $VPN_PID)..."
+  if ! timeout 120 bash -c 'until ip link show tun0 &>/dev/null; do sleep 1; done'; then
+    log "ERROR: VPN tunnel (tun0) did not come up within 120s"
+    log "--- openvpn.log (tail) ---"
+    tail -n 40 /tmp/openvpn.log 2>/dev/null || true
+    exit 1
+  fi
+  log "VPN tunnel up."
+fi
+
+# ── Step 1c: Wait for OpenHands ────────────────────────────────────────────────
+log "Waiting for OpenHands at $OH_BASE_URL..."
+timeout 300 bash -c "until curl -sf \"$OH_BASE_URL/\" >/dev/null 2>&1; do sleep 10; done"
+log "OpenHands reachable."
+
+# ── Step 2: Parse prompts ──────────────────────────────────────────────────────
+[[ -f "$PROMPTS_SOURCE" ]] || { log "ERROR: Prompts file not found: $PROMPTS_SOURCE"; exit 1; }
+log "Parsing prompts: $PROMPTS_SOURCE (mode=$PROMPTS_MODE)"
+PROMPTS_JSON=$(python3 "$SCRIPT_DIR/lib/prompt_parser.py" "$PROMPTS_SOURCE" "$PROMPTS_MODE")
+PROMPT_COUNT=$(echo "$PROMPTS_JSON" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+log "Prompt configurations: $PROMPT_COUNT"
+
+# ── Run loop ───────────────────────────────────────────────────────────────────
+log "=== Starting run loop ==="
+
+for i in $(seq 0 $((PROMPT_COUNT - 1))); do
+  PROMPT_DIR="$RUN_DIR/prompt-$i"
+  mkdir -p "$PROMPT_DIR"
+
+  # Write prompt name and text to files (avoids shell quoting issues with multiline content)
+  echo "$PROMPTS_JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+p = data[$i]
+open('$PROMPT_DIR/prompt_name.txt', 'w').write(p['name'])
+open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
+"
+
+  PROMPT_NAME=$(cat "$PROMPT_DIR/prompt_name.txt")
+  log "--- Prompt $i: $PROMPT_NAME ---"
+
+  # Resume: skip already-completed runs
+  STATUS_FILE="$PROMPT_DIR/status.json"
+  if [[ "$RESUME" == "true" && -f "$STATUS_FILE" ]]; then
+    DONE_STATUS=$(python3 -c "import json; print(json.load(open('$STATUS_FILE'))['status'])" 2>/dev/null || echo "")
+    if [[ "$DONE_STATUS" == "stopped" || "$DONE_STATUS" == "finished" ]]; then
+      log "  Skipping (already $DONE_STATUS)"
+      continue
+    fi
+  fi
+
+  # Create conversation
+  log "  Creating OpenHands conversation..."
+  CONV_START=$(date +%s)
+  CREATE_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+    --base-url "$OH_BASE_URL" create --prompt-file "$PROMPT_DIR/prompt.txt")
+  CONV_ID=$(echo "$CREATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['conversation_id'])")
+  log "  Conversation: $CONV_ID"
+
+  # Poll for completion
+  log "  Polling for STOPPED (timeout: ${OH_RUN_TIMEOUT}s)..."
+  FINAL_STATUS="error"
+  ELAPSED=0
+  while true; do
+    sleep "$OH_POLL_INTERVAL"
+    ELAPSED=$((ELAPSED + OH_POLL_INTERVAL))
+    STATUS_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+      --base-url "$OH_BASE_URL" status --conv-id "$CONV_ID")
+    CONV_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+    EXEC_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('execution_status',''))" 2>/dev/null || echo "")
+    log "  [$ELAPSED s] $CONV_STATUS ($EXEC_STATUS)"
+    if [[ "$CONV_STATUS" == "STOPPED" ]]; then
+      echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
+      FINAL_STATUS="stopped"; break
+    fi
+    if [[ $ELAPSED -ge $OH_RUN_TIMEOUT ]]; then
+      log "  Timeout — stopping conversation..."
+      python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+        --base-url "$OH_BASE_URL" stop --conv-id "$CONV_ID" 2>/dev/null || true
+      FINAL_STATUS="timeout"; break
+    fi
+  done
+
+  DURATION=$(( $(date +%s) - CONV_START ))
+  log "  $FINAL_STATUS after ${DURATION}s"
+
+  # Collect artifacts
+  log "  Downloading conversation..."
+  python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+    --base-url "$OH_BASE_URL" download --conv-id "$CONV_ID" \
+    --output "$PROMPT_DIR/conversation.zip" 2>/dev/null || log "  WARNING: conversation download failed"
+
+  log "  Converting conversation to markdown..."
+  python3 - <<PYEOF
+import sys
+sys.path.insert(0, '$SCRIPT_DIR')
+from pathlib import Path
+from lib.export_to_markdown import convert
+zip_path = Path('$PROMPT_DIR/conversation.zip')
+if zip_path.exists() and zip_path.stat().st_size > 0:
+    Path('$PROMPT_DIR/conversation.md').write_text(convert(zip_path))
+PYEOF
+
+  log "  Extracting metrics..."
+  python3 "$SCRIPT_DIR/lib/extract_metrics.py" \
+    --conv-info "$PROMPT_DIR/conv_info.json" --output "$PROMPT_DIR/metrics.json"
+
+  # Context script — captures device ground truth
+  if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+    log "  Running context script ($CONTEXT_CMD)..."
+    (cd "$SCENARIO_CONFIG_DIR" && eval "$CONTEXT_CMD") > "$PROMPT_DIR/context.txt" 2>&1 \
+      || log "  WARNING: context script exited non-zero"
+  else
+    echo "(no context script configured)" > "$PROMPT_DIR/context.txt"
+  fi
+
+  # Save run status
+  cat > "$STATUS_FILE" <<STATUSEOF
+{
+  "conversation_id": "$CONV_ID",
+  "status": "$FINAL_STATUS",
+  "prompt_name": "$PROMPT_NAME",
+  "prompt_index": $i,
+  "duration_seconds": $DURATION,
+  "completed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+STATUSEOF
+
+  # Cleanup between runs (skip after the last one)
+  if [[ $i -lt $((PROMPT_COUNT - 1)) ]]; then
+    if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+      log "  Running cleanup script ($CLEANUP_CMD)..."
+      (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD") \
+        || log "  WARNING: cleanup script exited non-zero"
+    fi
+  fi
+
+  log "  Prompt-$i ($PROMPT_NAME): $FINAL_STATUS"
+done
+
+log "=== All runs complete ==="
+
+# ── Step 3: Evaluation ─────────────────────────────────────────────────────────
+log "=== Running evaluation ==="
+python3 "$SCRIPT_DIR/evaluate.py" --config "$CONFIG_FILE" --run-dir "$RUN_DIR"
+
+log "=== Done. Results in: $RUN_DIR ==="
+
+# Step 4 (teardown) runs via the cleanup trap below, so it also fires on
+# Ctrl-C/SIGTERM mid-run rather than only after a full, successful run.
