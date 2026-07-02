@@ -1,0 +1,35 @@
+name: Eval Harness — Docker Build & Publish
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "eval-harness/src/**"
+      - "eval-harness/Dockerfile"
+      - "!eval-harness/**/*.md"
+      - ".github/workflows/*"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "eval-harness/src/**"
+      - "eval-harness/Dockerfile"
+      - "!eval-harness/**/*.md"
+      - ".github/workflows/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/docker.yml
+    secrets: inherit
+    with:
+      docker-file-path: eval-harness/Dockerfile
+      docker-build-context: eval-harness
+      container-image-title: OCELOT Eval-Harness
+      image-name: ${{ github.repository }}-eval-harness
