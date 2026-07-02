@@ -1,0 +1,50 @@
+# OCELOT Eval-Harness — Run Configuration
+#
+# To use a different config: CONFIG=this-file.yml docker compose run --rm eval
+# Multiple config files can coexist in this directory.
+
+# ── Required ──────────────────────────────────────────────────────────────────
+
+scenario:
+  cave_config_name: example
+
+prompts:
+  source: example.md  # relative to /app/config/prompts/, or use absolute path
+
+evaluation:
+  llm:
+    api_key: <LLM_API_KEY>
+    base_url: <LLM_BASE_URL>
+    model: <LLM_MODEL>
+
+# ── Optional (uncomment to override defaults) ─────────────────────────────────
+
+# scenario:
+#   cave_wrapper_dir: /abs/path              # default: $CAVE_WRAPPER_DIR (set in .env); only override to point elsewhere
+#   configs_subpath: backend/configs         # default: backend/configs (config_dir = cave_wrapper_dir/configs_subpath/cave_config_name)
+
+# deploy:
+#   wait_time: 600                           # default: 600s
+#   lab_prefix: auto                         # default: auto → <scenario>-<HHMM>
+#   public_vpn_port: auto                    # default: auto → first free from pool
+#   port_pool: "51820-51920"                 # default: 51820-51920
+
+# openhands:
+#   base_url: http://10.1.1.20:3000          # default: http://10.1.1.20:3000
+#   poll_interval: 15                        # default: 15s
+#   run_timeout: 3600                        # default: 3600s (1h)
+
+# prompts:
+#   mode: cumulative                         # default: cumulative (alternative: individual)
+
+# context_script:
+#   cmd: "bash eval.sh"                      # default: bash eval.sh in config_dir
+
+# cleanup_script:
+#   cmd: "bash reset.sh"                     # default: bash reset.sh in config_dir
+
+# evaluation:
+#   output_name: "Phase_2a_{model}_{date}.md"             # default: {scenario}_{model}_{date}.md
+#   extraction_prompt: /app/config/evaluation-prompt.md   # default: built-in
+#   template: /app/config/evaluation-template.md          # default: built-in
+#   output_dir: /app/results                              # default: /app/results
