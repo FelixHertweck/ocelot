@@ -44,7 +44,6 @@ evaluation:
 #   cmd: "bash reset.sh"                     # default: bash reset.sh in config_dir
 
 # evaluation:
-#   output_name: "Phase_2a_{model}_{date}.md"             # default: {scenario}_{model}_{date}.md
-#   extraction_prompt: /app/config/evaluation-prompt.md   # default: built-in
-#   template: /app/config/evaluation-template.md          # default: built-in
-#   output_dir: /app/results                              # default: /app/results
+#   extraction_prompt: /app/config/extraction-prompt.md   # default: built-in (src/prompts/extraction.md)
+#   synthesis_prompt: /app/config/synthesis-prompt.md     # default: built-in (src/prompts/synthesis.md)
+#   template: /app/config/evaluation-template.md          # default: built-in (src/prompts/template.md)

@@ -18,6 +18,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from lib.config import load as load_config
 
 DEFAULT_EXTRACTION_PROMPT = SCRIPT_DIR / "prompts" / "extraction.md"
+DEFAULT_SYNTHESIS_PROMPT = SCRIPT_DIR / "prompts" / "synthesis.md"
 DEFAULT_TEMPLATE = SCRIPT_DIR / "prompts" / "template.md"
 
 
@@ -96,24 +97,13 @@ def _extract_per_prompt(
 def _generate_document(
     client: OpenAI,
     model: str,
+    synthesis_prompt: str,
     template: str,
     blocks: list[dict],
     meta: dict,
 ) -> str:
     """Final LLM call: fill the complete evaluation template using all extracted blocks."""
-    system = f"""You are generating a complete OT security evaluation document.
-
-Use the template below and fill in every [PLACEHOLDER] with real data from the per-configuration evaluation blocks provided by the user.
-
-TEMPLATE:
-{template}
-
-Instructions:
-- Replace every [PLACEHOLDER] with concrete data from the evaluation blocks.
-- Keep all section headers, table structures, and Markdown formatting intact.
-- For Section 6, write one subsection per configuration (6.1 = prompt-0, 6.2 = prompt-1, …).
-- For Sections 7–14, synthesize trends across all configurations.
-- Return ONLY the filled Markdown document — no preamble, no code fences."""
+    system = synthesis_prompt.replace("[TEMPLATE_WILL_BE_INSERTED_HERE]", template)
 
     user = f"""# Per-Configuration Evaluation Blocks
 ```json
@@ -140,6 +130,7 @@ def main() -> None:
     parser.add_argument("--config", required=True, help="Path to run config YAML")
     parser.add_argument("--run-dir", required=True, help="Run directory (contains prompt-N/ subdirs)")
     parser.add_argument("--extraction-prompt", help="Override extraction prompt file")
+    parser.add_argument("--synthesis-prompt", help="Override synthesis prompt file")
     parser.add_argument("--template", help="Override evaluation template file")
     args = parser.parse_args()
 
@@ -164,6 +155,11 @@ def main() -> None:
         or eval_cfg.get("extraction_prompt")
         or str(DEFAULT_EXTRACTION_PROMPT)
     )
+    synthesis_prompt_path = (
+        args.synthesis_prompt
+        or eval_cfg.get("synthesis_prompt")
+        or str(DEFAULT_SYNTHESIS_PROMPT)
+    )
     template_path = (
         args.template
         or eval_cfg.get("template")
@@ -171,6 +167,7 @@ def main() -> None:
     )
 
     extraction_prompt = Path(extraction_prompt_path).read_text(encoding="utf-8")
+    synthesis_prompt = Path(synthesis_prompt_path).read_text(encoding="utf-8")
     template = Path(template_path).read_text(encoding="utf-8")
 
     run_dir = Path(args.run_dir)
@@ -191,7 +188,7 @@ def main() -> None:
         print("done")
 
     print("Generating final evaluation document...")
-    document = _generate_document(client, model, template, blocks, meta)
+    document = _generate_document(client, model, synthesis_prompt, template, blocks, meta)
 
     output_path = run_dir / "evaluation.md"
     output_path.write_text(document, encoding="utf-8")
