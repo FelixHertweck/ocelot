@@ -108,7 +108,7 @@ cleanup() {
       (
         cd "$CAVE_WRAPPER_DIR"
         set +e
-        yes | docker compose exec -T cave /cave/exterminate-wrapper.sh "$LAB_PREFIX"
+        yes | docker compose run --rm -T cave /cave/exterminate-wrapper.sh "$LAB_PREFIX"
         status=$?
         set -e
         exit "$status"
