@@ -4,7 +4,7 @@ x-cave-wrapper-dir: &cave_wrapper_dir /path/to/cave-infrastructure-dockers
 
 services:
   eval:
-    image: ghcr.io/felixhertweck/ocelot-eval-harness:test
+    image: ghcr.io/felixhertweck/ocelot-eval-harness:main
     environment:
       CONFIG: config.yml            # config file to load from ./config/
       CAVE_WRAPPER_DIR: *cave_wrapper_dir
