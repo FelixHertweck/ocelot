@@ -5,6 +5,9 @@ x-cave-wrapper-dir: &cave_wrapper_dir /path/to/cave-infrastructure-dockers
 services:
   eval:
     image: ghcr.io/felixhertweck/ocelot-eval-harness:main
+    # On Ctrl+C the cleanup trap tears down the CAVE deployment
+    # (must exceed the teardown timeout in run.sh, 480s)
+    stop_grace_period: 600s
     environment:
       CONFIG: config.yml            # config file to load from ./config/
       CAVE_WRAPPER_DIR: *cave_wrapper_dir

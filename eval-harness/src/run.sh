@@ -128,7 +128,10 @@ fi
 RUN_DIR="${EVAL_OUTPUT_DIR}/${LAB_PREFIX}"
 mkdir -p "$RUN_DIR"
 LOG_FILE="$RUN_DIR/run.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
+# tee must ignore INT/TERM: on Ctrl+C the whole process group is signalled, so
+# an unprotected tee dies and the broken pipe kills the script (SIGPIPE) before
+# cleanup can tear down the deployment.
+exec > >(trap '' INT TERM; exec tee -a "$LOG_FILE") 2>&1
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 log "Run: $RUN_ID  prefix=$LAB_PREFIX  skip_deploy=$SKIP_DEPLOY"
@@ -162,36 +165,63 @@ fi
 VPN_PID=""
 DEPLOYED=false
 TEARDOWN_DONE=false
+SIGINT_RECEIVED=false
+
 cleanup() {
   log "--- Cleanup ---"
+
   if [[ -n "$VPN_PID" ]] && kill -0 "$VPN_PID" 2>/dev/null; then
     log "Stopping VPN (PID $VPN_PID)..."
     kill "$VPN_PID" 2>/dev/null || true
+    sleep 1
   fi
+
   if [[ "$VPN_PORT_CONFIG" == "auto" ]]; then
     rm -f "$LOCK_DIR/$VPN_PORT.lock"
   fi
+
   if [[ "$DEPLOYED" == "true" && "$TEARDOWN_DONE" == "false" ]]; then
     TEARDOWN_DONE=true
     if [[ "$KEEP_DEPLOYMENT" == "true" ]]; then
       log "Teardown SKIPPED (--keep-deployment, lab_prefix=$LAB_PREFIX)"
     else
       log "Tearing down deployment (lab_prefix=$LAB_PREFIX)..."
-      (
-        cd "$CAVE_WRAPPER_DIR"
-        set +e
-        yes | docker compose run --rm -T cave /cave/exterminate-wrapper.sh "$LAB_PREFIX"
-        status=$?
-        set -e
-        exit "$status"
-      ) || log "  WARNING: exterminate-wrapper.sh exited non-zero"
-      log "Teardown complete."
+      if [[ -d "$CAVE_WRAPPER_DIR" ]]; then
+        (
+          cd "$CAVE_WRAPPER_DIR"
+          set +e
+          yes | timeout 480 docker compose run --rm -T cave /cave/exterminate-wrapper.sh "$LAB_PREFIX"
+          # pipefail is still active here (set +e only clears errexit), so $? would
+          # report yes's SIGPIPE (141) once exterminate stops reading stdin. Grab the
+          # actual teardown command's status via PIPESTATUS, like the deploy step does.
+          status="${PIPESTATUS[1]}"
+          set -e
+          if [[ $status -eq 0 ]]; then
+            log "Teardown complete."
+          else
+            log "WARNING: exterminate-wrapper.sh exited with status $status"
+          fi
+          exit "$status"
+        ) || log "WARNING: Teardown command failed or timed out"
+      else
+        log "ERROR: CAVE_WRAPPER_DIR not found: $CAVE_WRAPPER_DIR"
+      fi
     fi
+  elif [[ "$DEPLOYED" == "false" ]]; then
+    log "Note: deployment was not completed, skipping teardown"
   fi
+
   log "Cleanup done."
 }
+
+handle_interrupt() {
+  SIGINT_RECEIVED=true
+  log "Interrupt received (Ctrl+C), initiating shutdown..."
+  exit 130
+}
+
 trap cleanup EXIT
-trap 'exit 130' INT
+trap handle_interrupt INT
 trap 'exit 143' TERM
 
 # ── Step 1: CAVE Deploy ────────────────────────────────────────────────────────
