@@ -20,6 +20,7 @@ from lib.config import load as load_config
 DEFAULT_EXTRACTION_PROMPT = SCRIPT_DIR / "prompts" / "extraction.md"
 DEFAULT_SYNTHESIS_PROMPT = SCRIPT_DIR / "prompts" / "synthesis.md"
 DEFAULT_TEMPLATE = SCRIPT_DIR / "prompts" / "template.md"
+DEFAULT_MULTI_RUN_SYNTHESIS_PROMPT = SCRIPT_DIR / "prompts" / "multi_run_synthesis.md"
 
 
 def _read(path: Path, default: str = "(not available)") -> str:
@@ -125,14 +126,58 @@ def _generate_document(
     return response.choices[0].message.content
 
 
+def _combine_runs(
+    client: OpenAI,
+    model: str,
+    multi_run_synthesis_prompt: str,
+    run_dirs: list[Path],
+) -> str:
+    """Final LLM call: merge N independent per-run evaluation.md documents into one report."""
+    sections = []
+    for idx, run_dir in enumerate(run_dirs, start=1):
+        meta = json.loads(_read(run_dir / "meta.json", "{}"))
+        doc = _read(run_dir / "evaluation.md")
+        sections.append(
+            f"# Run {idx} ({run_dir.name})\n\n"
+            f"## Run Metadata\n```json\n{json.dumps(meta, indent=2)}\n```\n\n"
+            f"## Evaluation Document\n{doc}"
+        )
+
+    user_msg = "\n\n---\n\n".join(sections)
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": multi_run_synthesis_prompt},
+            {"role": "user", "content": user_msg},
+        ],
+    )
+    return response.choices[0].message.content
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="OCELOT Eval-Harness — evaluation step")
     parser.add_argument("--config", required=True, help="Path to run config YAML")
-    parser.add_argument("--run-dir", required=True, help="Run directory (contains prompt-N/ subdirs)")
+    parser.add_argument("--run-dir", help="Run directory (contains prompt-N/ subdirs)")
+    parser.add_argument(
+        "--combine",
+        nargs="+",
+        metavar="RUN_DIR",
+        help="Combine mode: paths to already-evaluated run directories (each must contain evaluation.md)",
+    )
+    parser.add_argument("--output", help="Output path for --combine mode's combined evaluation.md")
     parser.add_argument("--extraction-prompt", help="Override extraction prompt file")
     parser.add_argument("--synthesis-prompt", help="Override synthesis prompt file")
+    parser.add_argument("--multi-run-synthesis-prompt", help="Override multi-run combination prompt file")
     parser.add_argument("--template", help="Override evaluation template file")
     args = parser.parse_args()
+
+    if bool(args.run_dir) == bool(args.combine):
+        print("ERROR: Specify exactly one of --run-dir or --combine.", file=sys.stderr)
+        sys.exit(1)
+    if args.combine and not args.output:
+        print("ERROR: --combine requires --output.", file=sys.stderr)
+        sys.exit(1)
 
     cfg = load_config(args.config)
     eval_cfg = cfg.get("evaluation", {})
@@ -149,6 +194,28 @@ def main() -> None:
 
     base_url = llm_cfg.get("base_url") or os.environ.get(base_url_env) or None
     client = OpenAI(api_key=api_key, base_url=base_url)
+
+    if args.combine:
+        multi_run_synthesis_prompt_path = (
+            args.multi_run_synthesis_prompt
+            or eval_cfg.get("multi_run_synthesis_prompt")
+            or str(DEFAULT_MULTI_RUN_SYNTHESIS_PROMPT)
+        )
+        multi_run_synthesis_prompt = Path(multi_run_synthesis_prompt_path).read_text(encoding="utf-8")
+
+        run_dirs = [Path(d) for d in args.combine]
+        for rdir in run_dirs:
+            if not (rdir / "evaluation.md").exists():
+                print(f"ERROR: {rdir} has no evaluation.md — run its per-run evaluation first.", file=sys.stderr)
+                sys.exit(1)
+
+        print(f"Combining {len(run_dirs)} run evaluation(s)...")
+        document = _combine_runs(client, model, multi_run_synthesis_prompt, run_dirs)
+
+        output_path = Path(args.output)
+        output_path.write_text(document, encoding="utf-8")
+        print(f"Combined evaluation saved: {output_path}")
+        return
 
     extraction_prompt_path = (
         args.extraction_prompt
