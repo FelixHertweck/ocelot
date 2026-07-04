@@ -3,7 +3,7 @@
 Automated evaluator for OCELOT scenarios. Deploys a scenario with CAVE, runs an OpenHands agent against each knowledge-gradient prompt configuration, collects all artifacts, and generates a structured evaluation document using an LLM.
 
 ```
-CAVE Deploy → [per-prompt: OpenHands run → collect artifacts → reset] → LLM evaluation → evaluation.md → CAVE Teardown
+CAVE Deploy → [runs.count ×: [per-prompt: OpenHands run → collect artifacts → reset] → per-run evaluation.md] → combined evaluation.md → CAVE Teardown
 ```
 
 ---
@@ -48,10 +48,16 @@ docker compose run --rm eval run.sh --keep-deployment
 # 7. Resume an interrupted run (skips already-completed prompts)
 docker compose run --rm eval run.sh --resume
 
-# 8. Re-run only the evaluation step on existing results
+# 8. Re-run only the evaluation step on existing results (per run)
 docker compose run --rm eval python3 evaluate.py \
   --config /app/config/config.yml \
-  --run-dir /app/results/<lab_prefix>
+  --run-dir /app/results/<lab_prefix>/run1
+
+# 8b. Re-run the combination step across existing per-run evaluations
+docker compose run --rm eval python3 evaluate.py \
+  --config /app/config/config.yml \
+  --combine /app/results/<lab_prefix>/run1 /app/results/<lab_prefix>/run2 \
+  --output /app/results/<lab_prefix>/evaluation.md
 ```
 
 ---
@@ -63,7 +69,7 @@ docker compose run --rm eval python3 evaluate.py \
 | `--config FILE` | Explicit config file path (overrides `$CONFIG` env var) |
 | `--skip-deploy` | Skip CAVE deploy and VPN setup; use with an already-running lab. Also skips teardown. |
 | `--keep-deployment` | Run as normal but do not tear down the lab after the eval completes. |
-| `--resume` | Skip prompt runs that already have a `status.json` with status `stopped` or `finished`. |
+| `--resume` | Skip prompt runs that already have a `status.json` with status `stopped` or `finished`; skips an entire `runN/` folder if it already has an `evaluation.md`. |
 
 Flags can be combined, e.g. `run.sh --skip-deploy --resume` to continue a partially-run eval on an existing lab.
 
@@ -73,18 +79,23 @@ Flags can be combined, e.g. `run.sh --skip-deploy --resume` to continue a partia
 
 Runs the LLM evaluation step standalone on an existing results directory, without re-deploying or re-running OpenHands. Per-prompt `eval_block.json` files are cached — only missing ones trigger a new LLM call.
 
+Has two mutually-exclusive modes: `--run-dir` (evaluate one `runN/` folder into its own `evaluation.md`) and `--combine` (merge several already-evaluated `runN/` folders into one combined `evaluation.md`).
+
 | Flag | Description |
 |---|---|
 | `--config FILE` | Path to the run config YAML (required) |
-| `--run-dir DIR` | Results directory containing `prompt-N/` subdirectories (required) |
+| `--run-dir DIR` | Single-run mode: results directory containing `prompt-N/` subdirectories |
+| `--combine DIR [DIR ...]` | Combine mode: paths to `runN/` directories that already contain `evaluation.md` |
+| `--output FILE` | Output path for `--combine` mode's combined document (required with `--combine`) |
 | `--extraction-prompt FILE` | Override the extraction prompt file |
 | `--synthesis-prompt FILE` | Override the synthesis (document generation) prompt file |
+| `--multi-run-synthesis-prompt FILE` | Override the run-combination prompt file (used with `--combine`) |
 | `--template FILE` | Override the evaluation template file |
 
 ```bash
 docker compose run --rm eval python3 evaluate.py \
   --config /app/config/config.yml \
-  --run-dir /app/results/<lab_prefix>
+  --run-dir /app/results/<lab_prefix>/run1
 ```
 
 ---
@@ -107,10 +118,12 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 | `openhands` | `run_timeout` | `3600` | Max seconds per run before the conversation is force-stopped |
 | `prompts` | `source` | — | Prompt file (relative to `config/prompts/` or absolute) |
 | `prompts` | `mode` | `cumulative` | `cumulative`: each run appends the next hint; `individual`: each hint runs alone |
+| `runs` | `count` | `1` | Number of times to repeat the full prompt sweep. Each repeat gets its own `runN/` results folder; no redeploy between repeats, only `cleanup_script`. When > 1, a combined `evaluation.md` is generated across all runs. |
 | `context_script` | `cmd` | `bash eval.sh` | Command run after each OpenHands conversation; stdout → `context.txt` |
-| `cleanup_script` | `cmd` | `bash reset.sh` | Command run between prompt runs to reset device state |
+| `cleanup_script` | `cmd` | `bash reset.sh` | Command run between prompt runs (and between repeated runs) to reset device state |
 | `evaluation` | `extraction_prompt` | built-in | Path to the per-run LLM extraction prompt file |
 | `evaluation` | `synthesis_prompt` | built-in | Path to the document synthesis LLM prompt file |
+| `evaluation` | `multi_run_synthesis_prompt` | built-in | Path to the LLM prompt that combines per-run `evaluation.md` documents (only used when `runs.count > 1`) |
 | `evaluation` | `template` | built-in | Path to the evaluation document template |
 | `evaluation.llm` | `model` | `gpt-4o` | LLM model used for evaluation |
 | `evaluation.llm` | `api_key` | — | LLM API key (or set `EVAL_LLM_API_KEY` in `.env`) |
@@ -167,7 +180,7 @@ For one-off evaluation runs with different prompts, use CLI flags:
 ```bash
 docker compose run --rm eval python3 evaluate.py \
   --config /app/config/config.yml \
-  --run-dir /app/results/<lab_prefix> \
+  --run-dir /app/results/<lab_prefix>/run1 \
   --extraction-prompt /app/config/custom-extraction.md \
   --synthesis-prompt /app/config/custom-synthesis.md \
   --template /app/config/custom-template.md
@@ -200,7 +213,7 @@ EOF
 # Re-run evaluation with the new synthesis prompt (extractions stay cached)
 docker compose run --rm eval python3 evaluate.py \
   --config /app/config/config.yml \
-  --run-dir /app/results/<lab_prefix>
+  --run-dir /app/results/<lab_prefix>/run1
 ```
 
 This is much faster than re-extracting — only the final document synthesis runs with the new prompt.
@@ -271,13 +284,19 @@ eval-harness/
       config.yml          ← example run configuration
       prompts/            ← place your prompt .md files here
     results/              ← run output (gitignored, created by the harness)
-      <lab_prefix>/       ← one folder per run
-        evaluation.md     ← final evaluation document
+      <lab_prefix>/       ← one folder per run.sh invocation (single deploy/teardown)
         run.log
         meta.json
-        prompt-0/         ← base prompt run
-          prompt.txt, conversation.md, metrics.json, context.txt, status.json
-        prompt-1/         ← base + hint 1 run
+        evaluation.md     ← primary entrypoint: copy of run1/evaluation.md if runs.count == 1,
+                            or the combined evaluation across all runs if runs.count > 1
+        run1/             ← one full prompt sweep
+          evaluation.md   ← evaluation document for this run only
+          meta.json
+          prompt-0/       ← base prompt run
+            prompt.txt, conversation.md, metrics.json, context.txt, status.json
+          prompt-1/       ← base + hint 1 run
+            ...
+        run2/             ← present when runs.count > 1: same prompt sweep, repeated
           ...
 ```
 

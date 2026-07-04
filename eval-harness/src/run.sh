@@ -134,7 +134,12 @@ LOG_FILE="$RUN_DIR/run.log"
 exec > >(trap '' INT TERM; exec tee -a "$LOG_FILE") 2>&1
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
-log "Run: $RUN_ID  prefix=$LAB_PREFIX  skip_deploy=$SKIP_DEPLOY"
+log "Run: $RUN_ID  prefix=$LAB_PREFIX  skip_deploy=$SKIP_DEPLOY  num_runs=$NUM_RUNS"
+
+if ! [[ "$NUM_RUNS" =~ ^[0-9]+$ ]] || [[ "$NUM_RUNS" -lt 1 ]]; then
+  echo "ERROR: runs.count must be a positive integer, got: $NUM_RUNS" >&2
+  exit 1
+fi
 
 # ── Port selection ─────────────────────────────────────────────────────────────
 LOCK_DIR="$SCRIPT_DIR/.port-locks"
@@ -253,7 +258,8 @@ cat > "$RUN_DIR/meta.json" <<META
   "cave_config_name": "$CAVE_CONFIG_NAME",
   "vpn_port": $VPN_PORT,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "skip_deploy": $SKIP_DEPLOY
+  "skip_deploy": $SKIP_DEPLOY,
+  "num_runs": $NUM_RUNS
 }
 META
 
@@ -290,14 +296,50 @@ PROMPT_COUNT=$(echo "$PROMPTS_JSON" | python3 -c "import sys,json; print(len(jso
 log "Prompt configurations: $PROMPT_COUNT"
 
 # ── Run loop ───────────────────────────────────────────────────────────────────
-log "=== Starting run loop ==="
+log "=== Starting run loop ($NUM_RUNS run(s)) ==="
 
-for i in $(seq 0 $((PROMPT_COUNT - 1))); do
-  PROMPT_DIR="$RUN_DIR/prompt-$i"
-  mkdir -p "$PROMPT_DIR"
+for RUN_IDX in $(seq 1 "$NUM_RUNS"); do
+  RUN_SUBDIR="$RUN_DIR/run${RUN_IDX}"
+  mkdir -p "$RUN_SUBDIR"
 
-  # Write prompt name and text to files (avoids shell quoting issues with multiline content)
-  echo "$PROMPTS_JSON" | python3 -c "
+  # Resume: skip this run entirely once its per-run evaluation.md exists
+  if [[ "$RESUME" == "true" && -f "$RUN_SUBDIR/evaluation.md" ]]; then
+    log "=== Run $RUN_IDX/$NUM_RUNS: skipping (already evaluated) ==="
+    # Still reset before the next run (unless this is the last one overall) —
+    # a prior invocation may have had a lower runs.count and thus skipped its
+    # own final cleanup, assuming this was the last run at the time.
+    if [[ $RUN_IDX -lt $NUM_RUNS ]]; then
+      if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+        log "  Running cleanup script ($CLEANUP_CMD) before next run..."
+        if ! (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD"); then
+          log "ERROR: cleanup script failed — aborting run (environment may be in inconsistent state)"
+          log "NOTE: CAVE deployment will still be torn down via cleanup trap (exterminate-wrapper.sh)"
+          exit 1
+        fi
+      fi
+    fi
+    continue
+  fi
+
+  log "=== Run $RUN_IDX/$NUM_RUNS ==="
+
+  cat > "$RUN_SUBDIR/meta.json" <<RUNMETA
+{
+  "run_id": "$RUN_ID",
+  "run_index": $RUN_IDX,
+  "num_runs": $NUM_RUNS,
+  "lab_prefix": "$LAB_PREFIX",
+  "cave_config_name": "$CAVE_CONFIG_NAME",
+  "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+RUNMETA
+
+  for i in $(seq 0 $((PROMPT_COUNT - 1))); do
+    PROMPT_DIR="$RUN_SUBDIR/prompt-$i"
+    mkdir -p "$PROMPT_DIR"
+
+    # Write prompt name and text to files (avoids shell quoting issues with multiline content)
+    echo "$PROMPTS_JSON" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 p = data[$i]
@@ -305,62 +347,62 @@ open('$PROMPT_DIR/prompt_name.txt', 'w').write(p['name'])
 open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
 "
 
-  PROMPT_NAME=$(cat "$PROMPT_DIR/prompt_name.txt")
-  log "--- Prompt $i: $PROMPT_NAME ---"
+    PROMPT_NAME=$(cat "$PROMPT_DIR/prompt_name.txt")
+    log "--- Prompt $i: $PROMPT_NAME ---"
 
-  # Resume: skip already-completed runs
-  STATUS_FILE="$PROMPT_DIR/status.json"
-  if [[ "$RESUME" == "true" && -f "$STATUS_FILE" ]]; then
-    DONE_STATUS=$(python3 -c "import json; print(json.load(open('$STATUS_FILE'))['status'])" 2>/dev/null || echo "")
-    if [[ "$DONE_STATUS" == "stopped" || "$DONE_STATUS" == "finished" ]]; then
-      log "  Skipping (already $DONE_STATUS)"
-      continue
+    # Resume: skip already-completed runs
+    STATUS_FILE="$PROMPT_DIR/status.json"
+    if [[ "$RESUME" == "true" && -f "$STATUS_FILE" ]]; then
+      DONE_STATUS=$(python3 -c "import json; print(json.load(open('$STATUS_FILE'))['status'])" 2>/dev/null || echo "")
+      if [[ "$DONE_STATUS" == "stopped" || "$DONE_STATUS" == "finished" ]]; then
+        log "  Skipping (already $DONE_STATUS)"
+        continue
+      fi
     fi
-  fi
 
-  # Create conversation
-  log "  Creating OpenHands conversation..."
-  CONV_START=$(date +%s)
-  CREATE_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-    --base-url "$OH_BASE_URL" create --prompt-file "$PROMPT_DIR/prompt.txt")
-  CONV_ID=$(echo "$CREATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['conversation_id'])")
-  log "  Conversation: $CONV_ID"
+    # Create conversation
+    log "  Creating OpenHands conversation..."
+    CONV_START=$(date +%s)
+    CREATE_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+      --base-url "$OH_BASE_URL" create --prompt-file "$PROMPT_DIR/prompt.txt")
+    CONV_ID=$(echo "$CREATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['conversation_id'])")
+    log "  Conversation: $CONV_ID"
 
-  # Poll for completion
-  log "  Polling for STOPPED (timeout: ${OH_RUN_TIMEOUT}s)..."
-  FINAL_STATUS="error"
-  ELAPSED=0
-  while true; do
-    sleep "$OH_POLL_INTERVAL"
-    ELAPSED=$((ELAPSED + OH_POLL_INTERVAL))
-    STATUS_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-      --base-url "$OH_BASE_URL" status --conv-id "$CONV_ID")
-    CONV_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-    EXEC_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('execution_status',''))" 2>/dev/null || echo "")
-    log "  [$ELAPSED s] $CONV_STATUS ($EXEC_STATUS)"
-    if [[ "$CONV_STATUS" == "STOPPED" ]]; then
-      echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
-      FINAL_STATUS="stopped"; break
-    fi
-    if [[ $ELAPSED -ge $OH_RUN_TIMEOUT ]]; then
-      log "  Timeout — stopping conversation..."
-      python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-        --base-url "$OH_BASE_URL" stop --conv-id "$CONV_ID" 2>/dev/null || true
-      FINAL_STATUS="timeout"; break
-    fi
-  done
+    # Poll for completion
+    log "  Polling for STOPPED (timeout: ${OH_RUN_TIMEOUT}s)..."
+    FINAL_STATUS="error"
+    ELAPSED=0
+    while true; do
+      sleep "$OH_POLL_INTERVAL"
+      ELAPSED=$((ELAPSED + OH_POLL_INTERVAL))
+      STATUS_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+        --base-url "$OH_BASE_URL" status --conv-id "$CONV_ID")
+      CONV_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+      EXEC_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('execution_status',''))" 2>/dev/null || echo "")
+      log "  [$ELAPSED s] $CONV_STATUS ($EXEC_STATUS)"
+      if [[ "$CONV_STATUS" == "STOPPED" ]]; then
+        echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
+        FINAL_STATUS="stopped"; break
+      fi
+      if [[ $ELAPSED -ge $OH_RUN_TIMEOUT ]]; then
+        log "  Timeout — stopping conversation..."
+        python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+          --base-url "$OH_BASE_URL" stop --conv-id "$CONV_ID" 2>/dev/null || true
+        FINAL_STATUS="timeout"; break
+      fi
+    done
 
-  DURATION=$(( $(date +%s) - CONV_START ))
-  log "  $FINAL_STATUS after ${DURATION}s"
+    DURATION=$(( $(date +%s) - CONV_START ))
+    log "  $FINAL_STATUS after ${DURATION}s"
 
-  # Collect artifacts
-  log "  Downloading conversation..."
-  python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-    --base-url "$OH_BASE_URL" download --conv-id "$CONV_ID" \
-    --output "$PROMPT_DIR/conversation.zip" 2>/dev/null || log "  WARNING: conversation download failed"
+    # Collect artifacts
+    log "  Downloading conversation..."
+    python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+      --base-url "$OH_BASE_URL" download --conv-id "$CONV_ID" \
+      --output "$PROMPT_DIR/conversation.zip" 2>/dev/null || log "  WARNING: conversation download failed"
 
-  log "  Converting conversation to markdown..."
-  python3 - <<PYEOF
+    log "  Converting conversation to markdown..."
+    python3 - <<PYEOF
 import sys
 sys.path.insert(0, '$SCRIPT_DIR')
 from pathlib import Path
@@ -370,21 +412,21 @@ if zip_path.exists() and zip_path.stat().st_size > 0:
     Path('$PROMPT_DIR/conversation.md').write_text(convert(zip_path))
 PYEOF
 
-  log "  Extracting metrics..."
-  python3 "$SCRIPT_DIR/lib/extract_metrics.py" \
-    --conv-info "$PROMPT_DIR/conv_info.json" --output "$PROMPT_DIR/metrics.json"
+    log "  Extracting metrics..."
+    python3 "$SCRIPT_DIR/lib/extract_metrics.py" \
+      --conv-info "$PROMPT_DIR/conv_info.json" --output "$PROMPT_DIR/metrics.json"
 
-  # Context script — captures device ground truth
-  if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
-    log "  Running context script ($CONTEXT_CMD)..."
-    (cd "$SCENARIO_CONFIG_DIR" && eval "$CONTEXT_CMD") > "$PROMPT_DIR/context.txt" 2>&1 \
-      || log "  WARNING: context script exited non-zero"
-  else
-    echo "(no context script configured)" > "$PROMPT_DIR/context.txt"
-  fi
+    # Context script — captures device ground truth
+    if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+      log "  Running context script ($CONTEXT_CMD)..."
+      (cd "$SCENARIO_CONFIG_DIR" && eval "$CONTEXT_CMD") > "$PROMPT_DIR/context.txt" 2>&1 \
+        || log "  WARNING: context script exited non-zero"
+    else
+      echo "(no context script configured)" > "$PROMPT_DIR/context.txt"
+    fi
 
-  # Save run status
-  cat > "$STATUS_FILE" <<STATUSEOF
+    # Save run status
+    cat > "$STATUS_FILE" <<STATUSEOF
 {
   "conversation_id": "$CONV_ID",
   "status": "$FINAL_STATUS",
@@ -395,26 +437,44 @@ PYEOF
 }
 STATUSEOF
 
-  # Cleanup between runs (skip after the last one)
-  if [[ $i -lt $((PROMPT_COUNT - 1)) ]]; then
-    if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
-      log "  Running cleanup script ($CLEANUP_CMD)..."
-      if ! (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD"); then
-        log "ERROR: cleanup script failed — aborting run (environment may be in inconsistent state)"
-        log "NOTE: CAVE deployment will still be torn down via cleanup trap (exterminate-wrapper.sh)"
-        exit 1
+    # Cleanup between prompts (skip only after the very last prompt of the very last run)
+    if [[ $i -lt $((PROMPT_COUNT - 1)) || $RUN_IDX -lt $NUM_RUNS ]]; then
+      if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+        log "  Running cleanup script ($CLEANUP_CMD)..."
+        if ! (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD"); then
+          log "ERROR: cleanup script failed — aborting run (environment may be in inconsistent state)"
+          log "NOTE: CAVE deployment will still be torn down via cleanup trap (exterminate-wrapper.sh)"
+          exit 1
+        fi
       fi
     fi
-  fi
 
-  log "  Prompt-$i ($PROMPT_NAME): $FINAL_STATUS"
+    log "  Prompt-$i ($PROMPT_NAME): $FINAL_STATUS"
+  done
+
+  log "=== Run $RUN_IDX/$NUM_RUNS: prompt loop complete ==="
+
+  # ── Step 3: Per-run evaluation ───────────────────────────────────────────────
+  log "=== Run $RUN_IDX/$NUM_RUNS: running evaluation ==="
+  python3 "$SCRIPT_DIR/evaluate.py" --config "$CONFIG_FILE" --run-dir "$RUN_SUBDIR"
+
 done
 
 log "=== All runs complete ==="
 
-# ── Step 3: Evaluation ─────────────────────────────────────────────────────────
-log "=== Running evaluation ==="
-python3 "$SCRIPT_DIR/evaluate.py" --config "$CONFIG_FILE" --run-dir "$RUN_DIR"
+# ── Step 4: Top-level evaluation.md (always present as the primary entrypoint) ─
+if [[ "$NUM_RUNS" -gt 1 ]]; then
+  log "=== Combining $NUM_RUNS run evaluations ==="
+  RUN_SUBDIRS=()
+  for RUN_IDX in $(seq 1 "$NUM_RUNS"); do
+    RUN_SUBDIRS+=("$RUN_DIR/run${RUN_IDX}")
+  done
+  python3 "$SCRIPT_DIR/evaluate.py" --config "$CONFIG_FILE" \
+    --combine "${RUN_SUBDIRS[@]}" --output "$RUN_DIR/evaluation.md"
+else
+  log "=== Copying single run's evaluation to $RUN_DIR/evaluation.md ==="
+  cp "$RUN_DIR/run1/evaluation.md" "$RUN_DIR/evaluation.md"
+fi
 
 log "=== Done. Results in: $RUN_DIR ==="
 

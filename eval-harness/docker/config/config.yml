@@ -37,6 +37,12 @@ evaluation:
 # prompts:
 #   mode: cumulative                         # default: cumulative (alternative: individual)
 
+# runs:
+#   count: 1                                 # default: 1. If >1, the full prompt sweep is repeated N times
+#                                             # (no redeploy between runs, just cleanup_script). Results are
+#                                             # kept fully separate under run1/, run2/, ... and combined into
+#                                             # a top-level evaluation.md at the end.
+
 # context_script:
 #   cmd: "bash eval.sh"                      # default: bash eval.sh in config_dir
 
