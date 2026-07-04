@@ -22,6 +22,12 @@ DEFAULT_SYNTHESIS_PROMPT = SCRIPT_DIR / "prompts" / "synthesis.md"
 DEFAULT_TEMPLATE = SCRIPT_DIR / "prompts" / "template.md"
 DEFAULT_MULTI_RUN_SYNTHESIS_PROMPT = SCRIPT_DIR / "prompts" / "multi_run_synthesis.md"
 
+# Rough safety cap for --combine's input (per-run evaluation.md documents are
+# concatenated verbatim). ~4 chars/token, so this is a conservative ~100k-token
+# budget — fail fast instead of hitting the model's context limit after all
+# runs have already completed.
+MAX_COMBINE_CHARS = 400_000
+
 
 def _read(path: Path, default: str = "(not available)") -> str:
     try:
@@ -144,6 +150,17 @@ def _combine_runs(
         )
 
     user_msg = "\n\n---\n\n".join(sections)
+
+    if len(user_msg) > MAX_COMBINE_CHARS:
+        print(
+            f"ERROR: Combined input for --combine is {len(user_msg):,} characters, "
+            f"exceeding the {MAX_COMBINE_CHARS:,}-character safety limit "
+            "(likely to exceed the model's context window). "
+            "Reduce runs.count, shorten the per-run evaluation.md documents/template, "
+            "or raise MAX_COMBINE_CHARS in evaluate.py if your model can handle more.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     response = client.chat.completions.create(
         model=model,

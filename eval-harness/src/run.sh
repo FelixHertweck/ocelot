@@ -302,7 +302,7 @@ for RUN_IDX in $(seq 1 "$NUM_RUNS"); do
   RUN_SUBDIR="$RUN_DIR/run${RUN_IDX}"
   mkdir -p "$RUN_SUBDIR"
 
-  # Resume: skip a run entirely once its combined evaluation.md exists
+  # Resume: skip this run entirely once its per-run evaluation.md exists
   if [[ "$RESUME" == "true" && -f "$RUN_SUBDIR/evaluation.md" ]]; then
     log "=== Run $RUN_IDX/$NUM_RUNS: skipping (already evaluated) ==="
     continue
@@ -449,7 +449,7 @@ done
 
 log "=== All runs complete ==="
 
-# ── Step 4: Combine per-run evaluations ────────────────────────────────────────
+# ── Step 4: Top-level evaluation.md (always present as the primary entrypoint) ─
 if [[ "$NUM_RUNS" -gt 1 ]]; then
   log "=== Combining $NUM_RUNS run evaluations ==="
   RUN_SUBDIRS=()
@@ -458,6 +458,9 @@ if [[ "$NUM_RUNS" -gt 1 ]]; then
   done
   python3 "$SCRIPT_DIR/evaluate.py" --config "$CONFIG_FILE" \
     --combine "${RUN_SUBDIRS[@]}" --output "$RUN_DIR/evaluation.md"
+else
+  log "=== Copying single run's evaluation to $RUN_DIR/evaluation.md ==="
+  cp "$RUN_DIR/run1/evaluation.md" "$RUN_DIR/evaluation.md"
 fi
 
 log "=== Done. Results in: $RUN_DIR ==="

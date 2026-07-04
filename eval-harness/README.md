@@ -287,7 +287,8 @@ eval-harness/
       <lab_prefix>/       ← one folder per run.sh invocation (single deploy/teardown)
         run.log
         meta.json
-        evaluation.md     ← combined evaluation across all runs (only when runs.count > 1)
+        evaluation.md     ← primary entrypoint: copy of run1/evaluation.md if runs.count == 1,
+                            or the combined evaluation across all runs if runs.count > 1
         run1/             ← one full prompt sweep
           evaluation.md   ← evaluation document for this run only
           meta.json
