@@ -364,26 +364,25 @@ If the `evaluation.md` output looks incorrect or incomplete:
 
 ### Background Execution
 
-If you want the eval-harness to keep running after you close your terminal, use:
+Since the eval-harness prompts for console input during the run, use `screen` to keep the interactive session alive in the background so you can reattach and answer prompts whenever needed.
 
 ```bash
-docker compose run -d eval && docker compose logs -f eval
+screen -S eval
+docker compose run eval
 ```
 
-This command:
-1. **`docker compose run -d`** — starts the container in **detached mode** (background)
-2. **`docker compose logs -f`** — streams logs in real-time (follows the output)
+Detach from the session with `Ctrl+A` then `D`. The container keeps running, and you can safely close your terminal.
 
-When you close the logs (Ctrl+C), the container continues running. To check logs later:
+To reattach later (e.g. to answer a console prompt or check progress):
 
 ```bash
-docker compose logs -f eval
+screen -r eval
 ```
 
-To see container status:
+To list running sessions:
 
 ```bash
-docker compose ps
+screen -ls
 ```
 
 ---
