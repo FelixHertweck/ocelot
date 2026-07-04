@@ -305,6 +305,19 @@ for RUN_IDX in $(seq 1 "$NUM_RUNS"); do
   # Resume: skip this run entirely once its per-run evaluation.md exists
   if [[ "$RESUME" == "true" && -f "$RUN_SUBDIR/evaluation.md" ]]; then
     log "=== Run $RUN_IDX/$NUM_RUNS: skipping (already evaluated) ==="
+    # Still reset before the next run (unless this is the last one overall) —
+    # a prior invocation may have had a lower runs.count and thus skipped its
+    # own final cleanup, assuming this was the last run at the time.
+    if [[ $RUN_IDX -lt $NUM_RUNS ]]; then
+      if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+        log "  Running cleanup script ($CLEANUP_CMD) before next run..."
+        if ! (cd "$SCENARIO_CONFIG_DIR" && eval "$CLEANUP_CMD"); then
+          log "ERROR: cleanup script failed — aborting run (environment may be in inconsistent state)"
+          log "NOTE: CAVE deployment will still be torn down via cleanup trap (exterminate-wrapper.sh)"
+          exit 1
+        fi
+      fi
+    fi
     continue
   fi
 
