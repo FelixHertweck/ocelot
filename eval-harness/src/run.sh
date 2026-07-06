@@ -76,6 +76,7 @@ SKIP_DEPLOY=false
 KEEP_DEPLOYMENT=false
 RESUME=false
 CONFIG_SELECTED=false
+LAB_PREFIX_CLI=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -83,8 +84,9 @@ while [[ $# -gt 0 ]]; do
     --skip-deploy)     SKIP_DEPLOY=true; shift ;;
     --keep-deployment) KEEP_DEPLOYMENT=true; shift ;;
     --resume)          RESUME=true; shift ;;
+    --lab-prefix)      LAB_PREFIX_CLI="$2"; shift 2 ;;
     --help|-h)
-      echo "Usage: run.sh [--config FILE] [--skip-deploy] [--keep-deployment] [--resume]"
+      echo "Usage: run.sh [--config FILE] [--skip-deploy] [--keep-deployment] [--resume] [--lab-prefix NAME]"
       exit 0
       ;;
     *) echo "ERROR: Unknown option: $1" >&2; exit 1 ;;
@@ -116,6 +118,10 @@ if [[ -z "$EVAL_LLM_API_KEY" ]]; then
 fi
 
 # ── Generate run-id and lab_prefix ────────────────────────────────────────────
+if [[ -n "$LAB_PREFIX_CLI" ]]; then
+  LAB_PREFIX_CONFIG="$LAB_PREFIX_CLI"
+fi
+
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 RUN_ID="${CAVE_CONFIG_NAME}_${TIMESTAMP}"
 if [[ "$LAB_PREFIX_CONFIG" == "auto" ]]; then

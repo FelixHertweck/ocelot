@@ -40,13 +40,13 @@ CONFIG=config-myrun.yml docker compose run --rm eval
 docker compose run -d eval && docker compose logs -f eval
 
 # 5. Skip deploy (already-running lab)
-docker compose run --rm eval run.sh --skip-deploy
+docker compose run --rm eval --skip-deploy
 
 # 6. Keep lab running after the eval
-docker compose run --rm eval run.sh --keep-deployment
+docker compose run --rm eval --keep-deployment
 
 # 7. Resume an interrupted run (skips already-completed prompts)
-docker compose run --rm eval run.sh --resume
+docker compose run --rm eval --resume
 
 # 8. Re-run only the evaluation step on existing results (per run)
 docker compose run --rm eval python3 evaluate.py \
@@ -70,8 +70,19 @@ docker compose run --rm eval python3 evaluate.py \
 | `--skip-deploy` | Skip CAVE deploy and VPN setup; use with an already-running lab. Also skips teardown. |
 | `--keep-deployment` | Run as normal but do not tear down the lab after the eval completes. |
 | `--resume` | Skip prompt runs that already have a `status.json` with status `stopped` or `finished`; skips an entire `runN/` folder if it already has an `evaluation.md`. |
+| `--lab-prefix NAME` | Override `deploy.lab_prefix` from the config file. Lets you pin the results dir / lab name from the CLI instead of editing the config, e.g. to target a specific run when resuming. |
 
-Flags can be combined, e.g. `run.sh --skip-deploy --resume` to continue a partially-run eval on an existing lab.
+Flags can be combined, e.g. `--skip-deploy --resume` to continue a partially-run eval on an existing lab.
+
+The container's entrypoint already runs `run.sh` (see `Dockerfile`), so pass these flags directly to `docker compose run --rm eval`, without repeating `run.sh` — e.g. `docker compose run --rm eval --skip-deploy --resume`.
+
+To resume a specific run without touching the config file:
+
+```bash
+docker compose run --rm eval --resume --lab-prefix my-run
+```
+
+This automatically continues after the last successfully completed prompt: `--resume` walks `results/my-run/runN/prompt-*/status.json` in order and skips every prompt already marked `stopped`/`finished`, picking back up at the first one that isn't — no need to say which prompt to start from.
 
 ---
 
