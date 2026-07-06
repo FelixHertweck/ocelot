@@ -7,12 +7,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Activate venv if present, otherwise ensure dependencies are available
-if [[ -d ".venv" ]]; then
-    source .venv/bin/activate
-else
-    # Install dependencies if not already available
-    python -m pip install --quiet --no-cache-dir -r requirements.txt 2>/dev/null || true
+# Output is captured to context.txt (the ground truth the LLM evaluator reads), so stay
+# silent on success and only surface the log if setup genuinely fails. See reset.sh for
+# why we always rebuild ".venv" here rather than trusting one that already exists.
+if ! VENV_SETUP_LOG=$(python3 -m venv --clear .venv 2>&1); then
+    echo "$VENV_SETUP_LOG" >&2
+    exit 1
+fi
+source .venv/bin/activate
+if ! VENV_SETUP_LOG=$(pip install --no-cache-dir -r requirements.txt 2>&1); then
+    echo "$VENV_SETUP_LOG" >&2
+    exit 1
 fi
 
 echo "Connecting to inverter (10.1.1.15:502) …"

@@ -45,13 +45,14 @@ ssh \
 
 echo "=== Phase 1a Reset: Starting inverter ==="
 
-# Activate venv if present, otherwise ensure dependencies are available
-if [[ -d ".venv" ]]; then
-    source .venv/bin/activate
-else
-    # Install dependencies if not already available
-    python -m pip install --quiet --no-cache-dir -r requirements.txt 2>/dev/null || true
-fi
+# This always runs inside the eval-harness container, never on a host — so there's no
+# point trusting a pre-existing ".venv": one built elsewhere stores an absolute path to
+# that host's interpreter, which is dangling once mounted into this container. `--clear`
+# wipes and rebuilds it against whatever python is actually running right here; pip
+# install is a fast no-op once already satisfied, so redoing this every call is cheap.
+python3 -m venv --clear .venv
+source .venv/bin/activate
+pip install --quiet --no-cache-dir -r requirements.txt
 
 # Run inverter_start.py
 python inverter_start.py

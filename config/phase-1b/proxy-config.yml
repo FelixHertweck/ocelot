@@ -13,10 +13,102 @@ proxy:
 
 rules:
   default_action: DENY
+  # Fallback on_violation for registers that don't set their own. Only override at register level
+  # when a different action is needed (e.g. DISCONNECT for safety-critical writes like 40018).
   default_on_violation: MODBUS_EXCEPTION
 
+  # Read/write throttle for registers without their own read/write block (ms window).
+  default_rate_limit:
+    write:
+      max_requests: 1
+      per_millis: 100
+      on_violation: MODBUS_EXCEPTION
+    read:
+      max_requests: 1
+      per_millis: 100
+      on_violation: MODBUS_EXCEPTION
+
   registers:
-    # Add per-register rules here. Example:
-    # - address: 30775
-    #   description: "Total AC active power [W]"
-    #   allow_write: false
+    # --- Goal A: Nameplate / Device Identification (U32, Read-Only, FC3) ---
+    - address: 30003
+      description: "Nameplate.SusyId – SUSyID of the module"
+      allow_write: false
+
+    - address: 30005
+      description: "Nameplate.SerNum – Serial number"
+      allow_write: false
+      write:
+        max_requests: 1
+        per_millis: 100
+      read:
+        max_requests: 10
+        per_millis: 1000
+
+    - address: 30051
+      description: "Nameplate.MainModel – Device class (8001 = Solar Inverters)"
+      allow_write: false
+
+    - address: 30053
+      description: "Nameplate.Model – Exact device type (9336 = STP 15000TL-30)"
+      allow_write: false
+
+    - address: 30055
+      description: "Nameplate.Vendor – Manufacturer"
+      allow_write: false
+
+    - address: 30059
+      description: "Nameplate.PkgRev – Firmware version (software package)"
+      allow_write: false
+
+    # --- Goal B: Live Measurements (U32, Read-Only, FC3) ---
+    - address: 30769
+      description: "DcMs.Amp[1] – DC input current string 1 [mA]"
+      allow_write: false
+
+    - address: 30771
+      description: "DcMs.Vol[1] – DC input voltage string 1 [0.01 V]"
+      allow_write: false
+
+    - address: 30773
+      description: "DcMs.Watt[1] – DC input power string 1 [W]"
+      allow_write: false
+
+    - address: 30775
+      description: "Pac – Total AC active power output [W]"
+      allow_write: false
+
+    - address: 30783
+      description: "GridMs.PhV.phsA – Grid voltage phase A [0.01 V]"
+      allow_write: false
+
+    - address: 30785
+      description: "GridMs.PhV.phsB – Grid voltage phase B [0.01 V]"
+      allow_write: false
+
+    - address: 30787
+      description: "GridMs.PhV.phsC – Grid voltage phase C [0.01 V]"
+      allow_write: false
+
+    - address: 30803
+      description: "GridMs.Hz – Grid frequency [0.01 Hz]"
+      allow_write: false
+
+    - address: 30953
+      description: "TmpValSrc – Internal heat-sink temperature [0.1 °C]"
+      allow_write: false
+
+    # --- Goal C: Emergency Stop & State Verification ---
+    - address: 40018
+      description: "Inverter.FstStop – Fast shutdown (381=Stop, 1467=Start, 1749=FulStop); U32 WO, FC16"
+      allow_write: true
+      value_range:
+        min: 0
+        max: 1749
+      write:
+        max_requests: 1
+        per_millis: 150  # 1 write per 150ms; overrides default_rate_limit.write
+      on_violation: DISCONNECT  # overrides default_on_violation — disconnect on unsafe write
+
+    - address: 40029
+      description: "Operation.OpStt – Current operating state (381=Stop, 1469=ShutDown); read-only verification"
+      allow_write: false

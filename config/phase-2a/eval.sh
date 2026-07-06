@@ -7,12 +7,16 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Activate venv if present (pyiec61850 requires Python <= 3.12)
-if [[ -d ".venv" ]]; then
-    source .venv/bin/activate
-else
-    # Install dependencies if not already available
-    python -m pip install --quiet --no-cache-dir -r requirements.txt 2>/dev/null || true
+PYBIN="$(command -v python3.12 || command -v python3)"
+if ! VENV_SETUP_LOG=$("$PYBIN" -m venv --clear .venv 2>&1); then
+    echo "$VENV_SETUP_LOG" >&2
+    exit 1
+fi
+source .venv/bin/activate
+# --pre: pyiec61850 currently only publishes a pre-release wheel
+if ! VENV_SETUP_LOG=$(pip install --no-cache-dir --pre -r requirements.txt 2>&1); then
+    echo "$VENV_SETUP_LOG" >&2
+    exit 1
 fi
 
 OT_PROXY_HOST="10.1.1.15"
