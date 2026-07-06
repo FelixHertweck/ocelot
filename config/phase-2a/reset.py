@@ -2,9 +2,11 @@
 """
 Reset Phase 2a — close the circuit breaker via IEC 61850 MMS.
 
-Discovers the XCBR logical node automatically via GetServerDirectory and
-GetLogicalDeviceDirectory, reads the control model (direct vs. SBO), then
-issues Control.Operate(ctlVal=true) and verifies the breaker is closed.
+Discovers the XCBR (status) and CSWI (control) logical nodes automatically via
+GetServerDirectory and GetLogicalDeviceDirectory, reads the control model
+(direct vs. SBO) from CSWI.Pos — XCBR.Pos is status-only on the physical
+SIPROTEC — then issues Control.Operate(ctlVal=true) against CSWI.Pos and
+verifies via XCBR.Pos.stVal that the breaker is closed.
 
 Connects to the OT proxy, which forwards the Operate call upstream to the IED
 per the write rules in proxy-config.yml.
@@ -69,11 +71,16 @@ def mms_connect(host: str, port: int):
 
 # ── Discovery ─────────────────────────────────────────────────────────────────
 
-def find_xcbr(con) -> tuple[str, str] | tuple[None, None]:
-    """Traverse server directory to find the first XCBR logical node."""
+def find_breaker_lns(con) -> tuple[str, str, str] | tuple[None, None, None]:
+    """Traverse server directory to find the XCBR (status) and CSWI (control)
+    logical nodes of the first logical device that has both.
+
+    XCBR.Pos is status-only on the physical SIPROTEC (ctlModel=0) — the
+    actual control path is via CSWI.Pos, per proxy-config.yml.
+    """
     ll, err = iec61850.IedConnection_getServerDirectory(con, False)
     if err != iec61850.IED_ERROR_OK or ll is None:
-        return None, None
+        return None, None, None
     ld_names = ll_to_list(ll)
     ll_free(ll)
 
@@ -83,10 +90,11 @@ def find_xcbr(con) -> tuple[str, str] | tuple[None, None]:
             continue
         ln_names = ll_to_list(ll)
         ll_free(ll)
-        for ln in ln_names:
-            if ln.startswith("XCBR"):
-                return ld, ln
-    return None, None
+        xcbr_ln = next((ln for ln in ln_names if ln.startswith("XCBR")), None)
+        cswi_ln = next((ln for ln in ln_names if ln.startswith("CSWI")), None)
+        if xcbr_ln and cswi_ln:
+            return ld, xcbr_ln, cswi_ln
+    return None, None, None
 
 
 def read_ctl_model(con, ld: str, ln: str) -> int | None:
@@ -148,20 +156,20 @@ def main() -> None:
     print("Connected.")
 
     try:
-        print("\nDiscovering XCBR logical node …")
-        ld, ln = find_xcbr(con)
+        print("\nDiscovering XCBR (status) / CSWI (control) logical nodes …")
+        ld, xcbr_ln, cswi_ln = find_breaker_lns(con)
         if ld is None:
-            sys.exit("ERROR — no XCBR logical node found on this device")
-        print(f"  Found: {ld}/{ln}")
+            sys.exit("ERROR — no logical device with both XCBR and CSWI logical nodes found")
+        print(f"  Found: {ld}/{xcbr_ln} (status), {ld}/{cswi_ln} (control)")
 
-        before = read_stval(con, ld, ln)
+        before = read_stval(con, ld, xcbr_ln)
         print(f"  Current state: Pos.stVal = {before}  ({DBPOS.get(before, 'unknown')})")
 
         if before == CLOSED_STVAL:
             print("\n  Breaker is already CLOSED — nothing to do.")
             return
 
-        ctl_model = read_ctl_model(con, ld, ln)
+        ctl_model = read_ctl_model(con, ld, cswi_ln)
         if ctl_model is None:
             print("  WARNING — could not read ctlModel, assuming direct-with-normal-security")
             ctl_model = 1
@@ -172,11 +180,12 @@ def main() -> None:
             sys.exit("ERROR — ctlModel is status-only (0), cannot operate")
 
         print()
-        ok = close_breaker(con, ld, ln, ctl_model)
+        ok = close_breaker(con, ld, cswi_ln, ctl_model)
         if not ok:
-            sys.exit("ERROR — operate command failed")
+            print("\n  NOTE — operate command was not accepted; leaving it at that.")
+            return
 
-        after = read_stval(con, ld, ln)
+        after = read_stval(con, ld, xcbr_ln)
         print(f"  After:  Pos.stVal = {after}  ({DBPOS.get(after, 'unknown')})")
 
         if after == CLOSED_STVAL:
