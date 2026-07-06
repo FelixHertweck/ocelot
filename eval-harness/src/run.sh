@@ -142,21 +142,57 @@ if ! [[ "$NUM_RUNS" =~ ^[0-9]+$ ]] || [[ "$NUM_RUNS" -lt 1 ]]; then
 fi
 
 # ── Port selection ─────────────────────────────────────────────────────────────
-LOCK_DIR="$SCRIPT_DIR/.port-locks"
-mkdir -p "$LOCK_DIR"
+# PORT_REGISTRY_DIR must be shared across run.sh invocations (see config.py default).
+mkdir -p "$PORT_REGISTRY_DIR"
+PORT_REGISTRY_FILE="$PORT_REGISTRY_DIR/allocated-ports.tsv"
+PORT_REGISTRY_LOCK="$PORT_REGISTRY_DIR/allocated-ports.lock"
+touch "$PORT_REGISTRY_FILE"
+
+# TSV: port<TAB>lab_prefix<TAB>allocated_at<TAB>pid. flock guards read-check-append.
 
 pick_free_port() {
   local start="${PORT_POOL%-*}" end="${PORT_POOL#*-}"
+  local port status=1 lock_fd
+  exec {lock_fd}>"$PORT_REGISTRY_LOCK"
+  if ! flock -w 30 "$lock_fd"; then
+    echo "ERROR: timed out waiting for port-registry lock" >&2
+    exec {lock_fd}>&-
+    return 1
+  fi
+
   for port in $(seq "$start" "$end"); do
-    local lock="$LOCK_DIR/$port.lock"
-    if [[ ! -f "$lock" ]] && ! ss -ltn 2>/dev/null | grep -q ":$port "; then
-      echo $$ > "$lock"
-      echo "$port"
-      return 0
+    if grep -q "^${port}$(printf '\t')" "$PORT_REGISTRY_FILE"; then
+      continue
     fi
+    if ss -ltn 2>/dev/null | grep -q ":$port "; then
+      continue
+    fi
+    printf '%s\t%s\t%s\t%s\n' "$port" "$LAB_PREFIX" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$$" >> "$PORT_REGISTRY_FILE"
+    echo "$port"
+    status=0
+    break
   done
-  echo "ERROR: No free port available in range $PORT_POOL" >&2
-  return 1
+
+  flock -u "$lock_fd"
+  exec {lock_fd}>&-
+  if [[ $status -ne 0 ]]; then
+    echo "ERROR: No free port available in range $PORT_POOL" >&2
+  fi
+  return $status
+}
+
+release_port() {
+  local port="$1" lock_fd
+  exec {lock_fd}>"$PORT_REGISTRY_LOCK"
+  if ! flock -w 30 "$lock_fd"; then
+    echo "WARNING: timed out waiting for port-registry lock during release of port $port" >&2
+    exec {lock_fd}>&-
+    return 1
+  fi
+  grep -v "^${port}$(printf '\t')" "$PORT_REGISTRY_FILE" > "$PORT_REGISTRY_FILE.tmp" || true
+  mv "$PORT_REGISTRY_FILE.tmp" "$PORT_REGISTRY_FILE"
+  flock -u "$lock_fd"
+  exec {lock_fd}>&-
 }
 
 if [[ "$VPN_PORT_CONFIG" == "auto" ]]; then
@@ -179,10 +215,6 @@ cleanup() {
     log "Stopping VPN (PID $VPN_PID)..."
     kill "$VPN_PID" 2>/dev/null || true
     sleep 1
-  fi
-
-  if [[ "$VPN_PORT_CONFIG" == "auto" ]]; then
-    rm -f "$LOCK_DIR/$VPN_PORT.lock"
   fi
 
   if [[ "$DEPLOYED" == "true" && "$TEARDOWN_DONE" == "false" ]]; then
@@ -214,6 +246,12 @@ cleanup() {
     fi
   elif [[ "$DEPLOYED" == "false" ]]; then
     log "Note: deployment was not completed, skipping teardown"
+  fi
+
+  # Release only after teardown ran — the DNAT rule outlives the port pick otherwise.
+  if [[ "$VPN_PORT_CONFIG" == "auto" && "$KEEP_DEPLOYMENT" != "true" ]]; then
+    log "Releasing port $VPN_PORT from registry..."
+    release_port "$VPN_PORT"
   fi
 
   log "Cleanup done."

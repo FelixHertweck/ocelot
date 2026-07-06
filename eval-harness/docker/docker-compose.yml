@@ -15,6 +15,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock   # docker socket for CAVE deploy
       - ./config:/app/config:ro                     # scenario configs, prompts, templates
       - ./results:/app/results                      # run output and evaluation results
+      - ./port-registry:/app/port-registry          # shared port allocation registry (flock-guarded, survives across container instances)
       - type: bind                                  # CAVE infra + scenario scripts
         source: *cave_wrapper_dir
         target: *cave_wrapper_dir

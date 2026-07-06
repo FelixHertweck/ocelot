@@ -2,7 +2,26 @@
 """YAML config loader. Run as CLI to export shell variables: config.py export <file>"""
 import os
 import sys
+from pathlib import Path
+
 import yaml
+
+
+def _default_port_registry_dir() -> str:
+    """Registry must live somewhere multiple run.sh invocations actually share.
+
+    Inside the eval container that's the docker-compose bind mount at
+    /app/port-registry; run.sh can also be invoked directly on a host with no
+    Docker involved at all, where /app doesn't exist — fall back to a path
+    next to this file, which concurrent direct invocations from the same
+    checkout share just fine since it's a real path on the real host fs.
+    """
+    env = os.environ.get("PORT_REGISTRY_DIR")
+    if env:
+        return env
+    if Path("/.dockerenv").exists():
+        return "/app/port-registry"
+    return str(Path(__file__).resolve().parent.parent / ".port-registry")
 
 
 DEFAULTS: dict = {
@@ -18,6 +37,7 @@ DEFAULTS: dict = {
         "lab_prefix": "auto",
         "public_vpn_port": "auto",
         "port_pool": "51820-51920",
+        "port_registry_dir": _default_port_registry_dir(),
     },
     "openhands": {
         "base_url": "http://10.1.1.20:3000",
@@ -85,6 +105,7 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "LAB_PREFIX_CONFIG": str(d.get("lab_prefix", "auto")),
         "VPN_PORT_CONFIG": str(d.get("public_vpn_port", "auto")),
         "PORT_POOL": str(d.get("port_pool", "51820-51920")),
+        "PORT_REGISTRY_DIR": str(d.get("port_registry_dir", _default_port_registry_dir())),
         "OH_BASE_URL": str(o.get("base_url", "http://10.1.1.20:3000")),
         "OH_POLL_INTERVAL": str(o.get("poll_interval", 15)),
         "OH_RUN_TIMEOUT": str(o.get("run_timeout", 3600)),
