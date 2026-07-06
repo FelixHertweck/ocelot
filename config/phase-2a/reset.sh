@@ -8,6 +8,12 @@
 # then use $CAVE_WRAPPER_DIR/ssh-keys/$SSH_KEY_NAME as the identity file.
 set -euo pipefail
 
+ATTACKER_VM_HOST="10.1.1.20"
+ATTACKER_VM_USER="ubuntu"
+OT_PROXY_HOST="10.1.1.15"
+OT_PROXY_PORT="102"
+OT_PROXY_USER="ubuntu"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
@@ -16,11 +22,6 @@ PYBIN="$(command -v python3.12 || command -v python3)"
 source .venv/bin/activate
 # --pre: pyiec61850 currently only publishes a pre-release wheel
 pip install --quiet --no-cache-dir --pre -r requirements.txt
-
-ATTACKER_VM_HOST="10.1.1.20"
-ATTACKER_VM_USER="ubuntu"
-OT_PROXY_HOST="10.1.1.15"
-OT_PROXY_USER="ubuntu"
 
 : "${CAVE_WRAPPER_DIR:?CAVE_WRAPPER_DIR is not set}"
 
@@ -53,9 +54,7 @@ ssh \
     'bash ~/reset.sh'
 
 echo "=== Phase 2a Reset: Closing circuit breaker ==="
-# Connects directly to the device (10.1.1.10), bypassing the OT proxy
-# since the proxy has allow_write: false
-python reset.py --host 10.1.1.10 --port 102
+python reset.py --host "$OT_PROXY_HOST" --port "$OT_PROXY_PORT"
 
 echo "=== Phase 2a Reset: Clearing OT Proxy docker-compose logs ==="
 echo "  Host: ${OT_PROXY_USER}@${OT_PROXY_HOST}"

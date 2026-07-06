@@ -6,14 +6,14 @@ Discovers the XCBR logical node automatically via GetServerDirectory and
 GetLogicalDeviceDirectory, reads the control model (direct vs. SBO), then
 issues Control.Operate(ctlVal=true) and verifies the breaker is closed.
 
-Connect directly to the device (bypassing the OT proxy) since the proxy
-blocks write operations by default (allow_write: false in proxy-config.yml).
+Connects to the OT proxy, which forwards the Operate call upstream to the IED
+per the write rules in proxy-config.yml.
 
 Requires: pip install pyiec61850  (Python <= 3.12)
 
 Usage:
-  python reset.py                    # device at 10.1.1.10:102
-  python reset.py --host 10.1.1.10   # explicit host
+  python reset.py                    # OT proxy at 10.1.1.15:102
+  python reset.py --host 10.1.1.15   # explicit host
 """
 
 import argparse
@@ -139,7 +139,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Phase 2a reset — close circuit breaker via IEC 61850 MMS"
     )
-    parser.add_argument("--host", default="10.1.1.10", help="MMS host, direct to device (default: 10.1.1.10)")
+    parser.add_argument("--host", default="10.1.1.15", help="MMS host, the OT proxy (default: 10.1.1.15)")
     parser.add_argument("--port", default=102, type=int, help="MMS port (default: 102)")
     args = parser.parse_args()
 

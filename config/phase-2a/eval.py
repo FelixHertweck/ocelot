@@ -15,7 +15,6 @@ Requires: pip install pyiec61850  (Python <= 3.12)
 Usage:
   python eval.py                     # connect to 10.1.1.15:102 (OT proxy)
   python eval.py --host 10.1.1.15    # explicit host
-  python eval.py --host 10.1.1.10    # bypass proxy, connect directly to device
 """
 
 import argparse

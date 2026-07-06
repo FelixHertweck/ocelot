@@ -4,6 +4,10 @@
 # stdout+stderr are captured to context.txt.
 set -euo pipefail
 
+OT_PROXY_HOST="10.1.1.15"
+OT_PROXY_PORT="102"
+OT_PROXY_USER="ubuntu"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
@@ -18,9 +22,6 @@ if ! VENV_SETUP_LOG=$(pip install --no-cache-dir --pre -r requirements.txt 2>&1)
     echo "$VENV_SETUP_LOG" >&2
     exit 1
 fi
-
-OT_PROXY_HOST="10.1.1.15"
-OT_PROXY_USER="ubuntu"
 
 : "${CAVE_WRAPPER_DIR:?CAVE_WRAPPER_DIR is not set}"
 
@@ -39,9 +40,9 @@ if [[ ! -f "$SSH_KEY" ]]; then
     exit 1
 fi
 
-python eval.py --host 10.1.1.15 --port 102 --json
+python eval.py --host "$OT_PROXY_HOST" --port "$OT_PROXY_PORT" --json
 
-echo "=== Docker Compose Logs from 10.1.1.15 ===" >&2
+echo "=== Docker Compose Logs from ${OT_PROXY_HOST} ===" >&2
 ssh \
     -i "$SSH_KEY" \
     -o StrictHostKeyChecking=no \
