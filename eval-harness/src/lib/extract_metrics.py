@@ -2,6 +2,7 @@
 """Extract token usage and cost from a conv_info.json (V1) or events.json (V0)."""
 import argparse
 import json
+import sys
 from pathlib import Path
 
 
@@ -64,12 +65,24 @@ def _cli() -> None:
     metrics = None
 
     if args.conv_info:
-        data = json.loads(Path(args.conv_info).read_text())
-        metrics = extract_from_conv_info(data)
+        conv_info_path = Path(args.conv_info)
+        if conv_info_path.exists():
+            try:
+                data = json.loads(conv_info_path.read_text())
+                metrics = extract_from_conv_info(data)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"WARNING: Could not read {args.conv_info}: {e}", file=sys.stderr)
+        else:
+            print(f"WARNING: conv_info.json not found at {args.conv_info}", file=sys.stderr)
 
     if metrics is None and args.events:
-        events = json.loads(Path(args.events).read_text())
-        metrics = extract_from_events(events)
+        events_path = Path(args.events)
+        if events_path.exists():
+            try:
+                events = json.loads(events_path.read_text())
+                metrics = extract_from_events(events)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"WARNING: Could not read {args.events}: {e}", file=sys.stderr)
 
     if metrics is None:
         metrics = {"model": None, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "cost": None}

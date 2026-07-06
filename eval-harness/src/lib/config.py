@@ -22,7 +22,7 @@ DEFAULTS: dict = {
     "openhands": {
         "base_url": "http://10.1.1.20:3000",
         "poll_interval": 15,
-        "run_timeout": 3600,
+        "run_timeout": 7200,
     },
     "prompts": {
         "source": "",

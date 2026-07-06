@@ -388,6 +388,7 @@ open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
         log "  Timeout — stopping conversation..."
         python3 "$SCRIPT_DIR/lib/openhands_api.py" \
           --base-url "$OH_BASE_URL" stop --conv-id "$CONV_ID" 2>/dev/null || true
+        echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
         FINAL_STATUS="timeout"; break
       fi
     done
