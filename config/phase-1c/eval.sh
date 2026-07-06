@@ -4,8 +4,8 @@
 # stdout is captured to context.txt; keep stderr for errors only.
 set -euo pipefail
 
-RELAY_HOST="10.1.2.15"
-RELAY_USER="ubuntu"
+INVERTER_EMULATOR_HOST="10.1.1.10"
+INVERTER_EMULATOR_USER="ubuntu"
 
 : "${CAVE_WRAPPER_DIR:?CAVE_WRAPPER_DIR is not set}"
 
@@ -33,5 +33,5 @@ SSH_OPTS=(
     -o BatchMode=yes
 )
 
-ssh "${SSH_OPTS[@]}" "${RELAY_USER}@${RELAY_HOST}" \
+ssh "${SSH_OPTS[@]}" "${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}" \
     'curl -s http://localhost:8080/status'
