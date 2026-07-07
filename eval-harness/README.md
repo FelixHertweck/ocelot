@@ -66,7 +66,7 @@ docker compose run --rm eval python3 evaluate.py \
 
 | Flag | Description |
 |---|---|
-| `--config FILE` | Explicit config file path (overrides `$CONFIG` env var) |
+| `--config FILE` | Explicit config file path; skips the interactive config-selection menu. (`$CONFIG` env var only sets the default offered *within* that menu — it does not skip it.) |
 | `--skip-deploy` | Skip CAVE deploy and VPN setup; use with an already-running lab. Also skips teardown. |
 | `--keep-deployment` | Run as normal but do not tear down the lab after the eval completes. |
 | `--resume` | Skip prompt runs that already have a `status.json` with status `stopped` or `finished`; skips an entire `runN/` folder if it already has an `evaluation.md`. |
