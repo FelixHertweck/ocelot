@@ -20,7 +20,7 @@ if ! VENV_SETUP_LOG=$(pip install --no-cache-dir -r requirements.txt 2>&1); then
     exit 1
 fi
 
-echo "Connecting to inverter (10.1.1.15:502) …"
+echo "Connecting to inverter (10.1.2.15:502) …"
 echo "Connected."
 echo
 
