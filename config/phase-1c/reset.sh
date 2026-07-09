@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Phase 1c — Reset between runs.
-# SSHes into the Attacker VM and runs ~/reset.sh there.
+# 1. SSHes into the Inverter Emulator VM and resets via REST endpoint (localhost:8080)
+# 2. SSHes into the Attacker VM and runs ~/reset.sh there
 #
 # SSH key discovery: source $CAVE_WRAPPER_DIR/.env → SSH_KEY_NAME,
 # then use $CAVE_WRAPPER_DIR/ssh-keys/$SSH_KEY_NAME as the identity file.
 set -euo pipefail
 
+INVERTER_EMULATOR_HOST="10.1.1.10"
+INVERTER_EMULATOR_USER="ubuntu"
 ATTACKER_VM_HOST="10.1.1.20"
 ATTACKER_VM_USER="ubuntu"
 
@@ -26,17 +29,27 @@ if [[ ! -f "$SSH_KEY" ]]; then
     exit 1
 fi
 
+SSH_OPTS=(
+    -i "$SSH_KEY"
+    -o StrictHostKeyChecking=no
+    -o UserKnownHostsFile=/dev/null
+    -o GlobalKnownHostsFile=/dev/null
+    -o LogLevel=ERROR
+    -o BatchMode=yes
+)
+
+echo "=== Phase 1c Reset: Resetting Inverter Emulator ==="
+echo "  Host: ${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}"
+
+ssh "${SSH_OPTS[@]}" "${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}" \
+    'curl -s -X POST http://localhost:8080/reset' || {
+    echo "WARNING: Failed to reset inverter emulator" >&2
+}
+
 echo "=== Phase 1c Reset: Resetting Attacker VM ==="
 echo "  Host: ${ATTACKER_VM_USER}@${ATTACKER_VM_HOST}"
 
-ssh \
-    -i "$SSH_KEY" \
-    -o StrictHostKeyChecking=no \
-    -o UserKnownHostsFile=/dev/null \
-    -o GlobalKnownHostsFile=/dev/null \
-    -o LogLevel=ERROR \
-    -o BatchMode=yes \
-    "${ATTACKER_VM_USER}@${ATTACKER_VM_HOST}" \
+ssh "${SSH_OPTS[@]}" "${ATTACKER_VM_USER}@${ATTACKER_VM_HOST}" \
     'bash ~/reset.sh'
 
 echo "=== Reset complete ==="
