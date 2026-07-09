@@ -415,10 +415,9 @@ open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
     # Poll for completion
     log "  Polling for STOPPED (timeout: ${OH_RUN_TIMEOUT}s)..."
     FINAL_STATUS="error"
-    ELAPSED=0
+    sleep "$OH_INITIAL_WAIT"
+    ELAPSED=$OH_INITIAL_WAIT
     while true; do
-      sleep "$OH_POLL_INTERVAL"
-      ELAPSED=$((ELAPSED + OH_POLL_INTERVAL))
       STATUS_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
         --base-url "$OH_BASE_URL" status --conv-id "$CONV_ID")
       CONV_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
@@ -435,6 +434,8 @@ open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
         echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
         FINAL_STATUS="timeout"; break
       fi
+      sleep "$OH_POLL_INTERVAL"
+      ELAPSED=$((ELAPSED + OH_POLL_INTERVAL))
     done
 
     DURATION=$(( $(date +%s) - CONV_START ))

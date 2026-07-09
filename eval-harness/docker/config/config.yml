@@ -31,7 +31,8 @@ evaluation:
 
 # openhands:
 #   base_url: http://10.1.1.20:3000          # default: http://10.1.1.20:3000
-#   poll_interval: 15                        # default: 15s
+#   initial_wait: 15                         # default: 15s, wait before the first status poll after starting a prompt
+#   poll_interval: 15                        # default: 15s, wait between subsequent status polls
 #   run_timeout: 3600                        # default: 3600s (1h)
 
 # prompts:

@@ -41,6 +41,7 @@ DEFAULTS: dict = {
     },
     "openhands": {
         "base_url": "http://10.1.1.20:3000",
+        "initial_wait": 15,
         "poll_interval": 15,
         "run_timeout": 7200,
     },
@@ -107,6 +108,7 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "PORT_POOL": str(d.get("port_pool", "51820-51920")),
         "PORT_REGISTRY_DIR": str(d.get("port_registry_dir", _default_port_registry_dir())),
         "OH_BASE_URL": str(o.get("base_url", "http://10.1.1.20:3000")),
+        "OH_INITIAL_WAIT": str(o.get("initial_wait", 15)),
         "OH_POLL_INTERVAL": str(o.get("poll_interval", 15)),
         "OH_RUN_TIMEOUT": str(o.get("run_timeout", 3600)),
         "PROMPTS_SOURCE": str(p.get("source", "")) if str(p.get("source", "")).startswith("/") else f"/app/config/prompts/{p.get('source', '')}",
