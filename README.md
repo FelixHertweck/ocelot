@@ -16,6 +16,7 @@ Scenarios use [OpenHands](https://github.com/All-Hands-AI/OpenHands) as the auto
   * **`adrs/`**: Architecture Decision Records.
   * **`evaluation/`**: Evaluation criteria and phase result logs.
   * **`prompts/`**: Reference prompts for each phase.
+* **`eval-harness/`**: Automated evaluation harness — deploys a scenario, runs OpenHands against a set of prompts, and generates an LLM-scored evaluation document. See [eval-harness/README.md](eval-harness/README.md).
 * **`images/`**: Packer configurations to build the VM images.
   * **`aloha-water-treatment/`**: Modbus TCP water treatment plant simulator.
   * **`decepticon/`**: Decepticon red-team agent image.
@@ -75,3 +76,17 @@ For deployment guides see the specific scenario documentation:
 | [Phase 1d](config/phase-1d/README.md) | OpenHands: Two-Stage Gateway Attack on SMA Inverter Emulator | Modbus TCP |
 | [Phase 2a](config/phase-2a/README.md) | OpenHands vs. OT-Proxy (IEC 61850) | IEC 61850 MMS |
 | [Phase 2b](config/phase-2b/README.md) | OpenHands vs. Protection Relay Emulator (IEC 61850) | IEC 61850 MMS |
+
+### 4. Automated Evaluation
+
+Instead of running a scenario manually, the [`eval-harness/`](eval-harness/README.md) can deploy the lab via CAVE, run OpenHands against a full sweep of knowledge-gradient prompts, collect all conversation/device artifacts, and generate a structured, LLM-scored `evaluation.md` — all in one command:
+
+```bash
+cd eval-harness/docker
+cp .env.example .env
+$EDITOR .env   # set EVAL_LLM_API_KEY, CAVE_WRAPPER_DIR
+
+docker compose run --rm eval
+```
+
+See [eval-harness/README.md](eval-harness/README.md) for configuration, prompt file format, and troubleshooting.
