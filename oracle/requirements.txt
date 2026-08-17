@@ -1,0 +1,6 @@
+# Pinned exactly: mcp 2.x's server API (MCPServer, no more mcp.server.fastmcp.FastMCP) is a
+# breaking rewrite of the 1.x API this code was first written against — tested against 2.0.0.
+mcp==2.0.0
+pydantic>=2.7
+requests>=2.31
+openai>=1.30

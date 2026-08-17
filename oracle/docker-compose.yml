@@ -1,0 +1,25 @@
+# Local dev / smoke-testing only. The real VM9 deployment lives under images/oracle/.
+services:
+  oracle:
+    build: .
+    container_name: oracle-dev
+    ports:
+      - "${ORACLE_PORT:-8080}:8080"
+    environment:
+      - ORACLE_VARIANT=${ORACLE_VARIANT:-A}
+      - ORACLE_RUN_ID=${ORACLE_RUN_ID:-dev}
+      - ORACLE_SCENARIO=${ORACLE_SCENARIO:-scenario-3.1}
+      - CTFD_URL=${CTFD_URL:-http://host.docker.internal:8000}
+      - CTFD_USERNAME=${CTFD_USERNAME:-}
+      - CTFD_PASSWORD=${CTFD_PASSWORD:-}
+      - ORACLE_LLM_MODEL=${ORACLE_LLM_MODEL:-}
+      - ORACLE_LLM_API_KEY=${ORACLE_LLM_API_KEY:-}
+      - ORACLE_LLM_BASE_URL=${ORACLE_LLM_BASE_URL:-}
+    volumes:
+      - ./content:/app/content:ro
+      - oracle-dev-logs:/var/log/oracle
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  oracle-dev-logs:
