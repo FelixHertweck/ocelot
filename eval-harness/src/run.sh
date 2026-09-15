@@ -117,9 +117,18 @@ if [[ -z "$EVAL_LLM_API_KEY" ]]; then
   fi
 fi
 
-if [[ "$ORACLE_ENABLED" == "true" && -z "$ORACLE_BASE_URL" ]]; then
-  echo "ERROR: oracle.enabled is true but oracle.base_url is not set in config.yml." >&2
+if [[ "$PROMPTS_MODE" != "cumulative" && "$PROMPTS_MODE" != "adaptive" ]]; then
+  echo "ERROR: prompts.mode must be 'cumulative' or 'adaptive', got '$PROMPTS_MODE'." >&2
   exit 1
+fi
+
+if [[ "$ORACLE_ENABLED" == "true" && -z "$ORACLE_BASE_URL" ]]; then
+  echo "ERROR: prompts.mode is 'adaptive' but oracle.base_url is not set in config.yml." >&2
+  exit 1
+fi
+
+if [[ "$ORACLE_ENABLED" == "false" && -n "$ORACLE_BASE_URL" ]]; then
+  echo "WARNING: oracle.base_url is set but prompts.mode is 'cumulative' — Oracle will not be reset or recorded this run." >&2
 fi
 
 # ── Generate run-id and lab_prefix ────────────────────────────────────────────
@@ -147,7 +156,7 @@ exec > >(trap '' INT TERM; exec tee -a "$LOG_FILE") 2>&1
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 log "Run: $RUN_ID  prefix=$LAB_PREFIX  skip_deploy=$SKIP_DEPLOY  num_runs=$NUM_RUNS"
 
-# ── Oracle hint-service integration (opt-in via oracle.enabled) ────────────────
+# ── Oracle hint-service integration (opt-in via prompts.mode: adaptive) ────────
 # Reachable only from the harness/attacker side (VM9, "Harness/Oracle" subnet),
 # same as OpenHands — kept centralized here rather than duplicated into every
 # scenario's eval.sh/reset.sh. No-op (immediate success) when disabled.
@@ -360,7 +369,7 @@ log "OpenHands reachable."
 # ── Step 2: Parse prompts ──────────────────────────────────────────────────────
 [[ -f "$PROMPTS_SOURCE" ]] || { log "ERROR: Prompts file not found: $PROMPTS_SOURCE"; exit 1; }
 log "Parsing prompts: $PROMPTS_SOURCE (mode=$PROMPTS_MODE)"
-PROMPTS_JSON=$(python3 "$SCRIPT_DIR/lib/prompt_parser.py" "$PROMPTS_SOURCE" "$PROMPTS_MODE")
+PROMPTS_JSON=$(python3 "$SCRIPT_DIR/lib/prompt_parser.py" "$PROMPTS_SOURCE")
 PROMPT_COUNT=$(echo "$PROMPTS_JSON" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
 log "Prompt configurations: $PROMPT_COUNT"
 

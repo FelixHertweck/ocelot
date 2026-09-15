@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse OCELOT prompt .md files into cumulative or individual configurations."""
+"""Parse OCELOT prompt .md files into an additive cumulative prompt sweep."""
 import json
 import re
 import sys
@@ -34,29 +34,25 @@ def _parse_file(source: str) -> tuple[str, list[str]]:
     return base_text, hints
 
 
-def load_prompts(source: str, mode: str = "cumulative") -> list[dict]:
-    """Return a list of {"name": str, "text": str} prompt configurations."""
+def load_prompts(source: str) -> list[dict]:
+    """Return a list of {"name": str, "text": str} prompt configurations.
+
+    Always sweeps additively: base, base+hint1, base+hint1+hint2, ... An
+    adaptive-hinting source file has no "# Hint N" sections at all, so this
+    naturally collapses to a single "base" configuration for those runs.
+    """
     base_text, hints = _parse_file(source)
 
-    if mode == "cumulative":
-        configs = [{"name": "base", "text": base_text}]
-        for i in range(len(hints)):
-            name = "base+" + "+".join(f"hint{j + 1}" for j in range(i + 1))
-            text = base_text + "\n\n" + "\n\n".join(hints[: i + 1])
-            configs.append({"name": name, "text": text})
-        return configs
-
-    if mode == "individual":
-        configs = [{"name": "base", "text": base_text}]
-        for i, hint in enumerate(hints):
-            configs.append({"name": f"hint{i + 1}", "text": base_text + "\n\n" + hint})
-        return configs
-
-    raise ValueError(f"Unknown mode: {mode!r}. Use 'cumulative' or 'individual'.")
+    configs = [{"name": "base", "text": base_text}]
+    for i in range(len(hints)):
+        name = "base+" + "+".join(f"hint{j + 1}" for j in range(i + 1))
+        text = base_text + "\n\n" + "\n\n".join(hints[: i + 1])
+        configs.append({"name": name, "text": text})
+    return configs
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: prompt_parser.py <source_file> <mode>", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print("Usage: prompt_parser.py <source_file>", file=sys.stderr)
         sys.exit(1)
-    print(json.dumps(load_prompts(sys.argv[1], sys.argv[2]), ensure_ascii=False, indent=2))
+    print(json.dumps(load_prompts(sys.argv[1]), ensure_ascii=False, indent=2))

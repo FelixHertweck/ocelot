@@ -26,10 +26,18 @@ def _default_port_registry_dir() -> str:
 
 DEFAULTS: dict = {
     "scenario": {
+        # .json5 basename passed to deploy-wrapper.sh, which resolves it to a file
+        # under {cave_wrapper_dir}/backend/configs (exact match, else a recursive
+        # basename search — so this does NOT need to include the scenario's subpath).
         "cave_config_name": "",
         # Default from the CAVE_WRAPPER_DIR env var so the docker-compose mount
         # (source==target host path) and the harness agree without editing config.
         "cave_wrapper_dir": os.environ.get("CAVE_WRAPPER_DIR", "/cave-wrapper"),
+        # The scenario's own directory (relative to cave_wrapper_dir) — where
+        # eval.sh/reset.sh live. Independent of cave_config_name: a directory can
+        # hold multiple .json5 variants (e.g. "*-cumulative" / "*-adaptive-oracle")
+        # sharing one eval.sh/reset.sh, so this must be set per scenario, e.g.
+        # "backend/configs/phase-1a".
         "configs_subpath": "backend/configs",
     },
     "deploy": {
@@ -47,13 +55,17 @@ DEFAULTS: dict = {
     },
     "prompts": {
         "source": "",
+        # cumulative | adaptive — which of the two evaluation instruments this
+        # run is. Drives ORACLE_ENABLED (no separate oracle.enabled flag, so
+        # the instrument used for scoring can never drift out of sync with
+        # whether the harness records Oracle usage) and how the prompt file's
+        # hint sections are swept (see prompt_parser.py).
         "mode": "cumulative",
     },
     "runs": {
         "count": 1,
     },
     "oracle": {
-        "enabled": False,
         "base_url": "",
     },
     "context_script": {"cmd": "bash eval.sh"},
@@ -105,7 +117,6 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "SCENARIO_CONFIG_DIR": "/".join([
             str(s.get("cave_wrapper_dir", "/cave-wrapper")).rstrip("/"),
             str(s.get("configs_subpath", "backend/configs")).strip("/"),
-            str(s.get("cave_config_name", "")),
         ]),
         "DEPLOY_WAIT_TIME": str(d.get("wait_time", 600)),
         "LAB_PREFIX_CONFIG": str(d.get("lab_prefix", "auto")),
@@ -119,7 +130,7 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "PROMPTS_SOURCE": str(p.get("source", "")) if str(p.get("source", "")).startswith("/") else f"/app/config/prompts/{p.get('source', '')}",
         "PROMPTS_MODE": str(p.get("mode", "cumulative")),
         "NUM_RUNS": str(r.get("count", 1)),
-        "ORACLE_ENABLED": "true" if orc.get("enabled", False) else "false",
+        "ORACLE_ENABLED": "true" if p.get("mode", "cumulative") == "adaptive" else "false",
         "ORACLE_BASE_URL": str(orc.get("base_url", "")),
         "CONTEXT_CMD": str(cs.get("cmd", "bash eval.sh")),
         "CLEANUP_CMD": str(cl.get("cmd", "bash reset.sh")),

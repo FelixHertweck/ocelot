@@ -6,7 +6,8 @@
 # ── Required ──────────────────────────────────────────────────────────────────
 
 scenario:
-  cave_config_name: example
+  cave_config_name: example              # .json5 basename, resolved by deploy-wrapper.sh
+  configs_subpath: backend/configs/example  # scenario's own dir — where eval.sh/reset.sh live
 
 prompts:
   source: example.md  # relative to /app/config/prompts/, or use absolute path
@@ -21,7 +22,6 @@ evaluation:
 
 # scenario:
 #   cave_wrapper_dir: /abs/path              # default: $CAVE_WRAPPER_DIR (set in .env); only override to point elsewhere
-#   configs_subpath: backend/configs         # default: backend/configs (config_dir = cave_wrapper_dir/configs_subpath/cave_config_name)
 
 # deploy:
 #   wait_time: 600                           # default: 600s
@@ -36,7 +36,8 @@ evaluation:
 #   run_timeout: 3600                        # default: 3600s (1h)
 
 # prompts:
-#   mode: cumulative                         # default: cumulative (alternative: individual)
+#   mode: cumulative                         # default: cumulative (alternative: adaptive) — switches instrument, drives ORACLE_ENABLED
+#                                             # adaptive also needs oracle.base_url + a cave_config_name that deploys the Oracle VM
 
 # runs:
 #   count: 1                                 # default: 1. If >1, the full prompt sweep is repeated N times
@@ -45,13 +46,7 @@ evaluation:
 #                                             # a top-level evaluation.md at the end.
 
 # oracle:
-#   enabled: false                           # default: false — set true only for the *-adaptive-oracle
-#                                             # phase configs, which deploy the Oracle hint-service VM.
-#                                             # Resets Oracle before the run loop and between prompts/runs,
-#                                             # and saves each prompt's hint-usage report to
-#                                             # prompt-N/oracle_report.json for the LLM evaluator.
-#   base_url: http://10.1.1.11:8080          # required when enabled — Oracle's REST base URL (the oracle
-#                                             # VM, reachable from the harness over the same VPN as OpenHands)
+#   base_url: http://10.1.1.11:8080          # required when prompts.mode is adaptive (fails fast at startup if unset) — Oracle's REST base URL, reachable from the harness the same way as openhands.base_url
 
 # context_script:
 #   cmd: "bash eval.sh"                      # default: bash eval.sh in config_dir
