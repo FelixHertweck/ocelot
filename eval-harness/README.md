@@ -117,9 +117,9 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 
 | Section | Key | Default | Description |
 |---|---|---|---|
-| `scenario` | `cave_config_name` | — | CAVE config name; also used to locate scenario scripts |
+| `scenario` | `cave_config_name` | — | `.json5` basename passed to `deploy-wrapper.sh` for deploy. Resolved there against `{cave_wrapper_dir}/backend/configs` (exact match, else a recursive basename search) — independent of `configs_subpath`, so it does not need to include the scenario's subpath. |
 | `scenario` | `cave_wrapper_dir` | `/cave-wrapper` | CAVE wrapper dir (mounted from `$CAVE_WRAPPER_DIR` in `.env`) |
-| `scenario` | `configs_subpath` | `backend/configs` | Subpath within `cave_wrapper_dir` where scenario configs live |
+| `scenario` | `configs_subpath` | `backend/configs` | The scenario's own directory, relative to `cave_wrapper_dir` — where `eval.sh`/`reset.sh` live. Set per scenario, e.g. `backend/configs/phase-1a`; independent of `cave_config_name`, since one directory can hold several `.json5` variants (e.g. `phase-1a-cumulative.json5` + `phase-1a-adaptive-oracle.json5`) sharing one `eval.sh`/`reset.sh`. |
 | `deploy` | `wait_time` | `600` | Seconds to wait after CAVE deploy completes |
 | `deploy` | `lab_prefix` | `auto` | Lab name prefix; `auto` generates `<scenario>-<YYYYMMDD>-<HHMM>` |
 | `deploy` | `public_vpn_port` | `auto` | VPN port; `auto` picks the first free port from `port_pool` |
@@ -128,10 +128,9 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 | `openhands` | `poll_interval` | `15` | Seconds between conversation status polls |
 | `openhands` | `run_timeout` | `3600` | Max seconds per run before the conversation is force-stopped |
 | `prompts` | `source` | — | Prompt file (relative to `config/prompts/` or absolute) |
-| `prompts` | `mode` | `cumulative` | `cumulative`: each run appends the next hint; `individual`: each hint runs alone |
+| `prompts` | `mode` | `cumulative` | `cumulative` or `adaptive` — which of the two evaluation instruments this run is. The single switch between the two approaches: it decides how the prompt file's hint sections are swept (see below) and drives whether the harness treats Oracle as enabled (no separate `oracle.enabled` flag, so the instrument used for scoring can't drift out of sync with whether Oracle usage is actually recorded). `adaptive` requires `oracle.base_url` and a `cave_config_name` that deploys the Oracle VM, plus an adaptive-hinting prompt source (single Base Prompt, no `# Hint N` sections). |
 | `runs` | `count` | `1` | Number of times to repeat the full prompt sweep. Each repeat gets its own `runN/` results folder; no redeploy between repeats, only `cleanup_script`. When > 1, a combined `evaluation.md` is generated across all runs. |
-| `oracle` | `enabled` | `false` | Enable Oracle hint-service integration for the `*-adaptive-oracle` phase configs (which deploy the Oracle VM). When true, the harness resets Oracle before the run loop and between every prompt/run (so tier progression always starts clean), and saves each prompt's hint-usage report to `prompt-N/oracle_report.json`, which the extraction LLM sees alongside `context.txt`. No-op when false — nothing else in the pipeline needs Oracle-awareness. |
-| `oracle` | `base_url` | — | Oracle's REST base URL (e.g. `http://10.1.1.11:8080`), reachable from the harness the same way `openhands.base_url` is. Required when `oracle.enabled` is true. |
+| `oracle` | `base_url` | — | Oracle's REST base URL (e.g. `http://10.1.1.11:8080`), reachable from the harness the same way `openhands.base_url` is. Required when `prompts.mode` is `adaptive` — the harness fails fast at startup if it's missing. When set, the harness resets Oracle before the run loop and between every prompt/run (so tier progression always starts clean), and saves each prompt's hint-usage report to `prompt-N/oracle_report.json`, which the extraction LLM sees alongside `context.txt`. No-op when `prompts.mode` is `cumulative` — nothing else in the pipeline needs Oracle-awareness. |
 | `context_script` | `cmd` | `bash eval.sh` | Command run after each OpenHands conversation; stdout → `context.txt` |
 | `cleanup_script` | `cmd` | `bash reset.sh` | Command run between prompt runs (and between repeated runs) to reset device state |
 | `evaluation` | `extraction_prompt` | built-in | Path to the per-run LLM extraction prompt file |
@@ -143,7 +142,9 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 | `evaluation.llm` | `base_url` | — | LLM base URL for non-OpenAI providers |
 
 The scenario scripts (`eval.sh`, `reset.sh`) are looked up at:
-`{cave_wrapper_dir}/{configs_subpath}/{cave_config_name}/`
+`{cave_wrapper_dir}/{configs_subpath}/`
+
+If that directory doesn't exist, the harness does **not** fail — it silently writes `(no context script configured)` to `context.txt` and skips `reset.sh` between prompts. Always set `configs_subpath` explicitly to the scenario's own directory (e.g. `backend/configs/phase-1a`); leaving it at the default `backend/configs` looks up scripts directly in the configs root, which is virtually never correct.
 
 ---
 
@@ -252,7 +253,7 @@ Prompt files (`config/prompts/*.md`) use this structure:
 <hint 2 text — appended in run 2>
 ```
 
-In `cumulative` mode, run N receives `Base + Hint 1 + … + Hint N`. In `individual` mode, each section is sent alone.
+Run N receives `Base + Hint 1 + … + Hint N` — the sweep is always additive. An adaptive-hinting source file has no `# Hint N` sections at all (the Oracle delivers hints on demand instead), so it always collapses to the single `base` run.
 
 ---
 
@@ -307,7 +308,7 @@ eval-harness/
           meta.json
           prompt-0/       ← base prompt run
             prompt.txt, conversation.md, metrics.json, context.txt, status.json
-            oracle_report.json  ← only when oracle.enabled is true
+            oracle_report.json  ← only when prompts.mode is adaptive
           prompt-1/       ← base + hint 1 run
             ...
         run2/             ← present when runs.count > 1: same prompt sweep, repeated
