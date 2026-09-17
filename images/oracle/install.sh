@@ -14,3 +14,6 @@ docker compose pull --quiet
 
 cp /tmp/assets/run.sh ~/run.sh
 chmod +x ~/run.sh
+
+# Create the bind-mount source dirs up front
+mkdir -p ~/oracle/content ~/oracle/logs
