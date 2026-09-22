@@ -103,7 +103,7 @@ spec assumes.
 Everything below is an environment variable read at process startup (`src/config.py`) — the
 same convention as `ot-proxy.env` / `openhands.env` elsewhere in this repo. **The actual per-run
 values for a real scenario deployment are authored separately** (in the OCELOT testbed:
-`config/phase-*/`, wired by the scenario's `*-adaptive-oracle.json5` — see "Content") — this
+`config/phase-*/`, wired by the scenario's `*-adaptive.json5` — see "Content") — this
 README documents the schema, not the values.
 
 | Variable | Meaning |
@@ -124,7 +124,7 @@ reads exactly one file, `$ORACLE_CONTENT_DIR/$ORACLE_SCENARIO.json` (`src/conten
 **Where that file is authored:**
 
 - **OCELOT testbed** — the source of truth is `config/phase-<X>/oracle-hints.json`. The
-  scenario's `phase-<X>-adaptive-oracle.json5` mounts it into the Oracle VM as
+  scenario's `phase-<X>-adaptive.json5` mounts it into the Oracle VM as
   `~/oracle/content/phase-<X>.json` and starts the wrapper with `ORACLE_SCENARIO=phase-<X>`.
 - **Standalone / local dev** — this directory: `content/hints/<scenario>.json` (e.g. the bundled
   `scenario-3.1.json`), mounted to `/app/content` by `docker compose` — see "Local development".

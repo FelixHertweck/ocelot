@@ -73,7 +73,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh
 ```
 
 To deploy non-interactively with a custom lab prefix. Pick the config for the hinting mode you
-want: `-cumulative` (pre-staged prompt hints only) or `-adaptive-oracle` (adds the Oracle hint
+want: `-cumulative` (pre-staged prompt hints only) or `-adaptive` (adds the Oracle hint
 service VM on `10.1.1.21`, reached over MCP) — see [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments):
 
 ```bash
@@ -81,7 +81,7 @@ service VM on `10.1.1.21`, reached over MCP) — see [Methodology.md → Instrum
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a-cumulative --lab-prefix ocelot-p1a
 
 # ...or adaptive-hinting
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a-adaptive-oracle --lab-prefix ocelot-p1a
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1a/phase-1a-adaptive --lab-prefix ocelot-p1a
 
 # append --wg for WireGuard instead of OpenVPN
 ```
@@ -140,7 +140,7 @@ If the upstream Modbus device uses a slave ID other than `3`, pass `--slave <id>
 
 By default the `ot-proxy` VM is deployed without a fixed MAC address (`macAddress: null` in the phase config). Some physical OT networks require a known MAC address — e.g. for DHCP reservations or switch-port ACLs.
 
-To assign a fixed MAC address, edit whichever config you deploy (`configs/phase-1a/phase-1a-cumulative.json5` and/or `-adaptive-oracle.json5`) and replace `null` with the desired address:
+To assign a fixed MAC address, edit whichever config you deploy (`configs/phase-1a/phase-1a-cumulative.json5` and/or `-adaptive.json5`) and replace `null` with the desired address:
 
 ```json5
 {

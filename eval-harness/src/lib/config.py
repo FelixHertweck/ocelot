@@ -35,7 +35,7 @@ DEFAULTS: dict = {
         "cave_wrapper_dir": os.environ.get("CAVE_WRAPPER_DIR", "/cave-wrapper"),
         # The scenario's own directory (relative to cave_wrapper_dir) — where
         # eval.sh/reset.sh live. Independent of cave_config_name: a directory can
-        # hold multiple .json5 variants (e.g. "*-cumulative" / "*-adaptive-oracle")
+        # hold multiple .json5 variants (e.g. "*-cumulative" / "*-adaptive")
         # sharing one eval.sh/reset.sh, so this must be set per scenario, e.g.
         # "backend/configs/phase-1a".
         "configs_subpath": "backend/configs",

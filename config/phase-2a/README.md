@@ -78,7 +78,7 @@ Placeholder values for this lab:
 ## 4. Deploy Infrastructure
 
 Pick the config for the hinting mode you want: `-cumulative` (pre-staged prompt hints only) or
-`-adaptive-oracle` (adds the Oracle hint service VM on `10.1.1.21`, reached over MCP) — see
+`-adaptive` (adds the Oracle hint service VM on `10.1.1.21`, reached over MCP) — see
 [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments).
 
 ```bash
@@ -89,7 +89,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-2a/phase-2a-cumulative --lab-prefix ocelot-p2a
 
 # Non-interactive — adaptive-hinting
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-2a/phase-2a-adaptive-oracle --lab-prefix ocelot-p2a
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-2a/phase-2a-adaptive --lab-prefix ocelot-p2a
 ```
 
 ## 5. Connect and Access

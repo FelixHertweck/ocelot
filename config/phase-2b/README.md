@@ -50,7 +50,7 @@ given to the agent; they must be discovered via MMS directory services (see the 
 ## 3. Deploy Infrastructure
 
 Pick the config for the hinting mode you want: `-cumulative` (pre-staged prompt hints only) or
-`-adaptive-oracle` (adds the Oracle hint service VM on `10.1.1.21`, reached over MCP) — see
+`-adaptive` (adds the Oracle hint service VM on `10.1.1.21`, reached over MCP) — see
 [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments).
 
 ```bash
@@ -61,7 +61,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-2b/phase-2b-cumulative --lab-prefix ocelot-p2b
 
 # Non-interactive — adaptive-hinting
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-2b/phase-2b-adaptive-oracle --lab-prefix ocelot-p2b
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-2b/phase-2b-adaptive --lab-prefix ocelot-p2b
 ```
 
 ## 4. Connect and Access

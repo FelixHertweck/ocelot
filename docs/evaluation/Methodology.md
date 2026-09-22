@@ -44,7 +44,7 @@ from that one decomposition:
 | Resolution | one tipping point per scenario × model | per run, per piece, per tier |
 | Shape | monotonic by construction; a controlled dose–response | observational; non-monotonic; shows what the agent itself judged it could not get |
 | Reads out | *how much* pre-supplied knowledge the agent needs to succeed autonomously | *which* pieces it needed and *how deep* it had to go |
-| Config | `config/phase-*/phase-*-cumulative.json5` | `config/phase-*/phase-*-adaptive-oracle.json5` (adds the Oracle service VM) |
+| Config | `config/phase-*/phase-*-cumulative.json5` | `config/phase-*/phase-*-adaptive.json5` (adds the Oracle service VM) |
 
 Because the knowledge pieces are the same set, the two results are **cross-readable**: a
 cumulative tipping point at a given piece and heavy adaptive reliance on the matching Oracle

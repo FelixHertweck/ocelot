@@ -9,7 +9,7 @@ directories, kept here once instead of duplicated in every phase folder.
   memory server). Used by the `*-cumulative.json5` (cumulative-hinting) phase configs.
 - `openhands/mcp-servers-oracle.json` — the same Neo4j servers **plus** `oracle` (the Streamable
   HTTP hint service on `10.1.1.21`, see `oracle/README.md` on the `feat/oracle-hint-service`
-  branch). Used by the `*-adaptive-oracle.json5` (adaptive-hinting) phase configs.
+  branch). Used by the `*-adaptive.json5` (adaptive-hinting) phase configs.
 
   Two complete files rather than one with the `oracle` entry commented out: the openhands image
   runs the file through `envsubst | jq` (`images/openhands/assets/run.sh`), so a `//` comment
@@ -29,7 +29,7 @@ cp -r /tmp/ocelot/config/* ./configs/
 
 Most phases (e.g. `phase-1a` through `phase-1d`) do not carry a local `openhands.env` and reference `shared/openhands/openhands.env` directly. `phase-2a` and `phase-2b` keep their own scenario-specific `openhands.env` in their respective phase directories. All phases reference `mcp-servers-*.json` directly from `shared/openhands/`.
 
-Each phase ships two `.json5` configs — `phase-X-cumulative.json5` sources `/cave/backend/configs/shared/openhands/mcp-servers-only-neo4j.json`, while `phase-X-adaptive-oracle.json5` sources `/cave/backend/configs/shared/openhands/mcp-servers-oracle.json`.
+Each phase ships two `.json5` configs — `phase-X-cumulative.json5` sources `/cave/backend/configs/shared/openhands/mcp-servers-only-neo4j.json`, while `phase-X-adaptive.json5` sources `/cave/backend/configs/shared/openhands/mcp-servers-oracle.json`.
 
 If you edit a shared file in `shared/openhands/`, all phases referencing it use the updated version directly at deploy time.
 
