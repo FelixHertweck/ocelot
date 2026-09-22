@@ -9,9 +9,9 @@ if [ -f "/home/ubuntu/.env" ]; then
 fi
 
 # Create the bind-mount source dirs up front so they end up owned by ubuntu
-mkdir -p ~/oracle/content ~/oracle/logs
+mkdir -p ~/hinter/content ~/hinter/logs
 
-echo "Starting Oracle..."
+echo "Starting Hinter..."
 docker compose up -d
 
-echo "Oracle ready. Wrapper MCP endpoint on :${ORACLE_PORT:-8080}/mcp."
+echo "Hinter ready. Wrapper MCP endpoint on :${HINTER_PORT:-8080}/mcp."

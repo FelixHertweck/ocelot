@@ -1,6 +1,6 @@
 # OCELOT Eval-Harness
 
-Automated evaluator for OCELOT scenarios. Deploys a scenario with CAVE, runs an OpenHands agent against each condition of the configured instrument (a cumulative knowledge-gradient sweep, or a repeated adaptive Oracle run), collects all artifacts, and generates a structured evaluation document using an LLM — see **Evaluation Dimensions** below for what is measured and how the two instruments compare.
+Automated evaluator for OCELOT scenarios. Deploys a scenario with CAVE, runs an OpenHands agent against each condition of the configured instrument (a cumulative knowledge-gradient sweep, or a repeated adaptive Hinter run), collects all artifacts, and generates a structured evaluation document using an LLM — see **Evaluation Dimensions** below for what is measured and how the two instruments compare.
 
 ```
 CAVE Deploy → [runs.count ×: [per-prompt: OpenHands run → collect artifacts → reset] → per-run evaluation.md] → combined evaluation.md → CAVE Teardown
@@ -128,9 +128,9 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 | `openhands` | `poll_interval` | `15` | Seconds between conversation status polls |
 | `openhands` | `run_timeout` | `3600` | Max seconds per run before the conversation is force-stopped |
 | `prompts` | `source` | — | Prompt file (relative to `config/prompts/` or absolute) |
-| `prompts` | `mode` | `cumulative` | `cumulative` or `adaptive` — which of the two evaluation instruments this run is. The single switch between the two approaches: it decides how the prompt file's hint sections are swept (see below) and drives whether the harness treats Oracle as enabled (no separate `oracle.enabled` flag, so the instrument used for scoring can't drift out of sync with whether Oracle usage is actually recorded). `adaptive` requires `oracle.base_url` and a `cave_config_name` that deploys the Oracle VM, plus an adaptive-hinting prompt source (single Base Prompt, no `# Hint N` sections). |
+| `prompts` | `mode` | `cumulative` | `cumulative` or `adaptive` — which of the two evaluation instruments this run is. The single switch between the two approaches: it decides how the prompt file's hint sections are swept (see below) and drives whether the harness treats Hinter as enabled (no separate `hinter.enabled` flag, so the instrument used for scoring can't drift out of sync with whether Hinter usage is actually recorded). `adaptive` requires `hinter.base_url` and a `cave_config_name` that deploys the Hinter VM, plus an adaptive-hinting prompt source (single Base Prompt, no `# Hint N` sections). |
 | `runs` | `count` | `1` | Number of times to repeat the full prompt sweep. Each repeat gets its own `runN/` results folder; no redeploy between repeats, only `cleanup_script`. When > 1, a combined `evaluation.md` is generated across all runs. |
-| `oracle` | `base_url` | — | Oracle's REST base URL (e.g. `http://10.1.1.21:8080`), reachable from the harness the same way `openhands.base_url` is. Required when `prompts.mode` is `adaptive` — the harness fails fast at startup if it's missing. When set, the harness resets Oracle before the run loop and between every prompt/run (so tier progression always starts clean), and saves each prompt's hint-usage report to `prompt-N/oracle_report.json`, which the extraction LLM sees alongside `context.txt`. No-op when `prompts.mode` is `cumulative` — nothing else in the pipeline needs Oracle-awareness. |
+| `hinter` | `base_url` | — | Hinter's REST base URL (e.g. `http://10.1.1.21:8080`), reachable from the harness the same way `openhands.base_url` is. Required when `prompts.mode` is `adaptive` — the harness fails fast at startup if it's missing. When set, the harness resets Hinter before the run loop and between every prompt/run (so tier progression always starts clean), and saves each prompt's hint-usage report to `prompt-N/hinter_report.json`, which the extraction LLM sees alongside `context.txt`. No-op when `prompts.mode` is `cumulative` — nothing else in the pipeline needs Hinter-awareness. |
 | `context_script` | `cmd` | `bash eval.sh` | Command run after each OpenHands conversation; stdout → `context.txt` |
 | `cleanup_script` | `cmd` | `bash reset.sh` | Command run between prompt runs (and between repeated runs) to reset device state |
 | `evaluation` | `extraction_prompt` | built-in | Path to the per-run LLM extraction prompt file |
@@ -253,7 +253,7 @@ Prompt files (`config/prompts/*.md`) use this structure:
 <hint 2 text — appended in run 2>
 ```
 
-Run N receives `Base + Hint 1 + … + Hint N` — the sweep is always additive. An adaptive-hinting source file has no `# Hint N` sections at all (the Oracle delivers hints on demand instead), so it always collapses to the single `base` run.
+Run N receives `Base + Hint 1 + … + Hint N` — the sweep is always additive. An adaptive-hinting source file has no `# Hint N` sections at all (the Hinter delivers hints on demand instead), so it always collapses to the single `base` run.
 
 ---
 
@@ -308,7 +308,7 @@ eval-harness/
           meta.json
           prompt-0/       ← base prompt run
             prompt.txt, conversation.md, metrics.json, context.txt, status.json
-            oracle_report.json  ← only when prompts.mode is adaptive
+            hinter_report.json  ← only when prompts.mode is adaptive
           prompt-1/       ← base + hint 1 run
             ...
         run2/             ← present when runs.count > 1: same prompt sweep, repeated
@@ -327,7 +327,7 @@ adaptive run produce directly comparable documents:
 | # | Dimension | Question | Adaptive | Cumulative |
 |---|---|---|---|---|
 | 1 | Outcome / progress | Goals reached, verified actuation, ordinal attack-chain step | identical | identical |
-| 2 | Knowledge gaps — which | Which class was missing (or an execution issue) | `ask_oracle` calls, classified | dose transitions, classified |
+| 2 | Knowledge gaps — which | Which class was missing (or an execution issue) | `ask_hinter` calls, classified | dose transitions, classified |
 | 3 | Knowledge gaps — how much | How deep / how many | tier depth, call count | dose number at the tipping point |
 | 4 | Semantic correctness | Raw value → correct physical meaning/unit/label | identical | identical |
 | 5 | False actuation | Claimed state change the device context contradicts | identical | identical |
@@ -370,13 +370,13 @@ Input to LLM:
   • Agent conversation (complete transcript: commands, outputs, reasoning)
   • Token metrics (input/output token counts from the model)
   • Device context (output of eval.sh: ground-truth device state after the run)
-  • Oracle hint-service report (adaptive runs only)
+  • Hinter hint-service report (adaptive runs only)
 
 Output from LLM:
   • JSON object (eval_block.json) with fields:
     - attack_result: "Success", "Partial", or "Failure"
     - goal_outcomes: per goal (A, B, C, …) — result, description, attack_chain_step
-    - gap_events: (adaptive only) the ordered ask_oracle sequence, each classified into one
+    - gap_events: (adaptive only) the ordered ask_hinter sequence, each classified into one
       of the six knowledge-gap classes above, with the attack-chain step it occurred at and
       whether it was unblocked — empty for cumulative (see below)
     - semantic_correctness & evidence
@@ -439,7 +439,7 @@ map), and median + IQR for cost. See **evaluate.py Flags** → `--combine` above
 - **Independence**: Each condition is evaluated separately, so information from one test doesn't influence another.
 - **Device-grounded**: The LLM has access to the actual device state (`context.txt` from `eval.sh`), allowing it to detect discrepancies between what the agent *claims* to have done and what the device *actually shows*.
 - **Two-stage structure**: Per-condition extraction is cacheable and reusable; document synthesis is fast and iterative (good for template experimentation).
-- **One instrument-agnostic pipeline**: `evaluate.py`, `extraction.md`, `template.md`, `synthesis.md`, and `multi_run_synthesis.md` do not branch on `prompts.mode` — they read it off the data (an empty vs. populated `gap_events`, an `oracle_report.json` present or absent). The only place that knows there are two instruments is prompt parsing itself (`lib/prompt_parser.py`): a cumulative source file sweeps additively; an adaptive-hinting source file has no `# Hint N` sections and so collapses to one condition, repeated `runs.count` times for independent runs.
+- **One instrument-agnostic pipeline**: `evaluate.py`, `extraction.md`, `template.md`, `synthesis.md`, and `multi_run_synthesis.md` do not branch on `prompts.mode` — they read it off the data (an empty vs. populated `gap_events`, an `hinter_report.json` present or absent). The only place that knows there are two instruments is prompt parsing itself (`lib/prompt_parser.py`): a cumulative source file sweeps additively; an adaptive-hinting source file has no `# Hint N` sections and so collapses to one condition, repeated `runs.count` times for independent runs.
 - **Prompt overrides**: All evaluation prompts can be customized per-scenario (see **Overriding Evaluation Prompts and Templates** section above).
 
 ### Troubleshooting Evaluation

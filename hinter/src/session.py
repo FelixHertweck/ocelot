@@ -34,7 +34,7 @@ def extract_session_id(headers: Mapping[str, str] | None) -> str:
     session_id = headers.get(MCP_SESSION_ID_HEADER) if headers else None
     if not session_id:
         raise MissingSessionIdError(
-            "No mcp-session-id header on this request — ask_oracle requires an active "
+            "No mcp-session-id header on this request — ask_hinter requires an active "
             "Streamable HTTP session (the client must call initialize first)."
         )
     return validate_session_id(session_id)

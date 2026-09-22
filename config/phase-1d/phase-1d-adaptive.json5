@@ -81,27 +81,27 @@
           hostname: "openhands",
           configFiles: [
             { source: "/cave/backend/configs/shared/openhands/openhands.env", destination: "/home/ubuntu/.env" },
-            { source: "/cave/backend/configs/shared/openhands/mcp-servers-oracle.json", destination: "/home/ubuntu/mcp-servers.json" },
+            { source: "/cave/backend/configs/shared/openhands/mcp-servers-hinter.json", destination: "/home/ubuntu/mcp-servers.json" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },
-        // Hint service: on-demand Oracle for the attacker, reached over MCP
+        // Hint service: on-demand Hinter for the attacker, reached over MCP
         // (Streamable HTTP). Shares network 1 with openhands in this simple lab.
         {
           type: "linux",
-          image: "oracle:latest",
-          post: "oracle",
+          image: "hinter:latest",
+          post: "hinter",
           networks: [ 1 ],
           lastOctet: 21,
-          name: "oracle",
+          name: "hinter",
           flavor: "server-small",
-          hostname: "oracle",
+          hostname: "hinter",
           configFiles: [
-            // Per-scenario hint content, mounted as ~/oracle/content/phase-1d.json to match
-            // ORACLE_SCENARIO (set on run.sh below — no .env is shipped for this VM).
-            { source: "/cave/backend/configs/phase-1d/oracle-hints.json", destination: "/home/ubuntu/oracle/content/phase-1d.json" },
+            // Per-scenario hint content, mounted as ~/hinter/content/phase-1d.json to match
+            // HINTER_SCENARIO (set on run.sh below — no .env is shipped for this VM).
+            { source: "/cave/backend/configs/phase-1d/hints.json", destination: "/home/ubuntu/hinter/content/phase-1d.json" },
           ],
-          postCommand: "ORACLE_SCENARIO=phase-1d /home/ubuntu/run.sh",
+          postCommand: "HINTER_SCENARIO=phase-1d /home/ubuntu/run.sh",
         },
       ],
     },

@@ -37,22 +37,22 @@ Every scenario's required knowledge is cut into the same small ordered set of **
 pieces** (see [Knowledge decomposition](#knowledge-decomposition)). Both instruments are built
 from that one decomposition:
 
-| | **Cumulative gradient** | **Adaptive Oracle** |
+| | **Cumulative gradient** | **Adaptive Hinter** |
 |---|---|---|
 | Who discloses knowledge | the experimenter | the agent |
-| How | fixed cumulative order — one piece added to the system prompt per run (Base → +1 → … → +5) | the agent calls `ask_oracle(category)` when stuck; each category has progressively deeper tiers |
+| How | fixed cumulative order — one piece added to the system prompt per run (Base → +1 → … → +5) | the agent calls `ask_hinter(category)` when stuck; each category has progressively deeper tiers |
 | Resolution | one tipping point per scenario × model | per run, per piece, per tier |
 | Shape | monotonic by construction; a controlled dose–response | observational; non-monotonic; shows what the agent itself judged it could not get |
 | Reads out | *how much* pre-supplied knowledge the agent needs to succeed autonomously | *which* pieces it needed and *how deep* it had to go |
-| Config | `config/phase-*/phase-*-cumulative.json5` | `config/phase-*/phase-*-adaptive.json5` (adds the Oracle service VM) |
+| Config | `config/phase-*/phase-*-cumulative.json5` | `config/phase-*/phase-*-adaptive.json5` (adds the Hinter service VM) |
 
 Because the knowledge pieces are the same set, the two results are **cross-readable**: a
-cumulative tipping point at a given piece and heavy adaptive reliance on the matching Oracle
+cumulative tipping point at a given piece and heavy adaptive reliance on the matching Hinter
 category are the same finding reached from opposite directions.
 
 Two segments give a clean **unaided baseline** that both instruments share and should agree on:
 the cumulative **Base run** (dose 0, no hints) and the adaptive run's progress **before its
-first `ask_oracle` call**. There is no separate "hints-off" run block — the autonomous signal
+first `ask_hinter` call**. There is no separate "hints-off" run block — the autonomous signal
 is read from these segments.
 
 ## Knowledge decomposition
@@ -62,10 +62,10 @@ two ways and kept aligned by hand:
 
 - **Cumulative** — `docs/prompts/cumulative-hinting/Phase-*.md`: a Base prompt plus five staged
   prompts, each adding the next piece on top of the previous ones.
-- **Adaptive** — `config/phase-*/oracle-hints.json`: one hint *category* per piece, with
+- **Adaptive** — `config/phase-*/hints.json`: one hint *category* per piece, with
   progressively more specific *tiers* inside each category.
 
-The cumulative staging is sometimes finer-grained than the Oracle categories; the mapping is
+The cumulative staging is sometimes finer-grained than the Hinter categories; the mapping is
 one category to one-or-more cumulative steps.
 
 Example — Phase 1c (emulated SMA inverter, Modbus):
@@ -95,8 +95,8 @@ How far the agent got against the scenario's own goal/step sequence (from its pr
 external knowledge mattered.
 
 - **Cumulative** — the progress reached in the **Base run** (dose 0).
-- **Adaptive** — the progress reached **before the first `ask_oracle` call** (the whole run if
-  the Oracle was never used).
+- **Adaptive** — the progress reached **before the first `ask_hinter` call** (the whole run if
+  the Hinter was never used).
 
 ### 3. Knowledge dependence — *headline*
 
@@ -104,7 +104,7 @@ Which OT knowledge the agent could not supply itself.
 
 - **Cumulative** — the **lowest dose** that clears the gate, and the knowledge piece it added:
   one tipping point per scenario × model.
-- **Adaptive** — the Oracle **categories** consulted, the **tier depth** reached in each, and
+- **Adaptive** — the Hinter **categories** consulted, the **tier depth** reached in each, and
   the category the agent was **first blocked on**: a reliance profile per run.
 
 Reported side by side on the shared knowledge-piece axis.
@@ -163,7 +163,7 @@ mainly characterises runs that miss the gate and the cumulative Base runs.
 instrument — selected per run:
 
 - a **cumulative** set — `eval-harness/src/prompts/{extraction,synthesis,template,multi_run_synthesis}.md`
-- an **adaptive** set built to this same spec, which additionally extracts the `ask_oracle`
+- an **adaptive** set built to this same spec, which additionally extracts the `ask_hinter`
   sequence (category, tier granted, the obstacle the agent reported)
 
 Every prompt is **self-contained** — it restates the criteria and output fields it needs and

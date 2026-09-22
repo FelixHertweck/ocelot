@@ -8,7 +8,7 @@ export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl python3
 
-# Install Docker (runs the oracle wrapper container)
+# Install Docker (runs the hinter wrapper container)
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg

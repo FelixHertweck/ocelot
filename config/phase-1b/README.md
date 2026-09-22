@@ -125,7 +125,7 @@ nano configs/shared/openhands/openhands.env
 | `NEO4J_PASSWORD` | Password for the Neo4j instance (min. 8 characters) |
 | `NEO4J_MCP_ENABLED` | Set to `false` to disable the Neo4j MCP server (default: `true`) |
 
-The `mcp-servers-*.json` deployed alongside `openhands.env` configures two Neo4j MCP servers (`neo4j` for Cypher queries, `neo4j-memory` for persistent agent memory); the `-adaptive` config additionally registers the `oracle` hint service. No manual edits are needed unless you change `NEO4J_PASSWORD`.
+The `mcp-servers-*.json` deployed alongside `openhands.env` configures two Neo4j MCP servers (`neo4j` for Cypher queries, `neo4j-memory` for persistent agent memory); the `-adaptive` config additionally registers the `hinter` hint service. No manual edits are needed unless you change `NEO4J_PASSWORD`.
 
 ## 5. Deploy Infrastructure
 
@@ -136,7 +136,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh
 ```
 
 To deploy non-interactively with a custom lab prefix. Pick the config for the hinting mode you
-want: `-cumulative` (pre-staged prompt hints only) or `-adaptive` (adds the Oracle hint
+want: `-cumulative` (pre-staged prompt hints only) or `-adaptive` (adds the Hinter hint
 service VM on `10.1.1.21`, reached over MCP) — see [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments):
 
 ```bash

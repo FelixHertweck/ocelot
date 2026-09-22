@@ -22,14 +22,14 @@ Scenarios use [OpenHands](https://github.com/All-Hands-AI/OpenHands) as the auto
   * **`decepticon/`**: Decepticon red-team agent image.
   * **`inverter-emulator/`**: SMA solar inverter emulator image.
   * **`openhands/`**: OpenHands AI agent image.
-  * **`oracle/`**: Oracle hint-service image (oracle wrapper container, mounted-JSON content). See [images/oracle/README.md](images/oracle/README.md).
+  * **`hinter/`**: Hinter hint-service image (hinter wrapper container, mounted-JSON content). See [images/hinter/README.md](images/hinter/README.md).
   * **`ot-management-gateway/`**: OT management gateway image (HTTP admin + SSH).
   * **`ot-proxy/`**: Modbus TCP and IEC 61850 security proxy image.
   * **`protection-relay-emulator/`**: IEC 61850 protection relay emulator image.
   * **`win-domain-controller/`**: Windows Server 2022 Active Directory domain controller image (Scenario 3.3).
 * **`inverter-emulator/`**: Source code for the SMA solar inverter emulator (Java/Maven).
 * **`openhands_exporter/`**: Script to convert OpenHands conversation export ZIPs into readable Markdown files.
-* **`oracle/`**: Source code for the Oracle hint service (Python/FastMCP) — on-demand, per-category, tiered hints for the attacker LLM. See [oracle/README.md](oracle/README.md).
+* **`hinter/`**: Source code for the Hinter hint service (Python/FastMCP) — on-demand, per-category, tiered hints for the attacker LLM. See [hinter/README.md](hinter/README.md).
 * **`ot-management-gateway/`**: Source code for the OT management gateway (nginx + web app).
 * **`ot-proxy/`**: Source code for the Modbus TCP / IEC 61850 security proxy (Java/Maven).
 * **`protection-relay-emulator/`**: Source code for the IEC 61850 protection relay emulator (Java/Maven).

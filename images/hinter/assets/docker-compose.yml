@@ -1,0 +1,13 @@
+services:
+  hinter:
+    image: ghcr.io/felixhertweck/ocelot-hinter:main
+    container_name: hinter
+    ports:
+      - "${HINTER_PORT:-8080}:8080"
+    environment:
+      - HINTER_HOST=0.0.0.0
+      - HINTER_SCENARIO=${HINTER_SCENARIO:-scenario-3.1}
+    volumes:
+      - ~/hinter/content:/app/content:ro
+      - ~/hinter/logs:/var/log/hinter
+    restart: unless-stopped
