@@ -98,6 +98,7 @@ def _extract_per_prompt(
     result = json.loads(response.choices[0].message.content)
     # Merge in metrics from metrics.json so summary step has reliable numbers
     result.setdefault("_prompt_name", name)
+    result.setdefault("_prompt_text", prompt_text)
     result.setdefault("_prompt_tokens", metrics.get("prompt_tokens", 0))
     result.setdefault("_completion_tokens", metrics.get("completion_tokens", 0))
     result.setdefault("_total_tokens", metrics.get("total_tokens", 0))
@@ -105,6 +106,38 @@ def _extract_per_prompt(
 
     cache.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     return result
+
+
+def _annotate_new_text_per_dose(blocks: list[dict]) -> None:
+    """Mutates `blocks` in place: adds `_new_text_this_dose` — the text newly added relative
+    to the previous block in the sweep, computed deterministically (string-suffix diff), not by
+    the LLM. Each cumulative prompt configuration is base+hint1+...+hintN, so dose N's text is
+    always dose N-1's text plus one appended hint — a straight prefix removal.
+
+    Also adds `_new_text_status` (`"base" | "ok" | "diff_failed"`) so downstream consumers never
+    have to guess *why* `_new_text_this_dose` is null — "no previous dose to diff against" (the
+    first block) and "the diff failed" (an unexpected, non-additive prompt structure) both used
+    to collapse to the same `None`, which is indistinguishable at the point of use. `"base"` for
+    single-block (adaptive) runs too, where the concept does not apply.
+    """
+    if len(blocks) < 2:
+        for b in blocks:
+            b["_new_text_this_dose"] = None
+            b["_new_text_status"] = "base"
+        return
+    blocks[0]["_new_text_this_dose"] = None
+    blocks[0]["_new_text_status"] = "base"
+    for prev, cur in zip(blocks, blocks[1:]):
+        prev_text = prev.get("_prompt_text", "")
+        cur_text = cur.get("_prompt_text", "")
+        if cur_text.startswith(prev_text):
+            cur["_new_text_this_dose"] = cur_text[len(prev_text):].strip()
+            cur["_new_text_status"] = "ok"
+        else:
+            # Not a clean prefix extension (unexpected prompt structure) — leave for the
+            # synthesis LLM to infer from the full texts rather than guessing a wrong diff.
+            cur["_new_text_this_dose"] = None
+            cur["_new_text_status"] = "diff_failed"
 
 
 def _generate_document(
@@ -276,6 +309,8 @@ def main() -> None:
         block = _extract_per_prompt(client, model, extraction_prompt, pdir)
         blocks.append(block)
         print("done")
+
+    _annotate_new_text_per_dose(blocks)
 
     print("Generating final evaluation document...")
     document = _generate_document(client, model, synthesis_prompt, template, blocks, meta)
