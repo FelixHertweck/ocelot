@@ -24,6 +24,8 @@
     {
       name: "phase-1c",
       times: 1,
+      // Pool moved above all fixed IPs (.10-.20) to avoid IpAddressAlreadyAllocated.
+      allocationPool: { startOctet: 100 },
       virtualNetworks: [
         {
           internalDns: false,
