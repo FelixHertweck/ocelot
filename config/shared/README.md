@@ -27,8 +27,6 @@ No copying or file merging between folders is needed. You simply stage the `conf
 cp -r /tmp/ocelot/config/* ./configs/
 ```
 
-Most phases (e.g. `phase-1a` through `phase-1d`) do not carry a local `openhands.env` and reference `shared/openhands/openhands.env` directly. `phase-2a` and `phase-2b` keep their own scenario-specific `openhands.env` in their respective phase directories. All phases reference `mcp-servers-*.json` directly from `shared/openhands/`.
-
 Each phase ships two `.json5` configs — `phase-X-cumulative.json5` sources `/cave/backend/configs/shared/openhands/mcp-servers-only-neo4j.json`, while `phase-X-adaptive.json5` sources `/cave/backend/configs/shared/openhands/mcp-servers-oracle.json`.
 
 If you edit a shared file in `shared/openhands/`, all phases referencing it use the updated version directly at deploy time.

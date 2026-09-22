@@ -31,10 +31,10 @@ cp -r /tmp/ocelot/config/* ./configs/
 
 ## 2. Configure the Task
 
-Edit `configs/phase-2b/openhands.env` and fill in your LLM credentials and the Phase 2b prompt:
+Edit `configs/shared/openhands/openhands.env` and fill in your LLM credentials and the Phase 2b prompt:
 
 ```bash
-nano configs/phase-2b/openhands.env
+nano configs/shared/openhands/openhands.env
 ```
 
 | Variable | Description |

@@ -54,10 +54,10 @@ options.
 
 ## 3. Configure the Task
 
-Edit `configs/phase-2a/openhands.env` and fill in your LLM credentials and the Phase 2a prompt:
+Edit `configs/shared/openhands/openhands.env` and fill in your LLM credentials and the Phase 2a prompt:
 
 ```bash
-nano configs/phase-2a/openhands.env
+nano configs/shared/openhands/openhands.env
 ```
 
 | Variable | Description |
