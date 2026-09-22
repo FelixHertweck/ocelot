@@ -92,7 +92,7 @@
           image: "oracle:latest",
           post: "oracle",
           networks: [ 1 ],
-          lastOctet: 11,
+          lastOctet: 21,
           name: "oracle",
           flavor: "server-small",
           hostname: "oracle",

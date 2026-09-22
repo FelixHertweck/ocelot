@@ -8,7 +8,7 @@ directories, kept here once instead of duplicated in every phase folder.
 - `openhands/mcp-servers-only-neo4j.json` — MCP server definitions with just Neo4j (Cypher +
   memory server). Used by the `*-cumulative.json5` (cumulative-hinting) phase configs.
 - `openhands/mcp-servers-oracle.json` — the same Neo4j servers **plus** `oracle` (the Streamable
-  HTTP hint service on `10.1.1.11`, see `oracle/README.md` on the `feat/oracle-hint-service`
+  HTTP hint service on `10.1.1.21`, see `oracle/README.md` on the `feat/oracle-hint-service`
   branch). Used by the `*-adaptive-oracle.json5` (adaptive-hinting) phase configs.
 
   Two complete files rather than one with the `oracle` entry commented out: the openhands image
