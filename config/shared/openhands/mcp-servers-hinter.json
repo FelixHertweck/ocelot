@@ -24,7 +24,7 @@
         "NEO4J_PASSWORD": "${NEO4J_PASSWORD}"
       }
     },
-    "oracle": {
+    "hinter": {
       "url": "http://10.1.1.21:8080/mcp"
     }
   }

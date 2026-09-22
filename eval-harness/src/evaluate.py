@@ -61,7 +61,7 @@ def _extract_per_prompt(
     conversation = _read(prompt_dir / "conversation.md")
     metrics = json.loads(_read(prompt_dir / "metrics.json", "{}"))
     context = _read(prompt_dir / "context.txt")
-    oracle_report = _read(prompt_dir / "oracle_report.json", "(Oracle hint service not used for this run)")
+    hinter_report = _read(prompt_dir / "hinter_report.json", "(Hinter hint service not used for this run)")
 
     user_msg = f"""# Prompt Configuration: {name}
 
@@ -81,9 +81,9 @@ def _extract_per_prompt(
 {context}
 ```
 
-## Oracle Hint-Service Report (ask_oracle usage this run)
+## Hinter Hint-Service Report (ask_hinter usage this run)
 ```json
-{oracle_report}
+{hinter_report}
 ```"""
 
     response = client.chat.completions.create(
