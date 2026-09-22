@@ -119,7 +119,7 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 |---|---|---|---|
 | `scenario` | `cave_config_name` | — | `.json5` basename passed to `deploy-wrapper.sh` for deploy. Resolved there against `{cave_wrapper_dir}/backend/configs` (exact match, else a recursive basename search) — independent of `configs_subpath`, so it does not need to include the scenario's subpath. |
 | `scenario` | `cave_wrapper_dir` | `/cave-wrapper` | CAVE wrapper dir (mounted from `$CAVE_WRAPPER_DIR` in `.env`) |
-| `scenario` | `configs_subpath` | `backend/configs` | The scenario's own directory, relative to `cave_wrapper_dir` — where `eval.sh`/`reset.sh` live. Set per scenario, e.g. `backend/configs/phase-1a`; independent of `cave_config_name`, since one directory can hold several `.json5` variants (e.g. `phase-1a-cumulative.json5` + `phase-1a-adaptive-oracle.json5`) sharing one `eval.sh`/`reset.sh`. |
+| `scenario` | `configs_subpath` | `backend/configs` | The scenario's own directory, relative to `cave_wrapper_dir` — where `eval.sh`/`reset.sh` live. Set per scenario, e.g. `backend/configs/phase-1a`; independent of `cave_config_name`, since one directory can hold several `.json5` variants (e.g. `phase-1a-cumulative.json5` + `phase-1a-adaptive.json5`) sharing one `eval.sh`/`reset.sh`. |
 | `deploy` | `wait_time` | `600` | Seconds to wait after CAVE deploy completes |
 | `deploy` | `lab_prefix` | `auto` | Lab name prefix; `auto` generates `<scenario>-<YYYYMMDD>-<HHMM>` |
 | `deploy` | `public_vpn_port` | `auto` | VPN port; `auto` picks the first free port from `port_pool` |

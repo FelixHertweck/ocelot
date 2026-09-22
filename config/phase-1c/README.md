@@ -47,7 +47,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh
 ```
 
 To deploy non-interactively with a custom lab prefix. Pick the config for the hinting mode you
-want: `-cumulative` (pre-staged prompt hints only) or `-adaptive-oracle` (adds the Oracle hint
+want: `-cumulative` (pre-staged prompt hints only) or `-adaptive` (adds the Oracle hint
 service VM on `10.1.1.21`, reached over MCP) — see [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments):
 
 ```bash
@@ -55,7 +55,7 @@ service VM on `10.1.1.21`, reached over MCP) — see [Methodology.md → Instrum
 docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c-cumulative --lab-prefix ocelot-p1c
 
 # ...or adaptive-hinting
-docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c-adaptive-oracle --lab-prefix ocelot-p1c
+docker compose run --rm cave /cave/deploy-wrapper.sh phase-1c/phase-1c-adaptive --lab-prefix ocelot-p1c
 
 # append --wg for WireGuard instead of OpenVPN
 ```
