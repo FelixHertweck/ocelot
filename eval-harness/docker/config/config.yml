@@ -46,7 +46,7 @@ evaluation:
 #                                             # a top-level evaluation.md at the end.
 
 # oracle:
-#   base_url: http://10.1.1.11:8080          # required when prompts.mode is adaptive (fails fast at startup if unset) — Oracle's REST base URL, reachable from the harness the same way as openhands.base_url
+#   base_url: http://10.1.1.21:8080          # required when prompts.mode is adaptive (fails fast at startup if unset) — Oracle's REST base URL, reachable from the harness the same way as openhands.base_url
 
 # context_script:
 #   cmd: "bash eval.sh"                      # default: bash eval.sh in config_dir

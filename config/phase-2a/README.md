@@ -78,7 +78,7 @@ Placeholder values for this lab:
 ## 4. Deploy Infrastructure
 
 Pick the config for the hinting mode you want: `-cumulative` (pre-staged prompt hints only) or
-`-adaptive-oracle` (adds the Oracle hint service VM on `10.1.1.11`, reached over MCP) — see
+`-adaptive-oracle` (adds the Oracle hint service VM on `10.1.1.21`, reached over MCP) — see
 [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments).
 
 ```bash
