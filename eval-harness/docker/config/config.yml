@@ -36,7 +36,7 @@ evaluation:
 #   run_timeout: 3600                        # default: 3600s (1h)
 
 # prompts:
-#   mode: cumulative                         # default: cumulative (alternative: adaptive) — switches instrument, drives ORACLE_ENABLED
+#   mode: cumulative                         # default: cumulative — name of the instrument (see src/instruments/; e.g. adaptive)
 #                                             # adaptive also needs oracle.base_url + a cave_config_name that deploys the Oracle VM
 
 # runs:

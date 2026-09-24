@@ -117,18 +117,12 @@ if [[ -z "$EVAL_LLM_API_KEY" ]]; then
   fi
 fi
 
-if [[ "$PROMPTS_MODE" != "cumulative" && "$PROMPTS_MODE" != "adaptive" ]]; then
-  echo "ERROR: prompts.mode must be 'cumulative' or 'adaptive', got '$PROMPTS_MODE'." >&2
-  exit 1
-fi
-
-if [[ "$ORACLE_ENABLED" == "true" && -z "$ORACLE_BASE_URL" ]]; then
-  echo "ERROR: prompts.mode is 'adaptive' but oracle.base_url is not set in config.yml." >&2
-  exit 1
-fi
+# Instrument-specific config checks (unknown mode, required oracle.base_url, ...).
+PYTHONPATH="$SCRIPT_DIR" python3 -m instruments validate "$CONFIG_FILE" || exit 1
+ORACLE_ENABLED=$(PYTHONPATH="$SCRIPT_DIR" python3 -m instruments uses-oracle "$PROMPTS_MODE") || exit 1
 
 if [[ "$ORACLE_ENABLED" == "false" && -n "$ORACLE_BASE_URL" ]]; then
-  echo "WARNING: oracle.base_url is set but prompts.mode is 'cumulative' — Oracle will not be reset or recorded this run." >&2
+  echo "WARNING: oracle.base_url is set but prompts.mode '$PROMPTS_MODE' does not use Oracle — it will not be reset or recorded this run." >&2
 fi
 
 # ── Generate run-id and lab_prefix ────────────────────────────────────────────
@@ -337,7 +331,8 @@ cat > "$RUN_DIR/meta.json" <<META
   "vpn_port": $VPN_PORT,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "skip_deploy": $SKIP_DEPLOY,
-  "num_runs": $NUM_RUNS
+  "num_runs": $NUM_RUNS,
+  "instrument": "$PROMPTS_MODE"
 }
 META
 
@@ -369,7 +364,7 @@ log "OpenHands reachable."
 # ── Step 2: Parse prompts ──────────────────────────────────────────────────────
 [[ -f "$PROMPTS_SOURCE" ]] || { log "ERROR: Prompts file not found: $PROMPTS_SOURCE"; exit 1; }
 log "Parsing prompts: $PROMPTS_SOURCE (mode=$PROMPTS_MODE)"
-PROMPTS_JSON=$(python3 "$SCRIPT_DIR/lib/prompt_parser.py" "$PROMPTS_SOURCE")
+PROMPTS_JSON=$(PYTHONPATH="$SCRIPT_DIR" python3 -m instruments plan "$PROMPTS_MODE" "$PROMPTS_SOURCE")
 PROMPT_COUNT=$(echo "$PROMPTS_JSON" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
 log "Prompt configurations: $PROMPT_COUNT"
 

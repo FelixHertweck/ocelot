@@ -234,6 +234,33 @@ This is much faster than re-extracting — only the final document synthesis run
 
 ---
 
+## Instruments
+
+`prompts.mode` selects an instrument from the registry in `src/instruments/__init__.py`. An instrument is a subclass of `Instrument` (`src/instruments/base.py`) that supplies only what differs between evaluation methods:
+
+| Hook | Purpose | cumulative | adaptive |
+|---|---|---|---|
+| `validate(cfg)` | Fail-fast config checks (run by `run.sh` before deploy) | — | requires `oracle.base_url` |
+| `plan(source)` | Conditions (prompt configurations) of one run | additive sweep Base, +Hint 1, … | single Base condition; rejects `# Hint N` sections |
+| `extraction_context(dir)` | Extra LLM inputs per condition | — | Oracle report (`oracle_report.json`) |
+| `annotate(blocks)` | Deterministic post-processing before synthesis | per-dose text diff (`_new_text_*`) | — |
+| `uses_oracle` | Harness resets/records the Oracle service | no | yes |
+| fragments | Fill the `{{slots}}` of the four core prompts | `instruments/cumulative/*.md` | `instruments/adaptive/*.md` |
+
+The harness sets `instrument` on every block deterministically; the extraction LLM no longer emits it.
+
+**Prompt fragments.** Each core prompt contains `{{slot}}` placeholders. An instrument provides a fragment file of the same filename (`instruments/<name>/extraction.md`, …) where `@@ slot_name` lines start a slot (an empty slot is allowed). A placeholder with no matching slot fails fast with the instrument and file named. Prompt overrides (`evaluation.*_prompt`, CLI flags) go through the same rendering: a custom file that keeps the placeholders is filled per instrument; one without placeholders is used verbatim.
+
+**Adding an instrument:**
+
+1. Create `src/instruments/<name>/__init__.py` with an `Instrument` subclass (`name`, `plan`, and any hooks above).
+2. Add the four fragment files (`extraction.md`, `synthesis.md`, `template.md`, `multi_run_synthesis.md`) covering every slot of the core prompts.
+3. Register the class in `REGISTRY` in `src/instruments/__init__.py`, then set `prompts.mode: <name>`.
+
+The instrument must produce the shared artifact: blocks whose `gap_events` use the six-class axis.
+
+---
+
 ## Prompt File Format
 
 Prompt files (`config/prompts/*.md`) use this structure:
@@ -289,8 +316,12 @@ eval-harness/
   src/                    ← source code copied into the image
     run.sh                ← main orchestration (deploy → run loop → evaluation → teardown)
     evaluate.py           ← standalone evaluation step (reads existing results)
-    lib/                  ← Python libraries
-    prompts/              ← default evaluation template and extraction prompt
+    lib/                  ← Python libraries (shared, instrument-independent)
+    instruments/          ← one package per evaluation method (registry, base class, prompt fragments)
+      base.py             ← Instrument interface + fragment rendering
+      cumulative/         ← Instrument subclass + extraction/synthesis/template/multi_run_synthesis fragments
+      adaptive/           ← same for the adaptive Oracle method
+    prompts/              ← core prompts with {{slot}} placeholders (shared contract)
   docker/                 ← deployment directory — work from here
     docker-compose.yml
     .env.example          ← copy to .env and fill in
@@ -419,17 +450,15 @@ Input to LLM:
 
 Output from LLM:
   • Complete Markdown document (evaluation.md), instrument-agnostic (one template — see
-    src/prompts/template.md): Test Setup, Evaluation Overview, Success Criteria, Evaluation
-    Dimensions, Results Summary, Per-Condition Detail, Knowledge-Gap Analysis, Autonomous
-    Capability (computed), Semantic Correctness, False Actuation & Safety, Token Efficiency,
-    Summary
+    src/prompts/template.md): Test Setup, Goals, Results Summary, Per-Condition Detail,
+    Knowledge-Gap Analysis, Autonomous Capability (computed), Correctness & Safety, Summary
 ```
 
 **No caching**: The final document is re-generated each time you run `evaluate.py`. This allows you to iterate on both the synthesis prompt and template without re-extracting per-condition blocks.
 
 When `runs.count > 1`, a further LLM call (`multi_run_synthesis_prompt`, default
 `src/prompts/multi_run_synthesis.md`) combines N of these per-run/per-sweep documents into one
-per-cell aggregate: the 0-call/Base completion rate (`x/N` + Wilson 95% CI), the raw
+per-cell aggregate: the 0-call/Base completion rate (`x/N`), the raw
 autonomous-step distribution across runs (not just an average — no pooling into a single
 number), the aggregated knowledge-gap class tally (one row of the paper's knowledge-dependence
 map), and median + IQR for cost. See **evaluate.py Flags** → `--combine` above.
@@ -439,7 +468,7 @@ map), and median + IQR for cost. See **evaluate.py Flags** → `--combine` above
 - **Independence**: Each condition is evaluated separately, so information from one test doesn't influence another.
 - **Device-grounded**: The LLM has access to the actual device state (`context.txt` from `eval.sh`), allowing it to detect discrepancies between what the agent *claims* to have done and what the device *actually shows*.
 - **Two-stage structure**: Per-condition extraction is cacheable and reusable; document synthesis is fast and iterative (good for template experimentation).
-- **One instrument-agnostic pipeline**: `evaluate.py`, `extraction.md`, `template.md`, `synthesis.md`, and `multi_run_synthesis.md` do not branch on `prompts.mode` — they read it off the data (an empty vs. populated `gap_events`, an `oracle_report.json` present or absent). The only place that knows there are two instruments is prompt parsing itself (`lib/prompt_parser.py`): a cumulative source file sweeps additively; an adaptive-hinting source file has no `# Hint N` sections and so collapses to one condition, repeated `runs.count` times for independent runs.
+- **Instrument-agnostic core, pluggable instruments**: `evaluate.py` and the four core prompts in `src/prompts/` (`extraction.md`, `synthesis.md`, `template.md`, `multi_run_synthesis.md`) contain no per-instrument branches. Everything that differs lives in one package per instrument under `src/instruments/<name>/` — see **Instruments** below. The shared contract (six-class axis, `gap_events` schema, document sections) stays in the core so every instrument's output remains directly comparable.
 - **Prompt overrides**: All evaluation prompts can be customized per-scenario (see **Overriding Evaluation Prompts and Templates** section above).
 
 ### Troubleshooting Evaluation

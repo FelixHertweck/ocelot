@@ -55,11 +55,10 @@ DEFAULTS: dict = {
     },
     "prompts": {
         "source": "",
-        # cumulative | adaptive — which of the two evaluation instruments this
-        # run is. Drives ORACLE_ENABLED (no separate oracle.enabled flag, so
-        # the instrument used for scoring can never drift out of sync with
-        # whether the harness records Oracle usage) and how the prompt file's
-        # hint sections are swept (see prompt_parser.py).
+        # Name of the evaluation instrument (see instruments/). Drives whether the
+        # harness records Oracle usage (no separate oracle.enabled flag, so the
+        # instrument used for scoring can never drift out of sync with it) and how
+        # the prompt file is turned into conditions.
         "mode": "cumulative",
     },
     "runs": {
@@ -130,7 +129,6 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "PROMPTS_SOURCE": str(p.get("source", "")) if str(p.get("source", "")).startswith("/") else f"/app/config/prompts/{p.get('source', '')}",
         "PROMPTS_MODE": str(p.get("mode", "cumulative")),
         "NUM_RUNS": str(r.get("count", 1)),
-        "ORACLE_ENABLED": "true" if p.get("mode", "cumulative") == "adaptive" else "false",
         "ORACLE_BASE_URL": str(orc.get("base_url", "")),
         "CONTEXT_CMD": str(cs.get("cmd", "bash eval.sh")),
         "CLEANUP_CMD": str(cl.get("cmd", "bash reset.sh")),
