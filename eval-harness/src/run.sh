@@ -446,31 +446,17 @@ open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
     CONV_ID=$(echo "$CREATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['conversation_id'])")
     log "  Conversation: $CONV_ID"
 
-    # Poll for completion
-    log "  Polling for STOPPED (timeout: ${OH_RUN_TIMEOUT}s)..."
-    FINAL_STATUS="error"
-    sleep "$OH_INITIAL_WAIT"
-    ELAPSED=$OH_INITIAL_WAIT
-    while true; do
-      STATUS_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-        --base-url "$OH_BASE_URL" status --conv-id "$CONV_ID")
-      CONV_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-      EXEC_STATUS=$(echo "$STATUS_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('execution_status',''))" 2>/dev/null || echo "")
-      log "  [$ELAPSED s] $CONV_STATUS ($EXEC_STATUS)"
-      if [[ "$CONV_STATUS" == "STOPPED" ]]; then
-        echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
-        FINAL_STATUS="stopped"; break
-      fi
-      if [[ $ELAPSED -ge $OH_RUN_TIMEOUT ]]; then
-        log "  Timeout — stopping conversation..."
-        python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-          --base-url "$OH_BASE_URL" stop --conv-id "$CONV_ID" 2>/dev/null || true
-        echo "$STATUS_RESULT" > "$PROMPT_DIR/conv_info.json"
-        FINAL_STATUS="timeout"; break
-      fi
-      sleep "$OH_POLL_INTERVAL"
-      ELAPSED=$((ELAPSED + OH_POLL_INTERVAL))
-    done
+    # Wait for the conversation to end; classifies how it ended and tries "continue" on error/stuck
+    log "  Waiting for end (timeout: ${OH_RUN_TIMEOUT}s, max continues: ${OH_MAX_CONTINUES})..."
+    END_JSON=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
+      --base-url "$OH_BASE_URL" wait --conv-id "$CONV_ID" \
+      --timeout "$OH_RUN_TIMEOUT" --poll-interval "$OH_POLL_INTERVAL" \
+      --initial-wait "$OH_INITIAL_WAIT" --max-continues "$OH_MAX_CONTINUES") \
+      || END_JSON='{"final_status": "error", "end_reason": "harness_error", "error_detail": "openhands_api.py wait crashed", "continue_attempts": [], "conv_info": {}}'
+    FINAL_STATUS=$(echo "$END_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['final_status'])")
+    echo "$END_JSON" | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin).get('conv_info', {})))" > "$PROMPT_DIR/conv_info.json"
+    echo "$END_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); d.pop('conv_info', None); print(json.dumps(d, indent=2))" > "$PROMPT_DIR/end_state.json"
+    END_COMPACT=$(python3 -c "import json; print(json.dumps(json.load(open('$PROMPT_DIR/end_state.json'))))")
 
     DURATION=$(( $(date +%s) - CONV_START ))
     log "  $FINAL_STATUS after ${DURATION}s"
@@ -513,12 +499,20 @@ PYEOF
 {
   "conversation_id": "$CONV_ID",
   "status": "$FINAL_STATUS",
+  "end": $END_COMPACT,
   "prompt_name": "$PROMPT_NAME",
   "prompt_index": $i,
   "duration_seconds": $DURATION,
   "completed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 STATUSEOF
+
+    # The agent did not end cleanly and could not be recovered: the run is documented
+    # (status.json, end_state.json, conversation.md); stop here rather than score on.
+    if [[ "$FINAL_STATUS" == "error" ]]; then
+      log "ERROR: prompt-$i ($PROMPT_NAME) ended abnormally and could not be recovered — aborting. Details: $PROMPT_DIR/end_state.json"
+      exit 1
+    fi
 
     # Cleanup between prompts (skip only after the very last prompt of the very last run)
     if [[ $i -lt $((PROMPT_COUNT - 1)) || $RUN_IDX -lt $NUM_RUNS ]]; then

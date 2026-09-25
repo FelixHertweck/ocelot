@@ -63,6 +63,7 @@ def _extract_per_prompt(
     conversation = _read(prompt_dir / "conversation.md")
     metrics = json.loads(_read(prompt_dir / "metrics.json", "{}"))
     context = _read(prompt_dir / "context.txt")
+    end_state = _read(prompt_dir / "end_state.json", "(not recorded)")
 
     user_msg = f"""# Prompt Configuration: {name}
 
@@ -71,6 +72,11 @@ def _extract_per_prompt(
 
 ## Agent Conversation
 {conversation}
+
+## Run Termination (how the OpenHands conversation ended)
+```json
+{end_state}
+```
 
 ## Token Metrics
 ```json
@@ -291,6 +297,9 @@ def main() -> None:
         name = _read(pdir / "prompt_name.txt", pdir.name)
         print(f"  [{pdir.name}] {name}...", end=" ", flush=True)
         block = _extract_per_prompt(client, model, extraction_prompt, pdir, instrument)
+        # Deterministic, from the harness's own record (not the LLM): set on cached blocks too.
+        end = json.loads(_read(pdir / "end_state.json", "{}"))
+        block["_termination"] = end if end.get("final_status", "finished") != "finished" else None
         blocks.append(block)
         print("done")
 
