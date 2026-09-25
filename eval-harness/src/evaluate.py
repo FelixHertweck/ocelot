@@ -15,6 +15,7 @@ except ImportError:
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+from instruments import Instrument, get as get_instrument
 from lib.config import load as load_config
 
 DEFAULT_EXTRACTION_PROMPT = SCRIPT_DIR / "prompts" / "extraction.md"
@@ -49,6 +50,7 @@ def _extract_per_prompt(
     model: str,
     extraction_prompt: str,
     prompt_dir: Path,
+    instrument: Instrument,
 ) -> dict:
     """LLM call for one prompt run → structured JSON block. Cached in eval_block.json."""
     cache = prompt_dir / "eval_block.json"
@@ -61,7 +63,7 @@ def _extract_per_prompt(
     conversation = _read(prompt_dir / "conversation.md")
     metrics = json.loads(_read(prompt_dir / "metrics.json", "{}"))
     context = _read(prompt_dir / "context.txt")
-    oracle_report = _read(prompt_dir / "oracle_report.json", "(Oracle hint service not used for this run)")
+    end_state = _read(prompt_dir / "end_state.json", "(not recorded)")
 
     user_msg = f"""# Prompt Configuration: {name}
 
@@ -71,6 +73,11 @@ def _extract_per_prompt(
 ## Agent Conversation
 {conversation}
 
+## Run Termination (how the OpenHands conversation ended)
+```json
+{end_state}
+```
+
 ## Token Metrics
 ```json
 {json.dumps(metrics, indent=2)}
@@ -79,12 +86,7 @@ def _extract_per_prompt(
 ## Device Context (eval.sh output)
 ```
 {context}
-```
-
-## Oracle Hint-Service Report (ask_oracle usage this run)
-```json
-{oracle_report}
-```"""
+```{instrument.extraction_context(prompt_dir)}"""
 
     response = client.chat.completions.create(
         model=model,
@@ -106,38 +108,6 @@ def _extract_per_prompt(
 
     cache.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     return result
-
-
-def _annotate_new_text_per_dose(blocks: list[dict]) -> None:
-    """Mutates `blocks` in place: adds `_new_text_this_dose` — the text newly added relative
-    to the previous block in the sweep, computed deterministically (string-suffix diff), not by
-    the LLM. Each cumulative prompt configuration is base+hint1+...+hintN, so dose N's text is
-    always dose N-1's text plus one appended hint — a straight prefix removal.
-
-    Also adds `_new_text_status` (`"base" | "ok" | "diff_failed"`) so downstream consumers never
-    have to guess *why* `_new_text_this_dose` is null — "no previous dose to diff against" (the
-    first block) and "the diff failed" (an unexpected, non-additive prompt structure) both used
-    to collapse to the same `None`, which is indistinguishable at the point of use. `"base"` for
-    single-block (adaptive) runs too, where the concept does not apply.
-    """
-    if len(blocks) < 2:
-        for b in blocks:
-            b["_new_text_this_dose"] = None
-            b["_new_text_status"] = "base"
-        return
-    blocks[0]["_new_text_this_dose"] = None
-    blocks[0]["_new_text_status"] = "base"
-    for prev, cur in zip(blocks, blocks[1:]):
-        prev_text = prev.get("_prompt_text", "")
-        cur_text = cur.get("_prompt_text", "")
-        if cur_text.startswith(prev_text):
-            cur["_new_text_this_dose"] = cur_text[len(prev_text):].strip()
-            cur["_new_text_status"] = "ok"
-        else:
-            # Not a clean prefix extension (unexpected prompt structure) — leave for the
-            # synthesis LLM to infer from the full texts rather than guessing a wrong diff.
-            cur["_new_text_this_dose"] = None
-            cur["_new_text_status"] = "diff_failed"
 
 
 def _generate_document(
@@ -250,14 +220,31 @@ def main() -> None:
 
     base_url = llm_cfg.get("base_url") or os.environ.get(base_url_env) or None
     client = OpenAI(api_key=api_key, base_url=base_url)
+    instrument = get_instrument(cfg["prompts"]["mode"])
 
     if args.combine:
+        # The runs' own recorded instrument wins over the current config, so a changed
+        # prompts.mode can't silently select the wrong fragments for older runs.
+        recorded = {
+            json.loads(_read(Path(d) / "meta.json", "{}")).get("instrument") for d in args.combine
+        } - {None}
+        if len(recorded) > 1:
+            print(f"ERROR: --combine mixes instruments {sorted(recorded)}; combine one instrument at a time.", file=sys.stderr)
+            sys.exit(1)
+        if recorded:
+            (name,) = recorded
+            if name != instrument.name:
+                print(f"NOTE: runs were recorded with instrument '{name}'; overriding config prompts.mode '{instrument.name}'.", file=sys.stderr)
+            instrument = get_instrument(name)
         multi_run_synthesis_prompt_path = (
             args.multi_run_synthesis_prompt
             or eval_cfg.get("multi_run_synthesis_prompt")
             or str(DEFAULT_MULTI_RUN_SYNTHESIS_PROMPT)
         )
-        multi_run_synthesis_prompt = Path(multi_run_synthesis_prompt_path).read_text(encoding="utf-8")
+        multi_run_synthesis_prompt = instrument.render(
+            Path(multi_run_synthesis_prompt_path).read_text(encoding="utf-8"),
+            DEFAULT_MULTI_RUN_SYNTHESIS_PROMPT.name,
+        )
 
         run_dirs = [Path(d) for d in args.combine]
         for rdir in run_dirs:
@@ -289,12 +276,15 @@ def main() -> None:
         or str(DEFAULT_TEMPLATE)
     )
 
-    extraction_prompt = Path(extraction_prompt_path).read_text(encoding="utf-8")
-    synthesis_prompt = Path(synthesis_prompt_path).read_text(encoding="utf-8")
-    template = Path(template_path).read_text(encoding="utf-8")
+    # Fragments are keyed by the core prompt's filename, so an overriding file that keeps
+    # {{slot}} placeholders is filled the same way; one without placeholders is used as-is.
+    extraction_prompt = instrument.render(Path(extraction_prompt_path).read_text(encoding="utf-8"), DEFAULT_EXTRACTION_PROMPT.name)
+    synthesis_prompt = instrument.render(Path(synthesis_prompt_path).read_text(encoding="utf-8"), DEFAULT_SYNTHESIS_PROMPT.name)
+    template = instrument.render(Path(template_path).read_text(encoding="utf-8"), DEFAULT_TEMPLATE.name)
 
     run_dir = Path(args.run_dir)
     meta = json.loads(_read(run_dir / "meta.json", "{}"))
+    meta["instrument"] = instrument.name
 
     prompt_dirs = _get_prompt_dirs(run_dir)
     if not prompt_dirs:
@@ -306,11 +296,14 @@ def main() -> None:
     for pdir in prompt_dirs:
         name = _read(pdir / "prompt_name.txt", pdir.name)
         print(f"  [{pdir.name}] {name}...", end=" ", flush=True)
-        block = _extract_per_prompt(client, model, extraction_prompt, pdir)
+        block = _extract_per_prompt(client, model, extraction_prompt, pdir, instrument)
+        # Deterministic, from the harness's own record (not the LLM): set on cached blocks too.
+        end = json.loads(_read(pdir / "end_state.json", "{}"))
+        block["_termination"] = end if end.get("final_status", "finished") != "finished" else None
         blocks.append(block)
         print("done")
 
-    _annotate_new_text_per_dose(blocks)
+    instrument.annotate(blocks)
 
     print("Generating final evaluation document...")
     document = _generate_document(client, model, synthesis_prompt, template, blocks, meta)
