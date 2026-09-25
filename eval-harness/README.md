@@ -127,6 +127,7 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 | `openhands` | `base_url` | `http://10.1.1.20:3000` | OpenHands URL (reachable via VPN) |
 | `openhands` | `poll_interval` | `15` | Seconds between conversation status polls |
 | `openhands` | `run_timeout` | `3600` | Max seconds per run before the conversation is force-stopped |
+| `openhands` | `max_continues` | `2` | "Continue" messages sent when a run ends with `error`/`stuck` before giving up (`0` disables recovery) |
 | `prompts` | `source` | — | Prompt file (relative to `config/prompts/` or absolute) |
 | `prompts` | `mode` | `cumulative` | `cumulative` or `adaptive` — which of the two evaluation instruments this run is. The single switch between the two approaches: it decides how the prompt file's hint sections are swept (see below) and drives whether the harness treats Oracle as enabled (no separate `oracle.enabled` flag, so the instrument used for scoring can't drift out of sync with whether Oracle usage is actually recorded). `adaptive` requires `oracle.base_url` and a `cave_config_name` that deploys the Oracle VM, plus an adaptive-hinting prompt source (single Base Prompt, no `# Hint N` sections). |
 | `runs` | `count` | `1` | Number of times to repeat the full prompt sweep. Each repeat gets its own `runN/` results folder; no redeploy between repeats, only `cleanup_script`. When > 1, a combined `evaluation.md` is generated across all runs. |
