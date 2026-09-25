@@ -1,5 +1,8 @@
 # OpenHands Phase [X] Evaluation — [Short Scenario Description]
 
+<!-- ABNORMAL END — include ONLY if a block has a non-null `_termination`; otherwise omit this block entirely. -->
+> **⚠ Run ended abnormally.** [Condition(s)]: `[end_reason]` after `[n]` continue attempt(s) — [`error_detail`]. The results below cover only what happened before the end and are not a complete measurement.
+
 <!-- Replace all [PLACEHOLDERS]; remove comment blocks before finalising.
 "Condition" = one measured configuration of the instrument used: {{condition_note}} -->
 

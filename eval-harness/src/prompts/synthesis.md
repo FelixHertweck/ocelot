@@ -12,6 +12,7 @@ TEMPLATE:
 ## Filling instructions
 
 - Replace every [PLACEHOLDER] with concrete data from the evaluation blocks.
+- If any block has a non-null `_termination` (the conversation ended with `error`/`stuck`/`timeout`, set by the harness), fill the ⚠ callout directly under the title from it, naming the affected condition(s), `end_reason`, the number of `continue_attempts`, and `error_detail`. If every `_termination` is null, omit the callout entirely.
 - Keep all section headers, table structures, and Markdown formatting intact.
 {{filling_instructions}}
 - Sections 5–8 synthesize across all blocks together.

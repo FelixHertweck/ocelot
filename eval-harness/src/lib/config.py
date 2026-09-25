@@ -52,6 +52,7 @@ DEFAULTS: dict = {
         "initial_wait": 15,
         "poll_interval": 15,
         "run_timeout": 7200,
+        "max_continues": 2,
     },
     "prompts": {
         "source": "",
@@ -126,6 +127,7 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "OH_INITIAL_WAIT": str(o.get("initial_wait", 15)),
         "OH_POLL_INTERVAL": str(o.get("poll_interval", 15)),
         "OH_RUN_TIMEOUT": str(o.get("run_timeout", 3600)),
+        "OH_MAX_CONTINUES": str(o.get("max_continues", 2)),
         "PROMPTS_SOURCE": str(p.get("source", "")) if str(p.get("source", "")).startswith("/") else f"/app/config/prompts/{p.get('source', '')}",
         "PROMPTS_MODE": str(p.get("mode", "cumulative")),
         "NUM_RUNS": str(r.get("count", 1)),
