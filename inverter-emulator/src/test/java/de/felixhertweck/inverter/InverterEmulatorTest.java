@@ -55,30 +55,30 @@ public class InverterEmulatorTest {
         master.connect();
 
         // 1. Check initial state
-        assertThat(readU32(master, 30200)).isEqualTo(307); // Operation.Health: Ok
-        assertThat(readU32(master, 30880)).isEqualTo(1780); // Operation.PvGriConn: connected
+        assertThat(readU32(master, 30201)).isEqualTo(307); // Operation.Health: Ok
+        assertThat(readU32(master, 30881)).isEqualTo(1780); // Operation.PvGriConn: connected
 
         // 2. Trigger E-Stop: write Inverter.FstStop (40018) = 1749 (Full stop)
         master.writeMultipleRegisters(
-                1, 40017, new Register[] {new SimpleRegister(0), new SimpleRegister(1749)});
+                1, 40018, new Register[] {new SimpleRegister(0), new SimpleRegister(1749)});
 
         // 3. Poll until E-Stop takes effect (max 3 seconds)
         long deadline = System.currentTimeMillis() + 3000;
-        int health = readU32(master, 30200);
+        int health = readU32(master, 30201);
         while (health != 35 && System.currentTimeMillis() < deadline) {
             Thread.sleep(100);
-            health = readU32(master, 30200);
+            health = readU32(master, 30201);
         }
         assertThat(health).isEqualTo(35); // Operation.Health: Fault
 
         // 4. Physical relationship: AC power/DC current collapse, but the grid voltage — which
         // is external to this inverter — stays present. This is the exact coupling that was
         // previously missing (power/health were independent hardcoded writes).
-        assertThat(readU32(master, 30774)).isEqualTo(0); // GridMs.TotW
-        assertThat(readU32(master, 30768)).isEqualTo(0); // DcMs.Amp
-        assertThat(readU32(master, 30880)).isEqualTo(1779); // Operation.PvGriConn: Separated
+        assertThat(readU32(master, 30775)).isEqualTo(0); // GridMs.TotW
+        assertThat(readU32(master, 30769)).isEqualTo(0); // DcMs.Amp
+        assertThat(readU32(master, 30881)).isEqualTo(1779); // Operation.PvGriConn: Separated
         // GridMs.PhV.phsA (grid voltage) is external to the inverter and stays present
-        assertThat(readU32(master, 30782) / 100.0).isCloseTo(230.0, Offset.offset(5.0));
+        assertThat(readU32(master, 30783) / 100.0).isCloseTo(230.0, Offset.offset(5.0));
 
         master.disconnect();
     }
