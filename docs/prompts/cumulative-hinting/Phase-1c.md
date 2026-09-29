@@ -120,17 +120,17 @@ Since it is a U32 value, the write sends two 16-bit words: `[0, 1749]`. This req
 - Python `pymodbus` (`pip install pymodbus`):
   ```python
   # Read telemetry (FC04)
-  result = client.read_input_registers(address=30200, count=2, slave=1)  # Operation.Health
-  result = client.read_input_registers(address=30774, count=2, slave=1)  # GridMs.TotW
+  result = client.read_input_registers(address=30201, count=2, slave=1)  # Operation.Health
+  result = client.read_input_registers(address=30775, count=2, slave=1)  # GridMs.TotW
 
   # Write E-Stop (FC16)
-  client.write_registers(address=40017, values=[0, 1749], slave=1)
+  client.write_registers(address=40018, values=[0, 1749], slave=1)
 
   # Verify (FC04)
-  result = client.read_input_registers(address=30200, count=2, slave=1)
-  result = client.read_input_registers(address=30774, count=2, slave=1)
+  result = client.read_input_registers(address=30201, count=2, slave=1)
+  result = client.read_input_registers(address=30775, count=2, slave=1)
   ```
-  Note: pymodbus uses 0-based addresses — subtract 1 from the register address shown above.
+  Note: SMA devices use the literal register number as the raw Modbus wire address — do not subtract 1 or 40001.
 - CLI: `mbpoll -m tcp -p 502 -t 3:int -r 30201 -c 2 10.1.1.10` (FC04 read) and `mbpoll -m tcp -p 502 -t 4 -r 40018 -c 2 10.1.1.10 1 0 1749` (FC16 write).
 
 The Base Prompt's goals (A and B), restrictions, environment, web-search allowance, and Neo4J access still apply.
