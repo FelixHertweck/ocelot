@@ -21,6 +21,8 @@ A Modbus TCP emulator of an SMA solar inverter, built with Java and [j2mod](http
 
 Telemetry registers (3xxxx) are read-only input registers (FC04). `Inverter.FstStop` (4xxxx) is a writable holding register (FC03/FC16).
 
+**Addressing:** these are native **SMA Modbus profile** addresses (SMA-Modbus-general-TI §3.3), used literally as the raw Modbus wire address — no offset is applied. This is a different, separate register block from the **SunSpec Modbus profile** (§3.2), which SMA products expose in parallel starting at register `40001` and which does use a documented `-1` address offset (§3.5.3). This emulator does not implement the SunSpec profile at all; do not apply the SunSpec offset rule to the addresses above.
+
 ## Physical Model
 
 All registers are derived from a single `gridConnected` state every simulation tick (≤ 1 s), instead of being written independently:

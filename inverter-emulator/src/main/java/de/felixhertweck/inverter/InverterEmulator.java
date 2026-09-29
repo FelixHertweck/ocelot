@@ -27,21 +27,22 @@ public class InverterEmulator {
 
     private static int PORT = 502;
 
-    // --- Input registers (3xxxx, FC04, read-only telemetry); value = SMA register - 1 ---
-    private static final int HEALTH_ADDR = 30200; // 30201, Operation.Health (U32)
-    private static final int YIELD_ADDR = 30516; // 30517, Metering.DyWhOut (U64)
-    private static final int DC_AMP_ADDR = 30768; // 30769, DcMs.Amp (S32, A, FIX3)
-    private static final int DC_VOL_ADDR = 30770; // 30771, DcMs.Vol (S32, V, FIX2)
-    private static final int DC_WATT_ADDR = 30772; // 30773, DcMs.Watt (S32, W, FIX0)
-    private static final int POWER_ADDR = 30774; // 30775, GridMs.TotW (S32, W)
-    private static final int AC_V_A_ADDR = 30782; // 30783, GridMs.PhV.phsA (U32, FIX2)
-    private static final int AC_V_B_ADDR = 30784; // 30785, GridMs.PhV.phsB (U32, FIX2)
-    private static final int AC_V_C_ADDR = 30786; // 30787, GridMs.PhV.phsC (U32, FIX2)
-    private static final int AC_HZ_ADDR = 30802; // 30803, GridMs.Hz (U32, FIX2)
-    private static final int GRID_CONN_ADDR = 30880; // 30881, Operation.PvGriConn (U32)
+    // --- Input registers (3xxxx, FC04, read-only telemetry) ---
+    // SMA devices use the literal register number as the raw Modbus wire address.
+    private static final int HEALTH_ADDR = 30201; // Operation.Health (U32)
+    private static final int YIELD_ADDR = 30517; // Metering.DyWhOut (U64)
+    private static final int DC_AMP_ADDR = 30769; // DcMs.Amp (S32, A, FIX3)
+    private static final int DC_VOL_ADDR = 30771; // DcMs.Vol (S32, V, FIX2)
+    private static final int DC_WATT_ADDR = 30773; // DcMs.Watt (S32, W, FIX0)
+    private static final int POWER_ADDR = 30775; // GridMs.TotW (S32, W)
+    private static final int AC_V_A_ADDR = 30783; // GridMs.PhV.phsA (U32, FIX2)
+    private static final int AC_V_B_ADDR = 30785; // GridMs.PhV.phsB (U32, FIX2)
+    private static final int AC_V_C_ADDR = 30787; // GridMs.PhV.phsC (U32, FIX2)
+    private static final int AC_HZ_ADDR = 30803; // GridMs.Hz (U32, FIX2)
+    private static final int GRID_CONN_ADDR = 30881; // Operation.PvGriConn (U32)
 
     // --- Holding registers (4xxxx, FC03/FC16, control) ---
-    private static final int FSTOP_ADDR = 40017; // 40018, Inverter.FstStop (U32, WO)
+    private static final int FSTOP_ADDR = 40018; // Inverter.FstStop (U32, WO)
 
     private static final int HEALTH_OK = 307; // Operation.Health: Ok
     private static final int HEALTH_FAULT = 35; // Operation.Health: Fault (Alm)
@@ -95,9 +96,7 @@ public class InverterEmulator {
                                 String description = LOGGED_INPUT_REGISTERS.get(ref);
                                 if (description != null) {
                                     log.info(
-                                            "Modbus FC04 read: {} (register {})",
-                                            description,
-                                            ref + 1);
+                                            "Modbus FC04 read: {} (register {})", description, ref);
                                 }
                             }
                             return super.getInputRegister(ref);
@@ -229,7 +228,7 @@ public class InverterEmulator {
                 log.warn(
                         "EMERGENCY STOP triggered via Modbus write to register {} —"
                                 + " shutting down inverter",
-                        FSTOP_ADDR + 1);
+                        FSTOP_ADDR);
             } else if (!fulStop && !wasConnected) {
                 log.info("Inverter resumed normal operation.");
             }
