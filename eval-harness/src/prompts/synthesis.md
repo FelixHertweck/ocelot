@@ -12,7 +12,8 @@ TEMPLATE:
 ## Filling instructions
 
 - Replace every [PLACEHOLDER] with concrete data from the evaluation blocks.
-- If any block has a non-null `_termination` (the conversation ended with `error`/`stuck`/`timeout`, set by the harness), fill the ⚠ callout directly under the title from it, naming the affected condition(s), `end_reason`, the number of `continue_attempts`, and `error_detail`. If every `_termination` is null, omit the callout entirely.
+- If any block has a non-null `_termination` (the conversation ended with `error`/`stuck`/`timeout`/`token_limit`, set by the harness), fill the ⚠ callout directly under the title from it, naming the affected condition(s), `end_reason`, the number of `continue_attempts`, and `error_detail`. For `token_limit`, state that the agent hit the configured token budget (`total_tokens`) and was stopped. If every `_termination` is null, omit the callout entirely.
+- If a block has a non-null `_feedback_rounds` (the goal-feedback loop ran), note how many feedback messages were sent and whether the scenario's device-observable end goal (`_goals.achieved`) was ultimately met. `_goals` is the harness's authoritative verdict for that one goal — prefer it over conversation-inferred status for it. It does not cover the scenario's other sub-goals (identification, reconnaissance, topology mapping, …); score those from the conversation and `context.txt` as usual.
 - Keep all section headers, table structures, and Markdown formatting intact.
 {{filling_instructions}}
 - Sections 5–8 synthesize across all blocks together.

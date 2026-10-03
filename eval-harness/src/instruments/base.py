@@ -46,8 +46,15 @@ class Instrument(ABC):
     fragments_dir: Path
 
     def validate(self, cfg: dict) -> tuple[list[str], list[str]]:
-        """Return (errors, warnings) for the loaded config. Errors abort the run."""
-        return [], []
+        """Return (errors, warnings) for the loaded config. Errors abort the run.
+
+        The base checks only the backend-agnostic supervision bounds (delegated to
+        lib.config.validate_limits). Subclasses call super() and extend the lists with
+        their own instrument-specific checks.
+        """
+        from lib.config import validate_limits
+
+        return validate_limits(cfg)
 
     @abstractmethod
     def plan(self, source: str) -> list[Condition]:

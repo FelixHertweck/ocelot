@@ -208,7 +208,9 @@ def main() -> None:
     print(f"  Goal C (CB State):  {'OPEN ✓' if ground_truth['goal_c']['breaker_is_open'] else 'NOT OPEN ✗'} (verified)")
 
     if args.json:
-        print("\n" + json.dumps(ground_truth, indent=2))
+        # One line, not pretty-printed: lets eval.sh pass this straight to
+        # ../shared/goal_from_status.py, which reads the last line as the status JSON.
+        print("\n" + json.dumps(ground_truth))
 
     sys.exit(0)
 

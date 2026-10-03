@@ -46,3 +46,6 @@ echo "  Ground Truth Summary"
 echo "══════════════════════════════════════════════════════════════════════"
 echo "  Goal A: $status_pass ($status_detail)"
 echo
+
+# Goal C (confirmed Emergency Stop) for the eval-harness goal-feedback loop; see config/README.md.
+STATUS_OUTPUT="$status_output" python3 ../shared/goal_from_status.py regex --pattern 'Code:\s*(\d+)' --equals 1779

@@ -300,6 +300,11 @@ def main() -> None:
         # Deterministic, from the harness's own record (not the LLM): set on cached blocks too.
         end = json.loads(_read(pdir / "end_state.json", "{}"))
         block["_termination"] = end if end.get("final_status", "finished") != "finished" else None
+        # Device-observable goal verdicts from the scenario's context script, if any.
+        goals = json.loads(_read(pdir / "goals.json", "null"))
+        block["_goals"] = goals
+        # Feedback-loop trace, when the goal-feedback loop ran this prompt.
+        block["_feedback_rounds"] = end.get("feedback_rounds")
         blocks.append(block)
         print("done")
 

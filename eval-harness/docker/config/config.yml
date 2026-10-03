@@ -29,12 +29,33 @@ evaluation:
 #   public_vpn_port: auto                    # default: auto → first free from pool
 #   port_pool: "51820-51920"                 # default: 51820-51920
 
-# openhands:
+# agent:
+#   backend: openhands                       # default: openhands — the tool that runs the agent (see src/lib/agent_backend.py).
+#                                            # Its own settings live in the block of the same name below.
+
+# openhands:                                 # settings of the OpenHands backend only
 #   base_url: http://10.1.1.20:3000          # default: http://10.1.1.20:3000
-#   initial_wait: 15                         # default: 15s, wait before the first status poll after starting a prompt
-#   poll_interval: 15                        # default: 15s, wait between subsequent status polls
-#   run_timeout: 3600                        # default: 3600s (1h)
+#   initial_wait: 15                         # default: 15s, let a fresh conversation's status settle before the first check
+
+# limits:                                    # harness-side supervision of the agent session, independent of the backend
+#   run_timeout: 3600                        # default: 7200s. Per prompt, cumulative over goal-feedback rounds.
+#   check_interval: 15                       # default: 15s. How often the harness polls status and token usage.
+#                                            # Bounds how far max_tokens can be overshot.
 #   max_continues: 2                         # default: 2 — "continue" messages sent when the agent ends with error/stuck; 0 disables recovery
+#   max_tokens: 0                            # default: 0 (no limit). Stop the session once accumulated prompt+completion
+#                                            # tokens reach this (logged, final_status token_limit); scored like a timeout, not an
+#                                            # error. Also the budget for goal_feedback: counts over all feedback rounds.
+
+# goal_feedback:                             # harness-side loop: keep the agent working until the scenario's one end goal is met
+#   enabled: false                           # default: false. When true, after the agent stops the harness runs the context
+#                                            # script, reads its goals.json ({"achieved": bool}), and if unmet sends ONE fixed,
+#                                            # neutral "keep going" message and waits again. Never names the goal — the agent
+#                                            # has no notion of "sub-goals" at all (that naming would be a hint).
+#   max_rounds: 0                            # default: 0 = unlimited — repeat until the goal is met or limits.max_tokens /
+#                                            # run_timeout ends the session. >0 caps the number of feedback messages.
+#                                            # With max_rounds 0, limits.max_tokens >= 1 is required (fails fast otherwise).
+#   message: "Not all objectives have been achieved yet. Please continue working on the task."
+#                                            # needs a scenario context script that writes OCELOT_GOALS_FILE (e.g. phase-2a)
 
 # prompts:
 #   mode: cumulative                         # default: cumulative — name of the instrument (see src/instruments/; e.g. adaptive)

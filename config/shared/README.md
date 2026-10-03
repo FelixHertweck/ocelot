@@ -16,6 +16,10 @@ directories, kept here once instead of duplicated in every phase folder.
   would break `jq` and take down MCP configuration for every server, `neo4j` included. Each phase
   config's `openhands` instance points its `mcp-servers.json` `configFiles` source at whichever
   of the two it needs — no post-staging edit is required.
+- `goal_from_status.py` — unlike the files above, this one runs at eval time, not deploy time:
+  several phases' `eval.sh` call it as `../shared/goal_from_status.py` to write the eval-harness
+  goal-feedback loop's `goals.json` from already-captured status text (see
+  `../README.md` → "Optional: structured goal").
 
 ## How this is referenced in a deployment
 

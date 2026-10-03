@@ -33,5 +33,9 @@ SSH_OPTS=(
     -o BatchMode=yes
 )
 
-ssh "${SSH_OPTS[@]}" "${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}" \
-    'curl -s http://localhost:8080/status'
+status_output=$(ssh "${SSH_OPTS[@]}" "${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}" \
+    'curl -s http://localhost:8080/status')
+echo "$status_output"
+
+# Goal B (confirmed Emergency Stop) for the eval-harness goal-feedback loop; see config/README.md.
+STATUS_OUTPUT="$status_output" python3 ../shared/goal_from_status.py json-field --field emergencyStop

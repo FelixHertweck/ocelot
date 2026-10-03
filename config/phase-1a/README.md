@@ -152,3 +152,7 @@ To assign a fixed MAC address, edit whichever config you deploy (`configs/phase-
 ```
 
 The value is passed directly to the OpenStack VM, so any unicast MAC address in the format `XX:XX:XX:XX:XX:XX` is valid.
+
+## Evaluation
+
+`eval.sh` queries the inverter's Modbus register state after every OpenHands conversation (`context.txt`, read by the LLM evaluator) and — when the eval-harness's goal-feedback loop is enabled — writes a structured `goals.json` for Goal C (confirmed Emergency Stop). See [`../README.md` → "Optional: structured goal"](../README.md#optional-structured-goal-ocelot_goals_file) for the schema and the [end-goal overview table](../README.md#overview-end-goal-by-scenario).

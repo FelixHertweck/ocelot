@@ -356,10 +356,10 @@ if [[ "$SKIP_DEPLOY" == "false" ]]; then
   log "VPN tunnel up."
 fi
 
-# ── Step 1c: Wait for OpenHands ────────────────────────────────────────────────
-log "Waiting for OpenHands at $OH_BASE_URL..."
-timeout 300 bash -c "until curl -sf \"$OH_BASE_URL/\" >/dev/null 2>&1; do sleep 10; done"
-log "OpenHands reachable."
+# ── Step 1c: Wait for the agent backend ────────────────────────────────────────
+log "Waiting for agent backend ($AGENT_BACKEND)..."
+python3 "$SCRIPT_DIR/lib/supervisor.py" --config "$CONFIG_FILE" ready
+log "Agent backend reachable."
 
 # ── Step 2: Parse prompts ──────────────────────────────────────────────────────
 [[ -f "$PROMPTS_SOURCE" ]] || { log "ERROR: Prompts file not found: $PROMPTS_SOURCE"; exit 1; }
@@ -438,54 +438,29 @@ open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
       fi
     fi
 
-    # Create conversation
-    log "  Creating OpenHands conversation..."
+    # Start the agent session and supervise it
+    log "  Starting agent session..."
     CONV_START=$(date +%s)
-    CREATE_RESULT=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-      --base-url "$OH_BASE_URL" create --prompt-file "$PROMPT_DIR/prompt.txt")
-    CONV_ID=$(echo "$CREATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['conversation_id'])")
-    log "  Conversation: $CONV_ID"
-
-    # Wait for the conversation to end; classifies how it ended and tries "continue" on error/stuck
-    log "  Waiting for end (timeout: ${OH_RUN_TIMEOUT}s, max continues: ${OH_MAX_CONTINUES})..."
-    END_JSON=$(python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-      --base-url "$OH_BASE_URL" wait --conv-id "$CONV_ID" \
-      --timeout "$OH_RUN_TIMEOUT" --poll-interval "$OH_POLL_INTERVAL" \
-      --initial-wait "$OH_INITIAL_WAIT" --max-continues "$OH_MAX_CONTINUES") \
-      || END_JSON='{"final_status": "error", "end_reason": "harness_error", "error_detail": "openhands_api.py wait crashed", "continue_attempts": [], "conv_info": {}}'
+    GOALS_FILE="$PROMPT_DIR/goals.json"
+    SUPERVISE_ARGS=(--config "$CONFIG_FILE" run --prompt-file "$PROMPT_DIR/prompt.txt" --out-dir "$PROMPT_DIR")
+    if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
+      SUPERVISE_ARGS+=(--goals-file "$GOALS_FILE" --goal-cmd "$CONTEXT_CMD" --goal-cwd "$SCENARIO_CONFIG_DIR")
+    fi
+    END_JSON=$(python3 "$SCRIPT_DIR/lib/supervisor.py" "${SUPERVISE_ARGS[@]}") \
+      || END_JSON='{"session_id": "", "final_status": "error", "end_reason": "harness_error", "error_detail": "supervisor.py crashed", "continue_attempts": []}'
     FINAL_STATUS=$(echo "$END_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['final_status'])")
-    echo "$END_JSON" | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin).get('conv_info', {})))" > "$PROMPT_DIR/conv_info.json"
-    echo "$END_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); d.pop('conv_info', None); print(json.dumps(d, indent=2))" > "$PROMPT_DIR/end_state.json"
+    CONV_ID=$(echo "$END_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id', ''))")
+    # Crash fallback: supervisor.py wrote no end_state.json
+    [[ -f "$PROMPT_DIR/end_state.json" ]] || echo "$END_JSON" > "$PROMPT_DIR/end_state.json"
     END_COMPACT=$(python3 -c "import json; print(json.dumps(json.load(open('$PROMPT_DIR/end_state.json'))))")
 
     DURATION=$(( $(date +%s) - CONV_START ))
-    log "  $FINAL_STATUS after ${DURATION}s"
-
-    # Collect artifacts
-    log "  Downloading conversation..."
-    python3 "$SCRIPT_DIR/lib/openhands_api.py" \
-      --base-url "$OH_BASE_URL" download --conv-id "$CONV_ID" \
-      --output "$PROMPT_DIR/conversation.zip" 2>/dev/null || log "  WARNING: conversation download failed"
-
-    log "  Converting conversation to markdown..."
-    python3 - <<PYEOF
-import sys
-sys.path.insert(0, '$SCRIPT_DIR')
-from pathlib import Path
-from lib.export_to_markdown import convert
-zip_path = Path('$PROMPT_DIR/conversation.zip')
-if zip_path.exists() and zip_path.stat().st_size > 0:
-    Path('$PROMPT_DIR/conversation.md').write_text(convert(zip_path))
-PYEOF
-
-    log "  Extracting metrics..."
-    python3 "$SCRIPT_DIR/lib/extract_metrics.py" \
-      --conv-info "$PROMPT_DIR/conv_info.json" --output "$PROMPT_DIR/metrics.json"
+    log "  $FINAL_STATUS after ${DURATION}s (session $CONV_ID)"
 
     # Context script — captures device ground truth
     if [[ -n "${SCENARIO_CONFIG_DIR:-}" && -d "$SCENARIO_CONFIG_DIR" ]]; then
       log "  Running context script ($CONTEXT_CMD)..."
-      (cd "$SCENARIO_CONFIG_DIR" && eval "$CONTEXT_CMD") > "$PROMPT_DIR/context.txt" 2>&1 \
+      (cd "$SCENARIO_CONFIG_DIR" && OCELOT_GOALS_FILE="$GOALS_FILE" eval "$CONTEXT_CMD") > "$PROMPT_DIR/context.txt" 2>&1 \
         || log "  WARNING: context script exited non-zero"
     else
       echo "(no context script configured)" > "$PROMPT_DIR/context.txt"
