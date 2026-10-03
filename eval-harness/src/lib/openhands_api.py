@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""OpenHands REST API client (V1). Usable as a library or CLI."""
+"""OpenHands REST API client (V1). Usable as a library or CLI.
+
+Pure mechanism: no budget/recovery policy lives here — that is lib/supervisor.py, reached
+through lib/openhands_backend.py (the AgentBackend adapter around this client).
+"""
 import argparse
 import json
 import sys
@@ -9,19 +13,22 @@ from urllib.parse import urlparse, urlunparse
 
 import requests
 
-# Terminal execution states that mean the agent has stopped working
+# Terminal states: the agent has stopped working (exec) or the sandbox is gone (sandbox).
 _TERMINAL_EXEC = {"finished", "error", "stuck", "waiting_for_confirmation"}
-# Terminal sandbox states
 _TERMINAL_SANDBOX = {"ERROR", "MISSING"}
-# End reasons a "continue" message can plausibly recover from (the sandbox is still alive)
-_RECOVERABLE = {"error", "stuck"}
-
-CONTINUE_MESSAGE = "Please continue with the task."
-MAX_CONSECUTIVE_API_FAILURES = 5
 
 
-def _log(msg: str) -> None:
-    print(f"[{time.strftime('%H:%M:%S')}] {msg}", file=sys.stderr, flush=True)
+def accumulated_tokens(status: dict) -> int:
+    """Total tokens (prompt + completion) accumulated so far in a conversation.
+
+    Reads the same `metrics.accumulated_token_usage` block that extract_metrics.py
+    uses. These accumulate across a conversation's runs, so for the goal-feedback
+    loop (multiple `continue` rounds in one conversation) this is already the
+    cumulative total — no per-round bookkeeping needed. Returns 0 when metrics
+    are absent (e.g. before the first LLM call).
+    """
+    tok = (status.get("metrics") or {}).get("accumulated_token_usage") or {}
+    return int(tok.get("prompt_tokens", 0)) + int(tok.get("completion_tokens", 0))
 
 
 def classify_end(exec_status: str, sandbox_status: str) -> str:
@@ -131,7 +138,7 @@ class OpenHandsClient:
             "title": conv.get("title", ""),
         }
 
-    def continue_conversation(self, conversation_id: str, message: str = CONTINUE_MESSAGE) -> None:
+    def continue_conversation(self, conversation_id: str, message: str) -> None:
         """Send a follow-up user message to the agent server and start a run.
 
         Resumes a paused sandbox first. Talks to the agent server directly
@@ -208,85 +215,6 @@ class OpenHandsClient:
             })
         return errors
 
-    def wait_for_end(
-        self,
-        conversation_id: str,
-        timeout: int,
-        poll_interval: int,
-        initial_wait: int,
-        max_continues: int,
-    ) -> dict:
-        """Poll until the conversation ends and report *how*, trying "continue" on recoverable errors.
-
-        Returns {final_status: finished | error | timeout, end_reason, execution_status,
-        sandbox_status, continue_attempts: [...], error_detail, elapsed_seconds, conv_info}.
-        `error` means the run did not end cleanly and recovery failed or was not possible.
-        """
-        time.sleep(initial_wait)
-        elapsed = initial_wait
-        attempts: list[dict] = []
-        api_failures = 0
-        st: dict = {}
-
-        def result(final: str, detail: str = "") -> dict:
-            error_events: list[dict] = []
-            if final != "finished" and st.get("conversation_url"):
-                error_events = self.fetch_error_events(st["conversation_url"], st.get("session_api_key", ""))
-            return {
-                "final_status": final,
-                "end_reason": st.get("end_reason") or final,
-                "execution_status": st.get("execution_status", ""),
-                "sandbox_status": st.get("runtime_status", ""),
-                "continue_attempts": attempts,
-                "error_detail": detail,
-                "error_events": error_events,
-                "elapsed_seconds": elapsed,
-                "conv_info": {k: v for k, v in st.items() if k != "session_api_key"},
-            }
-
-        while True:
-            try:
-                st = self.get_status(conversation_id)
-                api_failures = 0
-            except (requests.RequestException, ValueError) as e:
-                api_failures += 1
-                _log(f"  status poll failed ({api_failures}/{MAX_CONSECUTIVE_API_FAILURES}): {e}")
-                if api_failures >= MAX_CONSECUTIVE_API_FAILURES:
-                    return result("error", f"OpenHands API unreachable: {e}")
-                time.sleep(poll_interval)
-                elapsed += poll_interval
-                continue
-
-            _log(f"  [{elapsed} s] {st['status']} ({st['execution_status']}, sandbox {st['runtime_status']})")
-
-            if st["status"] == "STOPPED":
-                reason = st["end_reason"]
-                if reason == "finished":
-                    return result("finished")
-                if reason in _RECOVERABLE and len(attempts) < max_continues:
-                    attempt = {"after_reason": reason, "at_seconds": elapsed}
-                    attempts.append(attempt)
-                    _log(f"  ended with '{reason}' — sending continue ({len(attempts)}/{max_continues})")
-                    try:
-                        self.continue_conversation(conversation_id)
-                        attempt["sent"] = True
-                    except Exception as e:  # any failure = recovery impossible, give up
-                        attempt.update(sent=False, error=str(e))
-                        return result("error", f"continue failed after '{reason}': {e}")
-                    time.sleep(poll_interval)  # let the status flip back to running
-                    elapsed += poll_interval
-                    continue
-                return result("error", f"conversation ended with '{reason}'" + (
-                    f" after {len(attempts)} continue attempt(s)" if attempts else ""))
-
-            if elapsed >= timeout:
-                _log("  Timeout — stopping conversation...")
-                self.stop_conversation(conversation_id)
-                return result("timeout", f"no end within {timeout}s")
-
-            time.sleep(poll_interval)
-            elapsed += poll_interval
-
     def stop_conversation(self, conversation_id: str) -> None:
         """Best-effort stop via V1 sandbox pause."""
         try:
@@ -332,13 +260,6 @@ def _cli() -> None:
     p = sub.add_parser("status")
     p.add_argument("--conv-id", required=True)
 
-    p = sub.add_parser("wait")
-    p.add_argument("--conv-id", required=True)
-    p.add_argument("--timeout", type=int, required=True)
-    p.add_argument("--poll-interval", type=int, default=15)
-    p.add_argument("--initial-wait", type=int, default=15)
-    p.add_argument("--max-continues", type=int, default=2)
-
     p = sub.add_parser("events")
     p.add_argument("--conv-id", required=True)
     p.add_argument("--limit", type=int, default=20)
@@ -361,12 +282,6 @@ def _cli() -> None:
 
     elif args.command == "status":
         result = client.get_status(args.conv_id)
-        print(json.dumps(result))
-
-    elif args.command == "wait":
-        result = client.wait_for_end(
-            args.conv_id, args.timeout, args.poll_interval, args.initial_wait, args.max_continues
-        )
         print(json.dumps(result))
 
     elif args.command == "events":

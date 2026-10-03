@@ -6,6 +6,10 @@ from pathlib import Path
 
 import yaml
 
+#: Neutral "keep going" nudge for the goal-feedback loop; the single source of truth
+#: (DEFAULTS below and lib/supervisor.py both reference it).
+DEFAULT_FEEDBACK_MESSAGE = "Not all objectives have been achieved yet. Please continue working on the task."
+
 
 def _default_port_registry_dir() -> str:
     """Registry must live somewhere multiple run.sh invocations actually share.
@@ -26,18 +30,10 @@ def _default_port_registry_dir() -> str:
 
 DEFAULTS: dict = {
     "scenario": {
-        # .json5 basename passed to deploy-wrapper.sh, which resolves it to a file
-        # under {cave_wrapper_dir}/backend/configs (exact match, else a recursive
-        # basename search — so this does NOT need to include the scenario's subpath).
+        # .json5 basename passed to deploy-wrapper.sh
         "cave_config_name": "",
-        # Default from the CAVE_WRAPPER_DIR env var so the docker-compose mount
-        # (source==target host path) and the harness agree without editing config.
         "cave_wrapper_dir": os.environ.get("CAVE_WRAPPER_DIR", "/cave-wrapper"),
-        # The scenario's own directory (relative to cave_wrapper_dir) — where
-        # eval.sh/reset.sh live. Independent of cave_config_name: a directory can
-        # hold multiple .json5 variants (e.g. "*-cumulative" / "*-adaptive")
-        # sharing one eval.sh/reset.sh, so this must be set per scenario, e.g.
-        # "backend/configs/phase-1a".
+        # The scenario's own directory (relative to cave_wrapper_dir)
         "configs_subpath": "backend/configs",
     },
     "deploy": {
@@ -47,12 +43,24 @@ DEFAULTS: dict = {
         "port_pool": "51820-51920",
         "port_registry_dir": _default_port_registry_dir(),
     },
+    # Agent backend (see lib/agent_backend.py); its own settings live in its own block.
+    "agent": {"backend": "openhands"},
     "openhands": {
         "base_url": "http://10.1.1.20:3000",
         "initial_wait": 15,
-        "poll_interval": 15,
+    },
+    # Harness-side limits and supervision (backend-agnostic, see lib/supervisor.py).
+    "limits": {
         "run_timeout": 7200,
+        "check_interval": 15,
         "max_continues": 2,
+        "max_tokens": 0,  # 0 = no limit; cumulative over goal-feedback rounds
+    },
+    # Harness-side loop: nudge the agent while the scenario's goal is unmet. Opt-in.
+    "goal_feedback": {
+        "enabled": False,
+        "max_rounds": 0,  # 0 = unlimited (until max_tokens/run_timeout)
+        "message": DEFAULT_FEEDBACK_MESSAGE,
     },
     "prompts": {
         "source": "",
@@ -100,10 +108,41 @@ def load(config_file: str) -> dict:
     return _deep_merge(DEFAULTS, user_cfg)
 
 
+def validate_limits(cfg: dict) -> tuple[list[str], list[str]]:
+    """Validate the backend-agnostic supervision bounds (limits + goal_feedback).
+
+    Returns (errors, warnings); errors abort the run. Instruments call this from their own
+    validate() and append instrument-specific checks on top.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    try:
+        max_tokens = int((cfg.get("limits", {}) or {}).get("max_tokens", 0) or 0)
+    except (TypeError, ValueError):
+        errors.append("limits.max_tokens must be an integer.")
+        max_tokens = 0
+    fb = cfg.get("goal_feedback", {}) or {}
+    if fb.get("enabled"):
+        try:
+            max_rounds = int(fb.get("max_rounds", 0) or 0)
+        except (TypeError, ValueError):
+            errors.append("goal_feedback.max_rounds must be an integer.")
+            max_rounds = 0
+        if max_rounds < 0:
+            errors.append("goal_feedback.max_rounds must be >= 0 (0 = unlimited).")
+        # max_rounds 0 = unlimited, so the token budget is then the only thing that ends a
+        # never-satisfied goal set (run_timeout is a further backstop).
+        if max_rounds == 0 and max_tokens < 1:
+            errors.append(
+                "goal_feedback.enabled with max_rounds 0 (unlimited) requires limits.max_tokens >= 1; "
+                "otherwise set goal_feedback.max_rounds >= 1."
+            )
+    return errors, warnings
+
+
 def _flatten(cfg: dict) -> dict[str, str]:
     s = cfg["scenario"]
     d = cfg["deploy"]
-    o = cfg["openhands"]
     p = cfg["prompts"]
     r = cfg.get("runs", {})
     orc = cfg.get("oracle", {})
@@ -112,6 +151,7 @@ def _flatten(cfg: dict) -> dict[str, str]:
     e = cfg["evaluation"]
     lm = e.get("llm", {})
     return {
+        "AGENT_BACKEND": str(cfg.get("agent", {}).get("backend", "openhands")),
         "CAVE_CONFIG_NAME": str(s.get("cave_config_name", "")),
         "CAVE_WRAPPER_DIR": str(s.get("cave_wrapper_dir", "/cave-wrapper")),
         "SCENARIO_CONFIG_DIR": "/".join([
@@ -123,11 +163,6 @@ def _flatten(cfg: dict) -> dict[str, str]:
         "VPN_PORT_CONFIG": str(d.get("public_vpn_port", "auto")),
         "PORT_POOL": str(d.get("port_pool", "51820-51920")),
         "PORT_REGISTRY_DIR": str(d.get("port_registry_dir", _default_port_registry_dir())),
-        "OH_BASE_URL": str(o.get("base_url", "http://10.1.1.20:3000")),
-        "OH_INITIAL_WAIT": str(o.get("initial_wait", 15)),
-        "OH_POLL_INTERVAL": str(o.get("poll_interval", 15)),
-        "OH_RUN_TIMEOUT": str(o.get("run_timeout", 3600)),
-        "OH_MAX_CONTINUES": str(o.get("max_continues", 2)),
         "PROMPTS_SOURCE": str(p.get("source", "")) if str(p.get("source", "")).startswith("/") else f"/app/config/prompts/{p.get('source', '')}",
         "PROMPTS_MODE": str(p.get("mode", "cumulative")),
         "NUM_RUNS": str(r.get("count", 1)),

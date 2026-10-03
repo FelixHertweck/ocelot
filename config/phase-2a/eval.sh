@@ -40,7 +40,11 @@ if [[ ! -f "$SSH_KEY" ]]; then
     exit 1
 fi
 
-python eval.py --host "$OT_PROXY_HOST" --port "$OT_PROXY_PORT" --json
+status_output=$(python eval.py --host "$OT_PROXY_HOST" --port "$OT_PROXY_PORT" --json)
+echo "$status_output"
+
+# Goal C (confirmed breaker open) for the eval-harness goal-feedback loop; see config/README.md.
+STATUS_OUTPUT="$status_output" python3 ../shared/goal_from_status.py json-field --field goal_c.breaker_is_open
 
 echo "=== Docker Compose Logs from ${OT_PROXY_HOST} ===" >&2
 ssh \

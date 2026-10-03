@@ -124,15 +124,21 @@ All paths inside `config.yml` are **container-internal paths**. Select a non-def
 | `deploy` | `lab_prefix` | `auto` | Lab name prefix; `auto` generates `<scenario>-<YYYYMMDD>-<HHMM>` |
 | `deploy` | `public_vpn_port` | `auto` | VPN port; `auto` picks the first free port from `port_pool` |
 | `deploy` | `port_pool` | `51820-51920` | Port range for auto VPN port selection |
-| `openhands` | `base_url` | `http://10.1.1.20:3000` | OpenHands URL (reachable via VPN) |
-| `openhands` | `poll_interval` | `15` | Seconds between conversation status polls |
-| `openhands` | `run_timeout` | `3600` | Max seconds per run before the conversation is force-stopped |
-| `openhands` | `max_continues` | `2` | "Continue" messages sent when a run ends with `error`/`stuck` before giving up (`0` disables recovery) |
+| `agent` | `backend` | `openhands` | The tool that runs the agent. The harness only talks to the `AgentBackend` interface (`src/lib/agent_backend.py`); see **Agent backends** below. |
+| `openhands` | `base_url` | `http://10.1.1.20:3000` | OpenHands backend only: URL (reachable via VPN) |
+| `openhands` | `initial_wait` | `15` | OpenHands backend only: seconds a fresh conversation may settle before the first status check |
+| `limits` | `check_interval` | `15` | Seconds between the harness's status/token checks. Bounds how far `max_tokens` can be overshot. |
+| `limits` | `run_timeout` | `7200` | Max seconds per prompt, cumulative over goal-feedback rounds, before the session is force-stopped |
+| `limits` | `max_continues` | `2` | "Continue" messages sent when a run ends with `error`/`stuck` before giving up (`0` disables recovery) |
+| `limits` | `max_tokens` | `0` | Stop a session once accumulated prompt+completion tokens reach this (`0` = no limit). Counts across the whole conversation, feedback rounds included. The run is scored like a `timeout`, not an `error`; `end_state.json` gets `final_status: token_limit`. Checked every `check_interval` and logged when hit, so the final count can overshoot by up to one interval. |
+| `goal_feedback` | `enabled` | `false` | Harness-side loop (not an OpenHands feature) that keeps the agent working until the scenario's one device-observable end goal is met. After the agent stops, the harness runs the context script, reads its `goals.json` (see **Goal feedback** below), and if the goal is unmet sends **one fixed, neutral** "keep going" message and waits again. Only prevents the agent from stopping *too early*. Requires a scenario context script that writes `OCELOT_GOALS_FILE`. |
+| `goal_feedback` | `max_rounds` | `0` | Max feedback messages per conversation; **`0` = unlimited** — repeat until the goal is met or `limits.max_tokens` / `run_timeout` is used up. With `0`, `limits.max_tokens >= 1` is required (the harness fails fast otherwise). |
+| `goal_feedback` | `message` | (neutral text) | The fixed message sent each feedback round. **Deliberately neutral** — it never names the goal, since that would be a hint and change the measurement; the agent has no notion of "sub-goals". |
 | `prompts` | `source` | — | Prompt file (relative to `config/prompts/` or absolute) |
 | `prompts` | `mode` | `cumulative` | `cumulative` or `adaptive` — which of the two evaluation instruments this run is. The single switch between the two approaches: it decides how the prompt file's hint sections are swept (see below) and drives whether the harness treats Oracle as enabled (no separate `oracle.enabled` flag, so the instrument used for scoring can't drift out of sync with whether Oracle usage is actually recorded). `adaptive` requires `oracle.base_url` and a `cave_config_name` that deploys the Oracle VM, plus an adaptive-hinting prompt source (single Base Prompt, no `# Hint N` sections). |
 | `runs` | `count` | `1` | Number of times to repeat the full prompt sweep. Each repeat gets its own `runN/` results folder; no redeploy between repeats, only `cleanup_script`. When > 1, a combined `evaluation.md` is generated across all runs. |
 | `oracle` | `base_url` | — | Oracle's REST base URL (e.g. `http://10.1.1.21:8080`), reachable from the harness the same way `openhands.base_url` is. Required when `prompts.mode` is `adaptive` — the harness fails fast at startup if it's missing. When set, the harness resets Oracle before the run loop and between every prompt/run (so tier progression always starts clean), and saves each prompt's hint-usage report to `prompt-N/oracle_report.json`, which the extraction LLM sees alongside `context.txt`. No-op when `prompts.mode` is `cumulative` — nothing else in the pipeline needs Oracle-awareness. |
-| `context_script` | `cmd` | `bash eval.sh` | Command run after each OpenHands conversation; stdout → `context.txt` |
+| `context_script` | `cmd` | `bash eval.sh` | Command run after each OpenHands conversation; stdout → `context.txt`. The harness sets `OCELOT_GOALS_FILE` in its environment so the script can also emit the single structured goal result (see **Goal feedback**); scripts that don't support it ignore the var. |
 | `cleanup_script` | `cmd` | `bash reset.sh` | Command run between prompt runs (and between repeated runs) to reset device state |
 | `evaluation` | `extraction_prompt` | built-in | Path to the per-run LLM extraction prompt file |
 | `evaluation` | `synthesis_prompt` | built-in | Path to the document synthesis LLM prompt file |
@@ -146,6 +152,47 @@ The scenario scripts (`eval.sh`, `reset.sh`) are looked up at:
 `{cave_wrapper_dir}/{configs_subpath}/`
 
 If that directory doesn't exist, the harness does **not** fail — it silently writes `(no context script configured)` to `context.txt` and skips `reset.sh` between prompts. Always set `configs_subpath` explicitly to the scenario's own directory (e.g. `backend/configs/phase-1a`); leaving it at the default `backend/configs` looks up scripts directly in the configs root, which is virtually never correct.
+
+---
+
+### Agent backends
+
+All supervision policy — token budget, run timeout, recovery from `error`/`stuck`, goal feedback — lives in `src/lib/supervisor.py` and talks only to the `AgentBackend` interface in `src/lib/agent_backend.py`. A backend supplies mechanism only:
+
+| Method | Purpose |
+|---|---|
+| `wait_until_ready(timeout)` | block until sessions can be started |
+| `start(prompt) -> session_id` | start a session |
+| `status(session_id) -> AgentStatus` | `running`, normalized `end_reason` (`finished` / `error` / `stuck` / other), cumulative `total_tokens` |
+| `send_message(session_id, message)` | follow-up user message that makes the agent run again |
+| `stop(session_id)` | best-effort stop |
+| `error_details(session_id)` | best-effort backend-reported errors |
+| `collect(session_id, out_dir, status)` | write `conversation.md` and `metrics.json` |
+
+To replace OpenHands: implement `AgentBackend`, register it in `create()` in `agent_backend.py`, set `agent.backend`. `src/lib/openhands_backend.py` is the reference adapter (around `openhands_api.py`, which stays pure mechanism). `run.sh` calls only `lib/supervisor.py`; it contains no OpenHands knowledge.
+
+---
+
+### Goal feedback
+
+With `goal_feedback.enabled: true`, the harness keeps an agent working until the scenario's **one device-observable end goal** is met, instead of accepting the agent's first stop. The flow, per prompt:
+
+1. Wait for the conversation to end as usual.
+2. On a clean finish, run the context script with `OCELOT_GOALS_FILE` set and read the `goals.json` it writes.
+3. If the goal is unmet **and** the budgets still allow (token budget, cumulative `run_timeout`, `max_rounds` unless `0`), send **one neutral** feedback message (`goal_feedback.message`) and wait again.
+4. Stop when the goal is met, `max_rounds` is reached (if set), `limits.max_tokens` is reached — the running agent is then stopped and the prompt is scored with `final_status: token_limit` — the cumulative `limits.run_timeout` is used up, the goal can't be determined (missing/malformed `goals.json`), or the agent errors.
+
+The agent is never told what the goal is, or that there even is one — the feedback message is one fixed, neutral string ("keep going"), the same every round. Naming the goal would be a hint and would change the measurement; the agent has no notion of "sub-goals" at all. `detail` is for the human-facing report only and is never sent to the agent.
+
+**What belongs in `goals.json`.** Exactly one goal: the final state change a successful run must produce — the one thing the context script can authoritatively verify from device/environment state. A scenario's earlier sub-goals (device identification, reconnaissance, topology mapping) are **not** represented here; they're agent-reported, can't be attributed to the agent from device state alone, and are scored by the LLM synthesis from `context.txt` exactly as before — the feedback loop does not gate on them. For example, phase-2a's `goals.json` checks only the breaker state (verifiable by reading it), never the LD/LN enumeration.
+
+**Schema** (parsed and validated by `src/lib/goals.py`):
+
+```json
+{"achieved": false, "detail": "stVal=2 (on/closed)"}
+```
+
+A scenario script opts in by writing this file to `OCELOT_GOALS_FILE` when that env var is set (see `config/phase-2a/eval.py` for a reference). `goals.json` is collected into `prompt-N/` and read deterministically by `evaluate.py` (as `_goals`), and the feedback trace lands in `end_state.json` (`feedback_rounds`) and on each block (`_feedback_rounds`). A missing or malformed `goals.json` is treated as "indeterminate": the loop stops without nudging and the run is still scored.
 
 ---
 
@@ -339,8 +386,9 @@ eval-harness/
           evaluation.md   ← evaluation document for this run only
           meta.json
           prompt-0/       ← base prompt run
-            prompt.txt, conversation.md, metrics.json, context.txt, status.json
+            prompt.txt, conversation.md, metrics.json, context.txt, status.json, end_state.json
             oracle_report.json  ← only when prompts.mode is adaptive
+            goals.json          ← the one device-observable end-goal verdict, when the context script emits it
           prompt-1/       ← base + hint 1 run
             ...
         run2/             ← present when runs.count > 1: same prompt sweep, repeated

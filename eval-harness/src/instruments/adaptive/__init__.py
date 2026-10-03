@@ -11,10 +11,10 @@ class Adaptive(Instrument):
     fragments_dir = Path(__file__).parent
 
     def validate(self, cfg: dict) -> tuple[list[str], list[str]]:
-        errors = []
+        errors, warnings = super().validate(cfg)
         if not cfg.get("oracle", {}).get("base_url"):
             errors.append("prompts.mode is 'adaptive' but oracle.base_url is not set in config.yml.")
-        return errors, []
+        return errors, warnings
 
     def plan(self, source: str) -> list[Condition]:
         base_text, hints = parse_prompt_file(source)
