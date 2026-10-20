@@ -3,7 +3,7 @@
 # by VulnAD.ps1) RDP + WinRM on this host but not local admin, and sets it as the autologon
 # user. Keep the credential in sync with VulnAD.ps1's New-FootholdUser.
 #
-# This is the Scenario 3.3 (Active Directory) foothold and is unrelated to the
+# This is the Phase 3c (Active Directory) foothold and is unrelated to the
 # images/win11-patient-zero/ image, which bakes a local-admin "employee" account for the
 # workgroup Cave scenarios.
 
