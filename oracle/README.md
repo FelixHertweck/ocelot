@@ -108,7 +108,7 @@ README documents the schema, not the values.
 
 | Variable | Meaning |
 |---|---|
-| `ORACLE_SCENARIO` | Scenario key — the wrapper loads exactly `$ORACLE_CONTENT_DIR/$ORACLE_SCENARIO.json`. OCELOT phase deployments set `phase-1a` … `phase-2b`; the bundled local-dev example uses `scenario-3.1`. |
+| `ORACLE_SCENARIO` | Scenario key — the wrapper loads exactly `$ORACLE_CONTENT_DIR/$ORACLE_SCENARIO.json`. OCELOT phase deployments set `phase-1a` … `phase-2b`; the bundled local-dev example uses `phase-3a`. |
 | `ORACLE_HOST` / `ORACLE_PORT` | Bind address for the MCP server (default `0.0.0.0:8080`) |
 | `ORACLE_LOG_DIR` | Where per-session structured JSONL logs are written (default `/var/log/oracle`) |
 | `ORACLE_CONTENT_DIR` | Directory the `<scenario>.json` file is mounted into (image default `/app/content`; the CAVE VM mounts it under `~/oracle/content`) |
@@ -127,7 +127,7 @@ reads exactly one file, `$ORACLE_CONTENT_DIR/$ORACLE_SCENARIO.json` (`src/conten
   scenario's `phase-<X>-adaptive.json5` mounts it into the Oracle VM as
   `~/oracle/content/phase-<X>.json` and starts the wrapper with `ORACLE_SCENARIO=phase-<X>`.
 - **Standalone / local dev** — this directory: `content/hints/<scenario>.json` (e.g. the bundled
-  `scenario-3.1.json`), mounted to `/app/content` by `docker compose` — see "Local development".
+  `phase-3a.json`), mounted to `/app/content` by `docker compose` — see "Local development".
 
 Schema (identical in both cases):
 ```json

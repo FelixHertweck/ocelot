@@ -10,7 +10,7 @@ from pathlib import Path
 @dataclass(frozen=True)
 class Settings:
     scenario: str = field(
-        default_factory=lambda: os.environ.get("ORACLE_SCENARIO", "scenario-3.1")
+        default_factory=lambda: os.environ.get("ORACLE_SCENARIO", "phase-3a")
     )
 
     host: str = field(default_factory=lambda: os.environ.get("ORACLE_HOST", "0.0.0.0"))
