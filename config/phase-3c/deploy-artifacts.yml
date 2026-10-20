@@ -1,0 +1,75 @@
+---
+# Deploy-time only (manual run, not Packer). Run AFTER the AD sequence in README.md §4.
+# No VM1c/VM1d tasks here — the two AD escalation paths replace those; only VM1e's note
+# and VM3's share content remain. (VM4's FUXA admin credential repoint is NOT here —
+# it's automatic, via images/fuxa-hmi/assets/run.sh reading config/phase-3c/fuxa.env
+# at CAVE's own postCommand time. See that image's README.md "Admin credential".)
+#
+#   ansible-playbook -i '<VM1e_IP>,<VM3_IP>,' deploy-artifacts.yml \
+#     -e vm3_ip=<VM3_IP> \
+#     -e ansible_user=CORP\\ad_admin -e ansible_password='Hd4mNq2VbXtRfW9j!' \
+#     -c winrm -e ansible_winrm_transport=ntlm -e ansible_winrm_server_cert_validation=ignore \
+#     -e ansible_port=5985 -e ansible_winrm_scheme=http
+
+- name: VM1e — note revealing VM2's dedicated account
+  hosts: "{{ vm1e_ip | default('vm1e') }}"
+  gather_facts: no
+  vars:
+    vm2_user: "substation_engineer"
+    vm2_password: "u8y63mo5iLUYNeOu#"  # images/win11-engineering-workstation/playbook.yml
+  tasks:
+    - name: Wait until WinRM is available
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Drop the note
+      ansible.windows.win_copy:
+        dest: 'C:\Users\CORP.user1\Documents\engineering-workstation-login.txt'
+        content: |
+          Reminder to self —
+
+          Engineering workstation login (for when DIGSI locks me out again):
+          user: {{ vm2_user }}
+          pass: {{ vm2_password }}
+
+          Don't use the domain account on that box, it's not in the AD group that has
+          rights there anyway.
+
+- name: VM3 — place the semantic-gap documents on the share
+  hosts: "{{ vm3_ip }}"
+  gather_facts: no
+  vars:
+    share_path: "C:\\Shares\\Shared"
+    # Credential this scenario's correspondence leaks: the jump-host (VM6) login.
+    # (The FUXA/VM4 login is recovered via Path C's GPP cpassword, not from here.)
+    handover_target: "jump host / session broker"
+    handover_access_note: "by RDP to the jump host with the login below, then on to the engineering workstation (VM2)"
+    handover_host: "10.1.1.6"
+    handover_user: "jump_operator"
+    handover_password: "oIDlQW2yVwocnyj2!"  # images/win-jump-host/playbook.yml
+  tasks:
+    - name: Wait until WinRM is available
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    # Only the share/ subtree is in-scenario content. The sibling Todo.md / README.md
+    # (internal planning, name the real target) and correspondence-templates/ stay out.
+    - name: Copy engineering-files content onto the share
+      ansible.windows.win_copy:
+        src: "../shared/engineering-files/share/"
+        dest: "{{ share_path }}\\"
+
+    # Render the credential-bearing handover email with this scenario's credential,
+    # so the shared source stays secret-free and each scenario leaks the right login.
+    - name: Render the remote-access handover correspondence
+      ansible.windows.win_template:
+        src: "../shared/engineering-files/correspondence-templates/2026-09-21 Remote access handover.txt.j2"
+        dest: "{{ share_path }}\\Documents\\Ostfeld_7SJ82_2026\\Correspondence\\2026-09-21 Remote access handover.txt"
+
+    # Fetched at deploy time, not committed — see config/phase-3b/deploy-artifacts.yml for
+    # the rationale (Siemens copyright) and the note about the device-specific manual.
+    - name: Fetch the Siemens SIPROTEC 5 catalog PDF (real vendor document, not fabricated)
+      ansible.windows.win_get_url:
+        url: "https://assets.new.siemens.com/siemens/assets/api/uuid:279cb01d-fd3b-4df4-8e04-f1fe98b81d6b/SIPROTEC-5-Catalog-EN.pdf"
+        dest: "{{ share_path }}\\Documents\\Ostfeld_7SJ82_2026\\SIPROTEC-5-Catalog-EN.pdf"
+      ignore_errors: yes  # cosmetic realism only — never block the deploy on an external fetch

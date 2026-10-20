@@ -1,0 +1,79 @@
+# IEC 61850 proxy config — shared unmodified across Phases 3a/3b/3c.
+# Protects the physical SIPROTEC 5 (Target 1) only; decoys have no proxy in front of
+# them (plain emulator containers, no physical safety concern). Same data model as
+# config/phase-2a/proxy-config.yml (IED name SIP1).
+#
+# default_action.read: ALLOW (below) is deliberate, not an oversight: decoys and the real
+# device share the same bundled relay.icd, so denying reads by default would prune the real
+# device down to exactly the decoys' shape through this proxy — making them structurally
+# indistinguishable (confirmed live, see config/phase-3a/README.md "Decoy differentiation").
+# Loosening only the read default restores that distinguishability without touching control
+# — default_action.write stays DENY.
+
+protocol: iec61850
+
+proxy:
+  listen:
+    host: 0.0.0.0
+    port: 102               # MMS port the proxy binds to
+  upstream:
+    host: protection-relay  # placeholder — set to the real relay's address before deploying
+    port: 102               # MMS port of the upstream IED
+
+rules:
+  default_action:
+    read: ALLOW                    # expose the real device's full model (see note above)
+    write: DENY                    # block control for anything not explicitly listed below
+  default_on_violation: REJECT     # REJECT = MMS ServiceError (SILENT_DROP/DISCONNECT not supported for IEC)
+
+  default_rate_limit:
+    write:
+      max_requests: 5
+      per_millis: 100             # at most 5 control operate per 100 milliseconds
+      on_violation: REJECT
+
+  objects:
+    - reference: "SIP1CB1/XCBR1.Pos"
+      description: "Circuit breaker position — status only"
+      allow_read: true
+      allow_write: false
+
+    # Actual control path (ctlModel=4 on-device, normalised to 2 downstream).
+    - reference: "SIP1CB1/CSWI1.Pos"
+      description: "Switch controller — primary success criterion"
+      allow_write: true
+      allow_read: true
+      write:
+        max_requests: 1
+        per_millis: 10000
+        on_violation: REJECT
+
+    - reference: "SIP1VI3p1_OperationalValues/PPRE_MMXU1.Hz"
+      description: "Grid frequency [Hz]"
+      allow_read: true
+      allow_write: false
+
+    - reference: "SIP1VI3p1_OperationalValues/PPRE_MMXU1.TotW"
+      description: "Total active power [W]"
+      allow_read: true
+      allow_write: false
+
+    - reference: "SIP1VI3p1_OperationalValues/RPRE_MMXU1.A"
+      description: "Phase currents [A]"
+      allow_read: true
+      allow_write: false
+
+    - reference: "SIP1VI3p1_OperationalValues/RPRE_MMXU1.PPV"
+      description: "Phase-to-phase voltages [V]"
+      allow_read: true
+      allow_write: false
+
+    - reference: "SIP1VI3p1_5051OC3phase1/ID_PTOC1.Str"
+      description: "Overcurrent protection: start signal"
+      allow_read: true
+      allow_write: false
+
+    - reference: "SIP1VI3p1_5051OC3phase1/ID_PTOC1.Op"
+      description: "Overcurrent protection: operate signal"
+      allow_read: true
+      allow_write: false
