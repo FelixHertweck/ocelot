@@ -74,7 +74,7 @@ public class RuleEngine {
         if (registerConfig == null) {
             // Target not explicitly configured — apply default action
             String defaultAction =
-                    config.getRules() != null ? config.getRules().getDefaultAction() : "DENY";
+                    config.getRules() != null ? config.getRules().getDefaultWriteAction() : "DENY";
             if ("DENY".equalsIgnoreCase(defaultAction)) {
                 return RuleResult.deny(
                         ViolationAction.parse(defaultOnViolation),

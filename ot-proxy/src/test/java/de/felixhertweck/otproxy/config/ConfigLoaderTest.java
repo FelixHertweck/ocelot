@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
@@ -105,9 +106,80 @@ class ConfigLoaderTest {
     }
 
     @Test
-    void parsesDefaultAction() {
+    void parsesScalarDefaultActionAsBothDirections() {
         ProxyConfig config = load(YAML);
-        assertThat(config.getRules().getDefaultAction()).isEqualTo("DENY");
+        assertThat(config.getRules().getDefaultAction().getRead()).isEqualTo("DENY");
+        assertThat(config.getRules().getDefaultAction().getWrite()).isEqualTo("DENY");
+        assertThat(config.getRules().getDefaultReadAction()).isEqualTo("DENY");
+        assertThat(config.getRules().getDefaultWriteAction()).isEqualTo("DENY");
+    }
+
+    @Test
+    void parsesDirectionalDefaultAction() {
+        String yamlWithSplitDefault =
+                """
+                protocol: iec61850
+                proxy:
+                  listen:
+                    host: 0.0.0.0
+                    port: 10102
+                  upstream:
+                    host: 192.168.1.20
+                    port: 102
+                rules:
+                  default_action:
+                    read: ALLOW
+                    write: DENY
+                """;
+        ProxyConfig config = load(yamlWithSplitDefault);
+        assertThat(config.getRules().getDefaultReadAction()).isEqualTo("ALLOW");
+        assertThat(config.getRules().getDefaultWriteAction()).isEqualTo("DENY");
+    }
+
+    @Test
+    void normalizesDefaultActionCase() {
+        ProxyConfig config = load(YAML.replace("default_action: DENY", "default_action: deny"));
+        assertThat(config.getRules().getDefaultWriteAction()).isEqualTo("DENY");
+    }
+
+    @Test
+    void rejectsInvalidDefaultActionScalar() {
+        assertThatThrownBy(() -> load(YAML.replace("default_action: DENY", "default_action: ALOW")))
+                .hasMessageContaining("ALOW");
+    }
+
+    @Test
+    void rejectsInvalidDirectionalDefaultAction() {
+        String yaml =
+                """
+                rules:
+                  default_action:
+                    read: ALLOW
+                    write: ALOW
+                """;
+        assertThatThrownBy(() -> load(yaml)).hasMessageContaining("ALOW");
+    }
+
+    @Test
+    void defaultActionFailsSafeToDenyWhenUnset() {
+        String yamlWithoutDefaultAction =
+                """
+                proxy:
+                  listen:
+                    host: 0.0.0.0
+                    port: 5020
+                  upstream:
+                    host: 192.168.1.10
+                    port: 502
+                rules:
+                  registers:
+                    - address: 100
+                      allow_write: true
+                """;
+        ProxyConfig config = load(yamlWithoutDefaultAction);
+        assertThat(config.getRules().getDefaultAction()).isNull();
+        assertThat(config.getRules().getDefaultReadAction()).isEqualTo("DENY");
+        assertThat(config.getRules().getDefaultWriteAction()).isEqualTo("DENY");
     }
 
     @Test

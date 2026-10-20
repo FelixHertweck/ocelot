@@ -5,6 +5,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.felixhertweck.otproxy.config.DirectionalActionConfig;
 import de.felixhertweck.otproxy.config.Iec61850PointRuleConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.RulesConfig;
@@ -70,8 +71,12 @@ class Iec61850RuleEngineTest {
     }
 
     private RuleEngine engine(Iec61850PointRuleConfig... objects) {
+        DirectionalActionConfig defaultAction = new DirectionalActionConfig();
+        defaultAction.setRead("DENY");
+        defaultAction.setWrite("DENY");
+
         RulesConfig rules = new RulesConfig();
-        rules.setDefaultAction("DENY");
+        rules.setDefaultAction(defaultAction);
         rules.setObjects(List.of(objects));
 
         ProxyConfig config = new ProxyConfig();

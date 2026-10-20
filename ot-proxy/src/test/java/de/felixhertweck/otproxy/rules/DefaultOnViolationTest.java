@@ -5,6 +5,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.felixhertweck.otproxy.config.DirectionalActionConfig;
 import de.felixhertweck.otproxy.config.DirectionalRateLimitConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.RateLimitConfig;
@@ -143,8 +144,12 @@ class DefaultOnViolationTest {
         DirectionalRateLimitConfig defaults = new DirectionalRateLimitConfig();
         defaults.setRead(defaultRead);
 
+        DirectionalActionConfig defaultAction = new DirectionalActionConfig();
+        defaultAction.setRead("DENY");
+        defaultAction.setWrite("DENY");
+
         RulesConfig rules = new RulesConfig();
-        rules.setDefaultAction("DENY");
+        rules.setDefaultAction(defaultAction);
         rules.setDefaultOnViolation(defaultOnViolation);
         rules.setDefaultRateLimit(defaults);
         rules.setRegisters(List.of(registers));

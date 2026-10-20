@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.felixhertweck.otproxy.config.DirectionalActionConfig;
 import de.felixhertweck.otproxy.config.ListenConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.ProxySection;
@@ -195,8 +196,12 @@ class ModbusProxyIntegrationTest {
         proxySection.setListen(listen);
         proxySection.setUpstream(upstream);
 
+        DirectionalActionConfig defaultAction = new DirectionalActionConfig();
+        defaultAction.setRead("DENY");
+        defaultAction.setWrite("DENY");
+
         RulesConfig rules = new RulesConfig();
-        rules.setDefaultAction("DENY");
+        rules.setDefaultAction(defaultAction);
         rules.setRegisters(
                 List.of(
                         register(0, false, null, "MODBUS_EXCEPTION"),
