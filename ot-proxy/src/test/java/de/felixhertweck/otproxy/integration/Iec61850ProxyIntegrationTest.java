@@ -22,6 +22,7 @@ import com.beanit.iec61850bean.ServerEventListener;
 import com.beanit.iec61850bean.ServerModel;
 import com.beanit.iec61850bean.ServerSap;
 import com.beanit.iec61850bean.ServiceError;
+import de.felixhertweck.otproxy.config.DirectionalActionConfig;
 import de.felixhertweck.otproxy.config.Iec61850PointRuleConfig;
 import de.felixhertweck.otproxy.config.ProxyConfig;
 import de.felixhertweck.otproxy.config.RulesConfig;
@@ -204,8 +205,12 @@ class Iec61850ProxyIntegrationTest {
         cswiPos.setAllowWrite(allowWrite);
         cswiPos.setAllowRead(true);
 
+        DirectionalActionConfig defaultAction = new DirectionalActionConfig();
+        defaultAction.setRead("DENY");
+        defaultAction.setWrite("DENY");
+
         RulesConfig rules = new RulesConfig();
-        rules.setDefaultAction("DENY");
+        rules.setDefaultAction(defaultAction);
         rules.setObjects(List.of(pos, cswiPos));
 
         ProxyConfig config = new ProxyConfig();

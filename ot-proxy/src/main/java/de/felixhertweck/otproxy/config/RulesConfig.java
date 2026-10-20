@@ -4,18 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RulesConfig {
-    private String defaultAction = "DENY";
+    private DirectionalActionConfig defaultAction;
     private String defaultOnViolation;
     private DirectionalRateLimitConfig defaultRateLimit;
     private List<RegisterRuleConfig> registers = new ArrayList<>();
     private List<Iec61850PointRuleConfig> objects = new ArrayList<>();
 
-    public String getDefaultAction() {
+    public DirectionalActionConfig getDefaultAction() {
         return defaultAction;
     }
 
-    public void setDefaultAction(String defaultAction) {
+    public void setDefaultAction(DirectionalActionConfig defaultAction) {
         this.defaultAction = defaultAction;
+    }
+
+    /** Fail-safe {@code DENY} when unset. */
+    public String getDefaultWriteAction() {
+        return defaultAction != null && defaultAction.getWrite() != null
+                ? defaultAction.getWrite()
+                : "DENY";
+    }
+
+    /** Fail-safe {@code DENY} when unset. */
+    public String getDefaultReadAction() {
+        return defaultAction != null && defaultAction.getRead() != null
+                ? defaultAction.getRead()
+                : "DENY";
     }
 
     /**

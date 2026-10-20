@@ -17,13 +17,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Builds the IEC 61850 model the proxy exposes downstream, enforcing the read allow-list.
  *
- * <p>{@code iec61850bean} has no read interception hook, so a "which reads are allowed" policy can
- * only be enforced by withholding objects from the served model. When {@code default_action: DENY},
- * the exposed model keeps only the Logical Nodes referenced by an {@code allow_read} object rule
- * (plus the mandatory system nodes LLN0/LPHD); everything else is absent and reads return
- * object-not-found. Enforcement is at Logical-Node granularity because that is the finest unit the
- * library's public model API lets us rebuild. On any failure the full mirror is exposed (fail-open
- * on reads — write/control rules are always enforced separately).
+ * <p>{@code iec61850bean} has no read interception hook, so read policy is enforced by withholding
+ * objects from the served model. When {@code rules.default_action.read} is {@code DENY}, only the
+ * Logical Nodes referenced by an {@code allow_read} rule (plus LLN0/LPHD) are exposed. On any
+ * failure the full mirror is exposed (fail-open on reads; writes are enforced separately).
  */
 public final class Iec61850ModelFilter {
 
@@ -32,9 +29,10 @@ public final class Iec61850ModelFilter {
     private Iec61850ModelFilter() {}
 
     public static ServerModel buildExposedModel(ServerModel upstream, RulesConfig rules) {
-        boolean denyByDefault = rules != null && "DENY".equalsIgnoreCase(rules.getDefaultAction());
+        boolean denyByDefault =
+                rules != null && "DENY".equalsIgnoreCase(rules.getDefaultReadAction());
         if (!denyByDefault) {
-            return upstream; // default-allow: expose the full mirror
+            return upstream; // expose the full mirror
         }
 
         List<Iec61850PointRuleConfig> objects = rules.getObjects();
