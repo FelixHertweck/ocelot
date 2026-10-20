@@ -1,0 +1,15 @@
+From:    engineering@ostfeld-stadtwerke.example
+To:      ops-sync-distro@ostfeld-stadtwerke.example
+Date:    Wed, 09 Sep 2026 17:05:00 +0200
+Subject: Minutes - Weekly Ops Sync, 09 Sep
+
+Attendees: Engineering, Ops, IT (partial)
+
+1. Transformer TS2 (West) - tap-changer maintenance completed, back in service.
+2. Feeder relay project - device swap at the Old Town bay done, re-export and
+   re-test scheduled for next week (Engineering to own).
+3. IT: new jump host rollout on track, no action from Ops.
+4. Facilities: parking garage resurfacing finished ahead of schedule.
+5. AOB: none.
+
+Next sync: 16 Sep, same time.

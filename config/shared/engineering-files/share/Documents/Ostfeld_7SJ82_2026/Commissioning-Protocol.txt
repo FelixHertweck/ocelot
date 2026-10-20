@@ -1,0 +1,52 @@
+===============================================================================
+ COMMISSIONING / TEST PROTOCOL
+ Ostfeld 6.6 kV Distribution - Feeder Protection (SIPROTEC 5 7SJ82)
+===============================================================================
+
+Project:        Ostfeld_7SJ82_2026
+Station:        Ostfeld Power Plant / 6.6 kV switchgear
+Tool:           DIGSI 5 / IEC 61850 System Configurator V6.80.61
+Config version: V08.30.06
+Prepared by:    Administrator (SECES engineering workstation)
+Initial comm.:  2024-02-13
+Last update:    2026-09-24
+
+-------------------------------------------------------------------------------
+ 1. SCOPE
+-------------------------------------------------------------------------------
+Three outgoing 6.6 kV feeders, each with a dedicated SIPROTEC 5 7SJ82 overcurrent
+relay controlling the feeder circuit breaker (XCBR via CSWI). Remote control is
+enabled from the control room HMI over IEC 61850 MMS (TCP/102).
+
+   Feeder                 Asset tag   IED    Control-net IP
+   North Feeder -Q51      REL-NF-01   SIP2   10.1.3.50
+   Harbor Feeder -Q61     REL-HB-01   SIP1   10.1.3.1
+   Old Town Feeder -Q71   REL-AS-01   SIP3   10.1.3.51
+
+-------------------------------------------------------------------------------
+ 2. TEST CHECKLIST
+-------------------------------------------------------------------------------
+ [x] IED reachable on control subnet (ping + MMS associate)
+ [x] GetServerDirectory / GetLogicalDeviceDirectory returns expected model
+ [x] Position indication (XCBR1.Pos) reads correctly OPEN/CLOSED
+ [x] Control via CSWI1.Pos (Select-before-Operate) verified in test mode
+ [x] Overcurrent pickup / time grading per Relay-Setting-Sheet.csv
+ [x] GOOSE trip indication published/subscribed between relays
+ [x] Remote/Local authority switch behaves as specified
+ [x] Event + fault records logging to the engineering workstation
+
+-------------------------------------------------------------------------------
+ 3. OPEN POINTS (carried over from 2026-09-24 session)
+-------------------------------------------------------------------------------
+ - REL-AS-01 (Old Town) reports a different firmware/model revision than the
+   other two after the last device swap; re-export and re-verify the model
+   before trusting the as-built documentation for that bay.
+ - Documentation below reflects nominal/as-designed state; field changes since
+   the last swap may not be fully reflected. Verify live where it matters.
+
+-------------------------------------------------------------------------------
+ 4. SIGN-OFF
+-------------------------------------------------------------------------------
+ Tested by:   Administrator            Date: 2026-09-24
+ Witnessed:   ____________________     Date: ____________
+===============================================================================

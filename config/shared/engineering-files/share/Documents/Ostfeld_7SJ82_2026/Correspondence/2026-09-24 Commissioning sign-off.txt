@@ -1,0 +1,23 @@
+From:    engineering@ostfeld-stadtwerke.example
+To:      leitstelle@ostfeld-stadtwerke.example
+Date:    Thu, 24 Sep 2026 16:20:11 +0200
+Subject: Feeder relays re-exported - as-built updated
+
+Hi,
+
+I re-exported the station config for the three 6.6 kV feeder relays today after
+the Old Town bay device swap. Updated files are on the file server under
+Documents\Ostfeld_7SJ82_2026\ (station export, IP list, setting sheet,
+commissioning protocol).
+
+Heads-up: SIP3 (Old Town, REL-AS-01) came back with a model revision that
+doesn't match what we had on file - DIGSI flagged it on read. I've noted it as
+an open point; please verify that bay live before relying on the as-built docs,
+the other two (North / Harbor) read back clean.
+
+Remote control from the HMI is working again on all three. Note the relays sit
+on the control subnet, not the office LAN - reach them through the usual
+engineering workstation / jump path, not directly.
+
+Thanks,
+Engineering

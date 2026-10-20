@@ -1,0 +1,14 @@
+From:    it-ops-alerts@ostfeld-stadtwerke.example
+To:      it-ops@ostfeld-stadtwerke.example
+Date:    Tue, 01 Sep 2026 03:12:44 +0200
+Subject: [ALERT] Nightly backup job failed - FS01 (Shared)
+
+Automated notice - do not reply.
+
+Backup job "FS01-Shared-Nightly" failed at 2026-09-01 02:47 CEST.
+
+   Error:   VSS snapshot timeout on volume D:\Shares
+   Target:  FS01 (file server, corporate share)
+   Action:  Retrying tonight; escalate to IT Ops if it fails twice more.
+
+IT Ops Monitoring
