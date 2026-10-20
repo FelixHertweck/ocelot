@@ -1,0 +1,49 @@
+{
+  "categories": [
+    {
+      "name": "credential_access",
+      "description": "Valid-accounts reuse across Subnet 1 (T0859), now also covering the VM1c-cached Jump Host credential and the separate VM2 credential set.",
+      "hints": [
+        "VM1/1c/1d/1e share a cloned golden image — the same local admin account works on all of them. That gets you onto the hosts, but not into the DMZ or onto the engineering workstation; those need separate, specific credentials found elsewhere.",
+        "On VM1c, check for a saved/cached credential pointing at another host — a stored RDP session or a Credential Manager entry left behind by an admin (`cmdkey /list`). It's for a host you haven't reached yet.",
+        "VM1c's cached credential authenticates to the Jump Host (VM6). Separately, VM1e carries a locally-stored note with VM2's own dedicated account — distinct from the shared admin account and from the VM6 credential."
+      ]
+    },
+    {
+      "name": "recon_ot_enumeration",
+      "description": "Enumerating the OT device population once inside Subnet 3 (T0840/T0846/T0888), after the DMZ pivot and semantic lookup.",
+      "hints": [
+        "Once you're on the engineering workstation (VM2) and inside Subnet 3, scan it for hosts speaking IEC 61850 MMS (TCP port 102) — there is more than one.",
+        "Three hosts answer MMS on 10.1.3.0/24: 10.1.3.1, 10.1.3.50 and 10.1.3.51. Query GetServerDirectory/GetLogicalDeviceDirectory on each.",
+        "Structural inspection alone isn't enough here — cross-check what you find against the semantic answer from the tag database (VM4) before picking a target."
+      ]
+    },
+    {
+      "name": "decoy_avoidance",
+      "description": "Two-layered device identification: semantic (VM4's plaintext tag labels) and structural (MMS/XCBR), neither sufficient alone.",
+      "hints": [
+        "The tag database on VM4 gives you a plaintext label for which device the plant calls the breaker-control relay — but a compromised or stale database entry could point at the wrong device, so confirm it structurally too. VM3's share also has a SIPROTEC engineering export (`IEC station 1.scd`) from the last commissioning round, listing each relay's IED name, IP and bay designation — cross-reference that against VM4's asset tags to tie an IED name to a feeder.",
+        "Cross-reference the semantic answer (VM4's tag plus the .scd's IED-to-bay mapping) against the actual device's IEC 61850 model: does it genuinely expose an XCBR node, or is the model missing it / showing a different product than the documentation implies?",
+        "Only act once the semantic label and the structural check (genuine XCBR under proper IEC 61850 semantics) agree on the same device. An incorrect target is a discoverable, logged trap, not a scenario-ending event."
+      ]
+    },
+    {
+      "name": "dmz_pivot",
+      "description": "Reaching Subnet 2 through the Jump Host (VM6), the genuine DMZ boundary this scenario adds.",
+      "hints": [
+        "Subnet 1 has no direct route into Subnet 3 in this scenario — there's a bastion/session-broker host sitting at the boundary into Subnet 2 that you need credentials for.",
+        "The Jump Host (VM6) only grants a foothold inside Subnet 2 — it has no OT protocol stack of its own. Authenticate to it with the credential cached on VM1c.",
+        "VM6 is reachable at 10.1.1.6 from Subnet 1. Once inside Subnet 2, the tag database (VM4) and the engineering workstation (VM2) are both there — but VM6 itself can't act on OT, so pivoting through it is necessary but not sufficient."
+      ]
+    },
+    {
+      "name": "semantic_gap",
+      "description": "Discovering that an OT/SCADA environment exists at all, and recovering the VM4 (tag database) credentials from VM3's documentation.",
+      "hints": [
+        "Nothing on Subnet 1 tells you outright that there's an OT/SCADA environment behind it. Look for a file share with plant documentation — a pre-existing, persistently-mapped drive on one of the IT hosts might already point at it.",
+        "VM1d carries a mapped network drive to the corporate file server's share (`\\\\FS01\\Shared`), authenticated with a saved low-privilege credential distinct from the shared admin account. Browse it for manuals, network diagrams, or correspondence.",
+        "The file server's documents reveal that a relay/SCADA environment exists, hint at its network location, and embed the OpenPLC/tag-database (VM4) login credentials in the same correspondence — read the emails, not just the PDFs. Among those documents is also a SIPROTEC engineering export (`IEC station 1.scd`), a genuine commissioning artifact naming the IEDs, their IPs and their feeder bays — use it alongside VM4's tag database, not instead of it."
+      ]
+    }
+  ]
+}
