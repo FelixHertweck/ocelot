@@ -14,7 +14,13 @@ database; nothing on this host issues control commands.
 
 ## Admin credential
 
-FUXA's factory default is `admin` / `123456`. Repointing it to a fixed non-default value is
-a deploy-time step, not baked in: `POST /api/signin` with the default to get a token, then
-`POST /api/users` (header `x-access-token`, `username: "admin"`) to overwrite the password.
-The change persists in the `fuxa_db` / `fuxa_appdata` volumes.
+FUXA's factory default is `admin` / `123456`. Not baked into the image — the container
+doesn't exist at build time (`install.sh` only pulls it; `run.sh` starts it, at deploy time).
+
+`run.sh` repoints it instead: if `/home/ubuntu/.env` (via CAVE's `configFiles`) sets
+`FUXA_ADMIN_PASSWORD`, it signs in with the factory default, then `POST /api/users` to
+overwrite the password. Idempotent, non-fatal, persists in the `fuxa_db` volume. Leave
+`FUXA_ADMIN_PASSWORD` unset to keep the account at its factory default.
+
+By hand: `POST /api/signin` with the factory default to get a token, then `POST /api/users`
+with that token.
