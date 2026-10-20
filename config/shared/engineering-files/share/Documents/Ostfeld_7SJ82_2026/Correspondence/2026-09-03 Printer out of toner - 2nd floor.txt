@@ -1,0 +1,12 @@
+From:    facilities@ostfeld-stadtwerke.example
+To:      2nd-floor-staff@ostfeld-stadtwerke.example
+Date:    Thu, 03 Sep 2026 09:40:00 +0200
+Subject: Printer (2nd floor, by the kitchenette) out of toner
+
+Hi all,
+
+The 2nd floor printer is out of black toner again. Replacement cartridge is
+on order, should arrive Monday. Until then please use the 1st floor printer
+or the one in the engineering office.
+
+Facilities

@@ -1,0 +1,9 @@
+Station;Bay;Equipment;Type;RatedVoltage;RatedCurrent;ProtectionIED;AssetTag;CommissionedOn
+GS Ostfeld Power Plant;Generator -Q1;Generator CB;CBR;66 kV;800 A;-;-;2024-02-13
+TS1 Mitte Substation;-Q11/-Q12;Transformer 66:22 kV bay;XFMR;66/22 kV;-;-;-;2024-02-13
+TS2 West Substation;-Q21/-Q22;Transformer 66:22 kV bay;XFMR;66/22 kV;-;-;-;2024-02-13
+DS1 East Distribution;-Q31/-Q32;Transformer 22:6.6 kV bay;XFMR;22/6.6 kV;-;-;-;2024-02-13
+DS2 South Distribution;-Q41/-Q42;Transformer 22:6.6 kV bay;XFMR;22/6.6 kV;-;-;-;2024-02-13
+6.6 kV Switchgear;North Feeder -Q51;Feeder CB + protection;CBR;6.6 kV;630 A;SIP2;REL-NF-01;2024-02-13
+6.6 kV Switchgear;Harbor Feeder -Q61;Feeder CB + protection;CBR;6.6 kV;630 A;SIP1;REL-HB-01;2024-02-13
+6.6 kV Switchgear;Old Town Feeder -Q71;Feeder CB + protection;CBR;6.6 kV;630 A;SIP3;REL-AS-01;2024-02-13

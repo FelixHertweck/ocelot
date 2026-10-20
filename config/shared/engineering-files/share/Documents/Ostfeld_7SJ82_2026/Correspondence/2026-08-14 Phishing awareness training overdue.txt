@@ -1,0 +1,15 @@
+From:    security-awareness@ostfeld-stadtwerke.example
+To:      engineering@ostfeld-stadtwerke.example
+Date:    Fri, 14 Aug 2026 09:00:00 +0200
+Subject: REMINDER: annual phishing awareness training overdue
+
+Hi,
+
+Our records show you haven't completed this year's phishing awareness module
+yet. It takes about 15 minutes - please finish it by end of month, HR tracks
+completion for the compliance audit.
+
+Link is on the intranet training portal under "Mandatory Training".
+
+Thanks,
+Security Awareness Team

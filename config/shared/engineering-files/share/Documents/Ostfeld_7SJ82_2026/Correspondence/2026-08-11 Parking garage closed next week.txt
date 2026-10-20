@@ -1,0 +1,14 @@
+From:    facilities@ostfeld-stadtwerke.example
+To:      all-staff@ostfeld-stadtwerke.example
+Date:    Tue, 11 Aug 2026 08:30:00 +0200
+Subject: Parking garage closed 17-21 Aug (resurfacing works)
+
+All,
+
+The staff parking garage will be closed for resurfacing from Monday 17 August
+through Friday 21 August. Please use the overflow lot on Dammstrasse or
+public transport that week.
+
+Sorry for the inconvenience.
+
+Facilities

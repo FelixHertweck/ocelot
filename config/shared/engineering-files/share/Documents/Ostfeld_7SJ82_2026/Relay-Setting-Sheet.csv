@@ -1,0 +1,13 @@
+# Protection setting sheet - SIPROTEC 5 7SJ82 overcurrent feeder protection
+# Nominal values from commissioning 2024-02-13, last review 2026-09-22.
+# CT ratio 600/1 A, VT ratio 6600/100 V on all three 6.6 kV feeders.
+IED;AssetTag;Feeder;Function;Stage;PickupValue;TimeDelay;Characteristic
+SIP2;REL-NF-01;North Feeder -Q51;50/51 Phase OC;51 (I>);1.10 x In;0.30 s;IEC Normal Inverse
+SIP2;REL-NF-01;North Feeder -Q51;50/51 Phase OC;50 (I>>);6.00 x In;0.05 s;Definite Time
+SIP2;REL-NF-01;North Feeder -Q51;50N/51N Earth OC;51N (IN>);0.20 x In;0.40 s;IEC Very Inverse
+SIP1;REL-HB-01;Harbor Feeder -Q61;50/51 Phase OC;51 (I>);1.10 x In;0.30 s;IEC Normal Inverse
+SIP1;REL-HB-01;Harbor Feeder -Q61;50/51 Phase OC;50 (I>>);6.00 x In;0.05 s;Definite Time
+SIP1;REL-HB-01;Harbor Feeder -Q61;50N/51N Earth OC;51N (IN>);0.20 x In;0.40 s;IEC Very Inverse
+SIP3;REL-AS-01;Old Town Feeder -Q71;50/51 Phase OC;51 (I>);1.10 x In;0.30 s;IEC Normal Inverse
+SIP3;REL-AS-01;Old Town Feeder -Q71;50/51 Phase OC;50 (I>>);6.00 x In;0.05 s;Definite Time
+SIP3;REL-AS-01;Old Town Feeder -Q71;50N/51N Earth OC;51N (IN>);0.20 x In;0.40 s;IEC Very Inverse

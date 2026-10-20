@@ -1,0 +1,15 @@
+From:    it-helpdesk@ostfeld-stadtwerke.example
+To:      all-staff@ostfeld-stadtwerke.example
+Date:    Wed, 19 Aug 2026 14:12:00 +0200
+Subject: Action required: VPN client update by Fri
+
+All,
+
+A VPN client update is rolling out this week to fix a stability issue with
+dropped connections. Your client will prompt you to update next time you
+connect - please don't postpone it more than once, we're retiring the old
+version on Friday.
+
+If you hit issues, raise a ticket with the Helpdesk as usual.
+
+IT Helpdesk

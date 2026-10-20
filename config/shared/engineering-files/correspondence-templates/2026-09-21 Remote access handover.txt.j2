@@ -1,0 +1,22 @@
+From:    it-ot@ostfeld-stadtwerke.example
+To:      engineering@ostfeld-stadtwerke.example
+Date:    Mon, 21 Sep 2026 09:14:38 +0200
+Subject: RE: remote access for the feeder works next week
+
+Morning,
+
+As discussed - you don't get to the feeder relays straight from the office LAN.
+They sit on the control subnet, reached {{ handover_access_note }}.
+
+Login for the {{ handover_target }}:
+    host: {{ handover_host }}
+    user: {{ handover_user }}
+    pass: {{ handover_password }}
+
+Same account as last time - we haven't rotated it since commissioning. Don't
+share it outside the engineering team and don't paste it into tickets.
+
+The relay IPs and tags are in the station export on the file server
+(Documents\Ostfeld_7SJ82_2026\IP-Signal-Address-List.csv) if you need them.
+
+IT/OT

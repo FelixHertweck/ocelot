@@ -1,0 +1,20 @@
+From:    billing@energy-automation-reseller.example
+To:      engineering@ostfeld-stadtwerke.example
+Cc:      procurement@ostfeld-stadtwerke.example
+Date:    Tue, 25 Aug 2026 11:45:00 +0200
+Subject: Invoice #EA-20864 - DIGSI 5 Premium annual license renewal
+
+Dear customer,
+
+Please find attached invoice #EA-20864 for the annual renewal of your DIGSI 5
+Premium engineering software license (1 seat), due 30 Sep 2026.
+
+   Product:       DIGSI 5 Premium, perpetual + SMA
+   Qty:           1
+   Amount:        EUR 1,480.00 net
+   PO reference:  PO-2026-0442
+
+Let us know if you'd like to add seats for the next renewal cycle.
+
+Best regards,
+Energy Automation Reseller GmbH - Billing

@@ -1,0 +1,19 @@
+From:    hr@ostfeld-stadtwerke.example
+To:      engineering@ostfeld-stadtwerke.example
+Date:    Mon, 14 Sep 2026 08:50:00 +0200
+Subject: New starter onboarding checklist - reminder
+
+Hi Engineering,
+
+Quick reminder for next week's new starter: please make sure the standard
+checklist is done before their first day -
+
+  [ ] Desk + monitor set up
+  [ ] AD account requested via the usual IT ticket (not before background
+      check clears)
+  [ ] Site access badge requested
+  [ ] Mentor assigned for first two weeks
+
+Let me know if anything's blocked.
+
+HR
