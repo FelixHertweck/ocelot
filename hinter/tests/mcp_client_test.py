@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manual MCP client for exercising a running Oracle instance end-to-end.
+"""Manual MCP client for exercising a running Hinter instance end-to-end.
 
 Connects over Streamable HTTP twice — two independent client sessions, each with its own
 server-assigned Mcp-Session-Id (a real Streamable HTTP concept: no manual header plumbing needed
@@ -47,7 +47,7 @@ async def run_session(url: str, label: str, category: str, calls: int) -> None:
             print(f"[{label}] walking '{category}' for {calls} calls:")
             for i in range(1, calls + 1):
                 result = await session.call_tool(
-                    "ask_oracle", {"category": category, "context": f"{label} call #{i}"}
+                    "ask_hinter", {"category": category, "context": f"{label} call #{i}"}
                 )
                 if result.is_error:
                     print(f"[{label}]   call {i}: ERROR (expected on the last, over-budget call): {result.content}")

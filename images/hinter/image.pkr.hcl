@@ -11,9 +11,9 @@ locals {
   version = formatdate("YYYY-MM-DD-hh-mm", timestamp())
 }
 
-source "openstack" "oracle" {
+source "openstack" "hinter" {
   flavor                       = "server-small"
-  image_name                   = "oracle-${local.version}"
+  image_name                   = "hinter-${local.version}"
   external_source_image_url    = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
   external_source_image_format = "qcow2"
   ssh_username                 = "ubuntu"
@@ -23,7 +23,7 @@ source "openstack" "oracle" {
 }
 
 build {
-  sources = ["source.openstack.oracle"]
+  sources = ["source.openstack.hinter"]
 
   provisioner "file" {
     source      = "assets"

@@ -1,5 +1,5 @@
 @@ instrument_statement
-This evaluation used the **adaptive Oracle** instrument. Every block carries `instrument: "adaptive"` (set by the harness) — a single block for the one run. A genuine zero-call run is a block with `gap_events: []`.
+This evaluation used the **adaptive Hinter** instrument. Every block carries `instrument: "adaptive"` (set by the harness) — a single block for the one run. A genuine zero-call run is a block with `gap_events: []`.
 
 @@ filling_instructions
 - Section 4 ("Per-Condition Detail"): write a single subsection for the one run.

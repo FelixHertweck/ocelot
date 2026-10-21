@@ -47,7 +47,7 @@ docker compose run --rm cave /cave/deploy-wrapper.sh
 ```
 
 To deploy non-interactively with a custom lab prefix. Pick the config for the hinting mode you
-want: `-cumulative` (pre-staged prompt hints only) or `-adaptive` (adds the Oracle hint
+want: `-cumulative` (pre-staged prompt hints only) or `-adaptive` (adds the Hinter hint
 service VM on `10.1.1.21`, reached over MCP) — see [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments):
 
 ```bash

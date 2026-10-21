@@ -50,7 +50,7 @@ given to the agent; they must be discovered via MMS directory services (see the 
 ## 3. Deploy Infrastructure
 
 Pick the config for the hinting mode you want: `-cumulative` (pre-staged prompt hints only) or
-`-adaptive` (adds the Oracle hint service VM on `10.1.1.21`, reached over MCP) — see
+`-adaptive` (adds the Hinter hint service VM on `10.1.1.21`, reached over MCP) — see
 [Methodology.md → Instruments](../../docs/evaluation/Methodology.md#instruments).
 
 ```bash

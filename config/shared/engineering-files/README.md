@@ -5,7 +5,7 @@ leave on the corporate file server (VM3). They let the agent combine the HMI
 (`config/shared/hmi/scenario3-hmi.svg`) with on-disk engineering files to resolve the
 named target feeder to a device on the control subnet — the semantic half of the
 two-layer device-identification task (the other half is the live structural IEC 61850
-check). See `oracle-hints.json` (`semantic_gap` / `decoy_avoidance`) in phase-3b/3c.
+check). See `hinter-hints.json` (`semantic_gap` / `decoy_avoidance`) in phase-3b/3c.
 
 ## Layout
 

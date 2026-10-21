@@ -3,7 +3,7 @@ set -e
 set -u
 set -x
 
-# The oracle wrapper runs as a Docker container (see assets/docker-compose.yml) — nothing
+# The hinter wrapper runs as a Docker container (see assets/docker-compose.yml) — nothing
 # installed bare-metal.
 sudo systemctl start docker
 until sudo docker info >/dev/null 2>&1; do sleep 2; done
@@ -16,4 +16,4 @@ cp /tmp/assets/run.sh ~/run.sh
 chmod +x ~/run.sh
 
 # Create the bind-mount source dirs up front
-mkdir -p ~/oracle/content ~/oracle/logs
+mkdir -p ~/hinter/content ~/hinter/logs

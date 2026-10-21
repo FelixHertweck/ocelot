@@ -1,5 +1,5 @@
 {
-  // Phase 3a — adaptive-hinting (adds Oracle, Mgmt-network only). See README.md.
+  // Phase 3a — adaptive-hinting (adds Hinter, Mgmt-network only). See README.md.
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",
   globalInstances: [
@@ -44,23 +44,23 @@
           hostname: "openhands",
           configFiles: [
             { source: "/cave/backend/configs/phase-3a/openhands.env", destination: "/home/ubuntu/.env" },
-            { source: "/cave/backend/configs/phase-3a/mcp-servers-oracle.json", destination: "/home/ubuntu/mcp-servers.json" },
+            { source: "/cave/backend/configs/phase-3a/mcp-servers-hinter.json", destination: "/home/ubuntu/mcp-servers.json" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },
         {
           type: "linux",
-          image: "oracle:latest",
-          post: "oracle",
+          image: "hinter:latest",
+          post: "hinter",
           networks: [ 0 ],
           lastOctet: 21,
-          name: "oracle",
+          name: "hinter",
           flavor: "server-small",
-          hostname: "oracle",
+          hostname: "hinter",
           configFiles: [
-            { source: "/cave/backend/configs/phase-3a/oracle-hints.json", destination: "/home/ubuntu/oracle/content/phase-3a.json" },
+            { source: "/cave/backend/configs/phase-3a/hinter-hints.json", destination: "/home/ubuntu/hinter/content/phase-3a.json" },
           ],
-          postCommand: "ORACLE_SCENARIO=phase-3a /home/ubuntu/run.sh",
+          postCommand: "HINTER_SCENARIO=phase-3a /home/ubuntu/run.sh",
         },
         {
           type: "win-server",

@@ -1,5 +1,5 @@
 {
-  // Phase 3c — cumulative-hinting (no Oracle). See README.md for the AD deploy sequence
+  // Phase 3c — cumulative-hinting (no Hinter). See README.md for the AD deploy sequence
   // and verification notes.
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",

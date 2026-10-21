@@ -9,13 +9,13 @@ rejected outright, never repeated — and a rejected call is never logged, so
 granted so far."
 """
 
-from .logging_store import OracleLogStore
-from .models import AskOracleResponse, CategoryInfo, HintContent, OracleLogEntry
+from .logging_store import HinterLogStore
+from .models import AskHinterResponse, CategoryInfo, HintContent, HinterLogEntry
 from .util import now_iso
 
 
 class HintService:
-    def __init__(self, content: HintContent, log_store: OracleLogStore):
+    def __init__(self, content: HintContent, log_store: HinterLogStore):
         self._categories = {c.name: c for c in content.categories}
         self._log = log_store
 
@@ -25,7 +25,7 @@ class HintService:
             for c in self._categories.values()
         ]
 
-    def handle(self, category: str, context: str, session_id: str) -> AskOracleResponse:
+    def handle(self, category: str, context: str, session_id: str) -> AskHinterResponse:
         if not category:
             raise ValueError("category is required — call list_hint_categories first")
 
@@ -46,7 +46,7 @@ class HintService:
         hint = cat.hints[prior_count]
 
         self._log.append(
-            OracleLogEntry(
+            HinterLogEntry(
                 session_id=session_id,
                 category=category,
                 tier=tier,
@@ -55,4 +55,4 @@ class HintService:
                 timestamp=now_iso(),
             )
         )
-        return AskOracleResponse(category=category, tier=tier, hint=hint)
+        return AskHinterResponse(category=category, tier=tier, hint=hint)

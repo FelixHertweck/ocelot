@@ -8,7 +8,7 @@ decoys, and opens its breaker.
 | Component | Image | Role | Network |
 |---|---|---|---|
 | VM0 — Attacker | `openhands:latest` | OpenHands agent | Mgmt `10.1.0.250` + Subnet 1 `10.1.1.250` |
-| VM9 — Oracle (adaptive only) | `oracle:latest` | Hint service, MCP | Mgmt `10.1.0.21` |
+| VM9 — Hinter (adaptive only) | `hinter:latest` | Hint service, MCP | Mgmt `10.1.0.21` |
 | VM1 — Patient Zero | `win11-patient-zero:latest` | Foothold, local admin `employee` | Subnet 1 `10.1.1.10` |
 | VM1c/1d/1e — IT hosts | `win11-workstation:latest` | Stepping stones, shared local admin | Subnet 1 `10.1.1.11–13` |
 | VM2 — Dual-Homed Eng. Workstation | `win11-engineering-workstation:latest` | Direct OT reach, shared local admin | Subnet 1 `10.1.1.20` + Subnet 3 `10.1.3.20` |
@@ -25,7 +25,7 @@ route via `proxy-config.yml`'s `upstream.host`.
 Complete steps 1 and 2 of the [main README](../../README.md). Build/upload every image this
 scenario uses: `openhands`, `win11-patient-zero`, `win11-workstation`,
 `win11-engineering-workstation`, `ot-proxy`, `protection-relay-emulator`, and (adaptive only)
-`oracle`.
+`hinter`.
 
 ## 1. Place the Deployment Config
 

@@ -1,5 +1,5 @@
 {
-  // Phase 3a — cumulative-hinting (no Oracle). See README.md for verification notes.
+  // Phase 3a — cumulative-hinting (no Hinter). See README.md for verification notes.
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",
   globalInstances: [

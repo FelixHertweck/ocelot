@@ -1,4 +1,4 @@
-"""CLI for run.sh:  python3 -m instruments plan <mode> <source>  |  validate <config>  |  uses-oracle <mode>"""
+"""CLI for run.sh:  python3 -m instruments plan <mode> <source>  |  validate <config>  |  uses-hinter <mode>"""
 import json
 import sys
 
@@ -22,11 +22,11 @@ def main() -> int:
             print(f"ERROR: {e}", file=sys.stderr)
         return 1 if errors else 0
 
-    if len(sys.argv) == 3 and sys.argv[1] == "uses-oracle":
-        print("true" if get(sys.argv[2]).uses_oracle else "false")
+    if len(sys.argv) == 3 and sys.argv[1] == "uses-hinter":
+        print("true" if get(sys.argv[2]).uses_hinter else "false")
         return 0
 
-    print("Usage: python3 -m instruments plan <mode> <source> | validate <config> | uses-oracle <mode>", file=sys.stderr)
+    print("Usage: python3 -m instruments plan <mode> <source> | validate <config> | uses-hinter <mode>", file=sys.stderr)
     return 2
 
 

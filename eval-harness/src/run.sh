@@ -117,12 +117,12 @@ if [[ -z "$EVAL_LLM_API_KEY" ]]; then
   fi
 fi
 
-# Instrument-specific config checks (unknown mode, required oracle.base_url, ...).
+# Instrument-specific config checks (unknown mode, required hinter.base_url, ...).
 PYTHONPATH="$SCRIPT_DIR" python3 -m instruments validate "$CONFIG_FILE" || exit 1
-ORACLE_ENABLED=$(PYTHONPATH="$SCRIPT_DIR" python3 -m instruments uses-oracle "$PROMPTS_MODE") || exit 1
+HINTER_ENABLED=$(PYTHONPATH="$SCRIPT_DIR" python3 -m instruments uses-hinter "$PROMPTS_MODE") || exit 1
 
-if [[ "$ORACLE_ENABLED" == "false" && -n "$ORACLE_BASE_URL" ]]; then
-  echo "WARNING: oracle.base_url is set but prompts.mode '$PROMPTS_MODE' does not use Oracle — it will not be reset or recorded this run." >&2
+if [[ "$HINTER_ENABLED" == "false" && -n "$HINTER_BASE_URL" ]]; then
+  echo "WARNING: hinter.base_url is set but prompts.mode '$PROMPTS_MODE' does not use Hinter — it will not be reset or recorded this run." >&2
 fi
 
 # ── Generate run-id and lab_prefix ────────────────────────────────────────────
@@ -150,24 +150,24 @@ exec > >(trap '' INT TERM; exec tee -a "$LOG_FILE") 2>&1
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 log "Run: $RUN_ID  prefix=$LAB_PREFIX  skip_deploy=$SKIP_DEPLOY  num_runs=$NUM_RUNS"
 
-# ── Oracle hint-service integration (opt-in via prompts.mode: adaptive) ────────
-# Reachable only from the harness/attacker side (VM9, "Harness/Oracle" subnet),
+# ── Hinter hint-service integration (opt-in via prompts.mode: adaptive) ────────
+# Reachable only from the harness/attacker side (VM9, "Harness/Hinter" subnet),
 # same as OpenHands — kept centralized here rather than duplicated into every
 # scenario's eval.sh/reset.sh. No-op (immediate success) when disabled.
-oracle_reset() {
-  [[ "$ORACLE_ENABLED" == "true" ]] || return 0
-  log "  Resetting Oracle hint service ($ORACLE_BASE_URL)..."
-  python3 "$SCRIPT_DIR/lib/oracle_api.py" --base-url "$ORACLE_BASE_URL" reset >/dev/null 2>&1 \
-    || log "  WARNING: Oracle reset failed — next report may include stale sessions"
+hinter_reset() {
+  [[ "$HINTER_ENABLED" == "true" ]] || return 0
+  log "  Resetting Hinter hint service ($HINTER_BASE_URL)..."
+  python3 "$SCRIPT_DIR/lib/hinter_api.py" --base-url "$HINTER_BASE_URL" reset >/dev/null 2>&1 \
+    || log "  WARNING: Hinter reset failed — next report may include stale sessions"
 }
 
-oracle_report() {
+hinter_report() {
   local output_file="$1"
-  [[ "$ORACLE_ENABLED" == "true" ]] || return 0
-  log "  Fetching Oracle hint-usage report..."
-  python3 "$SCRIPT_DIR/lib/oracle_api.py" --base-url "$ORACLE_BASE_URL" report \
+  [[ "$HINTER_ENABLED" == "true" ]] || return 0
+  log "  Fetching Hinter hint-usage report..."
+  python3 "$SCRIPT_DIR/lib/hinter_api.py" --base-url "$HINTER_BASE_URL" report \
     > "$output_file" 2>/dev/null \
-    || { log "  WARNING: Oracle report fetch failed"; echo '{}' > "$output_file"; }
+    || { log "  WARNING: Hinter report fetch failed"; echo '{}' > "$output_file"; }
 }
 
 if ! [[ "$NUM_RUNS" =~ ^[0-9]+$ ]] || [[ "$NUM_RUNS" -lt 1 ]]; then
@@ -370,7 +370,7 @@ log "Prompt configurations: $PROMPT_COUNT"
 
 # Fresh slate before the very first prompt — matters for --skip-deploy reruns
 # against an already-running lab, which may carry sessions from a prior invocation.
-oracle_reset
+hinter_reset
 
 # ── Run loop ───────────────────────────────────────────────────────────────────
 log "=== Starting run loop ($NUM_RUNS run(s)) ==="
@@ -394,7 +394,7 @@ for RUN_IDX in $(seq 1 "$NUM_RUNS"); do
           exit 1
         fi
       fi
-      oracle_reset
+      hinter_reset
     fi
     continue
   fi
@@ -466,8 +466,8 @@ open('$PROMPT_DIR/prompt.txt', 'w').write(p['text'])
       echo "(no context script configured)" > "$PROMPT_DIR/context.txt"
     fi
 
-    # Oracle hint-usage report — what the agent asked/received this prompt (no-op if disabled)
-    oracle_report "$PROMPT_DIR/oracle_report.json"
+    # Hinter hint-usage report — what the agent asked/received this prompt (no-op if disabled)
+    hinter_report "$PROMPT_DIR/hinter_report.json"
 
     # Save run status
     cat > "$STATUS_FILE" <<STATUSEOF
@@ -499,7 +499,7 @@ STATUSEOF
           exit 1
         fi
       fi
-      oracle_reset
+      hinter_reset
     fi
 
     log "  Prompt-$i ($PROMPT_NAME): $FINAL_STATUS"

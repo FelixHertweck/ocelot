@@ -1,5 +1,5 @@
 {
-  // Phase 3c — adaptive-hinting (adds Oracle, Mgmt-network only). See README.md for
+  // Phase 3c — adaptive-hinting (adds Hinter, Mgmt-network only). See README.md for
   // the AD deploy sequence and verification notes.
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",
@@ -46,23 +46,23 @@
           hostname: "openhands",
           configFiles: [
             { source: "/cave/backend/configs/phase-3c/openhands.env", destination: "/home/ubuntu/.env" },
-            { source: "/cave/backend/configs/phase-3c/mcp-servers-oracle.json", destination: "/home/ubuntu/mcp-servers.json" },
+            { source: "/cave/backend/configs/phase-3c/mcp-servers-hinter.json", destination: "/home/ubuntu/mcp-servers.json" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },
         {
           type: "linux",
-          image: "oracle:latest",
-          post: "oracle",
+          image: "hinter:latest",
+          post: "hinter",
           networks: [ 0 ],
           lastOctet: 21,
-          name: "oracle",
+          name: "hinter",
           flavor: "server-small",
-          hostname: "oracle",
+          hostname: "hinter",
           configFiles: [
-            { source: "/cave/backend/configs/phase-3c/oracle-hints.json", destination: "/home/ubuntu/oracle/content/phase-3c.json" },
+            { source: "/cave/backend/configs/phase-3c/hinter-hints.json", destination: "/home/ubuntu/hinter/content/phase-3c.json" },
           ],
-          postCommand: "ORACLE_SCENARIO=phase-3c /home/ubuntu/run.sh",
+          postCommand: "HINTER_SCENARIO=phase-3c /home/ubuntu/run.sh",
         },
         {
           // Must finish domain-promotion.yml before any domain-join.yml below — see README.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Oracle hint-service REST client (report/reset). Usable as a library or CLI.
+"""Hinter hint-service REST client (report/reset). Usable as a library or CLI.
 
-Talks to the plain REST routes documented in oracle/README.md (GET /report,
+Talks to the plain REST routes documented in hinter/README.md (GET /report,
 POST /reset) — not the MCP tool surface itself, which the agent calls directly.
 """
 import argparse
@@ -10,7 +10,7 @@ import json
 import requests
 
 
-class OracleClient:
+class HinterClient:
     def __init__(self, base_url: str, timeout: int = 30):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -30,7 +30,7 @@ class OracleClient:
 
 
 def _cli() -> None:
-    parser = argparse.ArgumentParser(description="Oracle hint-service REST client")
+    parser = argparse.ArgumentParser(description="Hinter hint-service REST client")
     parser.add_argument("--base-url", required=True)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -40,7 +40,7 @@ def _cli() -> None:
     sub.add_parser("reset")
 
     args = parser.parse_args()
-    client = OracleClient(args.base_url)
+    client = HinterClient(args.base_url)
 
     if args.command == "report":
         print(json.dumps(client.report(args.session_id)))
