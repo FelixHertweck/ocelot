@@ -1,6 +1,6 @@
 # OCELOT: OT Cyber Exploitation via LLM Orchestration Testbed
 
-This project evaluates the capability of AI-driven agents to execute multi-step attacks against Industrial Control Systems (ICS). It provides an Infrastructure-as-Code (IaC) testbed that deploys attack scenarios against standard base images, targeting both physical OT hardware and software emulations.
+This project evaluates the capability of AI-driven agents to execute multi-step attacks against Industrial Control Systems (ICS). It provides an Infrastructure-as-Code (IaC) testbed that deploys attack scenarios against standard base images, targeting both physical OT hardware and software simulations.
 
 Scenarios use [OpenHands](https://github.com/All-Hands-AI/OpenHands) as the autonomous attacker agent. The testbed is protocol-agnostic: current scenarios cover Modbus TCP (Phases 0–1) and IEC 61850 MMS (Phase 2).
 
@@ -20,19 +20,19 @@ Scenarios use [OpenHands](https://github.com/All-Hands-AI/OpenHands) as the auto
 * **`images/`**: Packer configurations to build the VM images.
   * **`aloha-water-treatment/`**: Modbus TCP water treatment plant simulator.
   * **`decepticon/`**: Decepticon red-team agent image.
-  * **`inverter-emulator/`**: SMA solar inverter emulator image.
+  * **`inverter-simulator/`**: SMA solar inverter simulator image.
   * **`openhands/`**: OpenHands AI agent image.
   * **`hinter/`**: Hinter hint-service image (hinter wrapper container, mounted-JSON content). See [images/hinter/README.md](images/hinter/README.md).
   * **`ot-management-gateway/`**: OT management gateway image (HTTP admin + SSH).
   * **`ot-proxy/`**: Modbus TCP and IEC 61850 security proxy image.
-  * **`protection-relay-emulator/`**: IEC 61850 protection relay emulator image.
+  * **`protection-relay-simulator/`**: IEC 61850 protection relay simulator image.
   * **`win-domain-controller/`**: Windows Server 2022 Active Directory domain controller image (Phase 3c).
-* **`inverter-emulator/`**: Source code for the SMA solar inverter emulator (Java/Maven).
+* **`inverter-simulator/`**: Source code for the SMA solar inverter simulator (Java/Maven).
 * **`openhands_exporter/`**: Script to convert OpenHands conversation export ZIPs into readable Markdown files.
 * **`hinter/`**: Source code for the Hinter hint service (Python/FastMCP) — on-demand, per-category, tiered hints for the attacker LLM. See [hinter/README.md](hinter/README.md).
 * **`ot-management-gateway/`**: Source code for the OT management gateway (nginx + web app).
 * **`ot-proxy/`**: Source code for the Modbus TCP / IEC 61850 security proxy (Java/Maven).
-* **`protection-relay-emulator/`**: Source code for the IEC 61850 protection relay emulator (Java/Maven).
+* **`protection-relay-simulator/`**: Source code for the IEC 61850 protection relay simulator (Java/Maven).
 
 ## Getting Started
 
@@ -75,10 +75,10 @@ For deployment guides see the specific scenario documentation:
 | [Phase 0 — OpenHands](config/phase-0/Openhands.md) | OpenHands vs. Aloha Water Treatment | Modbus TCP |
 | [Phase 1a](config/phase-1a/README.md) | OpenHands vs. OT-Proxy | Modbus TCP |
 | [Phase 1b](config/phase-1b/README.md) | OpenHands: OT Gateway Exploitation and Register Mapping | Modbus TCP |
-| [Phase 1c](config/phase-1c/README.md) | OpenHands vs. SMA Inverter Emulator | Modbus TCP |
-| [Phase 1d](config/phase-1d/README.md) | OpenHands: Two-Stage Gateway Attack on SMA Inverter Emulator | Modbus TCP |
+| [Phase 1c](config/phase-1c/README.md) | OpenHands vs. SMA Inverter Simulator | Modbus TCP |
+| [Phase 1d](config/phase-1d/README.md) | OpenHands: Two-Stage Gateway Attack on SMA Inverter Simulator | Modbus TCP |
 | [Phase 2a](config/phase-2a/README.md) | OpenHands vs. OT-Proxy (IEC 61850) | IEC 61850 MMS |
-| [Phase 2b](config/phase-2b/README.md) | OpenHands vs. Protection Relay Emulator (IEC 61850) | IEC 61850 MMS |
+| [Phase 2b](config/phase-2b/README.md) | OpenHands vs. Protection Relay Simulator (IEC 61850) | IEC 61850 MMS |
 
 ### 4. Automated Evaluation
 

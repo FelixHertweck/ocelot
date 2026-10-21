@@ -2,18 +2,18 @@
   "categories": [
     {
       "name": "mms_endpoint",
-      "description": "Network location of the emulated IED: IP address, MMS port, and protocol.",
+      "description": "Network location of the simulated IED: IP address, MMS port, and protocol.",
       "hints": [
         "The target speaks IEC 61850 MMS; scan 10.1.1.0/24 for a host listening on TCP port 102.",
-        "The emulated IED is at 10.1.1.10, port 102.",
+        "The simulated IED is at 10.1.1.10, port 102.",
         "MMS is unauthenticated — connect directly with a libIEC61850-based client."
       ]
     },
     {
-      "name": "device_identity_emulator",
+      "name": "device_identity_simulator",
       "description": "What the target is and which data model it mirrors.",
       "hints": [
-        "The target is a software-emulated IEC 61850 IED running as a container image.",
+        "The target is a software-simulated IEC 61850 IED running as a container image.",
         "It is built on the open-source libIEC61850 stack (Edition 2).",
         "Its data model mirrors the Siemens SIPROTEC 5, including the SIP1 Logical Device prefix and Siemens LN prefixes."
       ]

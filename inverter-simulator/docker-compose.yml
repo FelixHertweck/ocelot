@@ -1,0 +1,14 @@
+services:
+  inverter-simulator:
+    image: ghcr.io/felixhertweck/ocelot-inverter-simulator:main
+    container_name: inverter-simulator
+    ports:
+      - "1502:502"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 502 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped

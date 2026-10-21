@@ -8,7 +8,7 @@
 In multi-step Industrial Control System (ICS) exploitation scenarios, monolithic LLMs suffer from severe "context drift" and compounding logic errors. While in-context memory is sufficient for single-device, flat-network tasks (Phases 1a and 1b), it fails as complexity scales. 
 
 From Phase 3 onward, the AI agent must simultaneously track:
-* Multiple physical and emulated devices across different network segments (IT and OT).
+* Multiple physical and simulated devices across different network segments (IT and OT).
 * Distinct OT protocol namespaces (Modbus TCP and IEC 61850).
 * Extracted credential pairs and their associated interfaces.
 * Semantic register-to-component mappings (bridging the IT/OT semantic gap).

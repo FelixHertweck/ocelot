@@ -33,7 +33,7 @@
           id: 1,
         },
         {
-          // OT network: ot-gateway (OT-side NIC) + inverter-emulator
+          // OT network: ot-gateway (OT-side NIC) + inverter-simulator
           internalDns: false,
           id: 2,
         },
@@ -56,16 +56,16 @@
           postCommand: "/home/ubuntu/run.sh",
         },
         {
-          // SMA inverter emulator — OT network only, directly reachable from the gateway.
+          // SMA inverter simulator — OT network only, directly reachable from the gateway.
           type: "linux",
-          image: "inverter-emulator:latest",
-          post: "inverter-emulator",
+          image: "inverter-simulator:latest",
+          post: "inverter-simulator",
           networks: [ 2 ],
           lastOctet: 15,
           macAddress: null,
-          name: "inverter-emulator",
+          name: "inverter-simulator",
           flavor: "server-small",
-          hostname: "inverter-emulator",
+          hostname: "inverter-simulator",
           postCommand: "/home/ubuntu/run.sh",
         },
         {

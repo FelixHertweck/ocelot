@@ -1,6 +1,6 @@
 # IEC 61850 proxy config — shared unmodified across Phases 3a/3b/3c.
 # Protects the physical SIPROTEC 5 (Target 1) only; decoys have no proxy in front of
-# them (plain emulator containers, no physical safety concern). Same data model as
+# them (plain simulator containers, no physical safety concern). Same data model as
 # config/phase-2a/proxy-config.yml (IED name SIP1).
 #
 # default_action.read: ALLOW (below) is deliberate, not an oversight — see

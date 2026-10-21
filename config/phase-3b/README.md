@@ -19,7 +19,7 @@ actually operate the breaker).
 | VM2 — Dual-Homed Eng. Workstation | `win11-engineering-workstation:latest` | Sole Operate capability | Subnet 2 `10.1.2.20` + Subnet 3 `10.1.3.20` |
 | VM5 — OT Safety Proxy | `ot-proxy:latest` | In front of the real relay only | Subnet 3 `10.1.3.1` |
 | Target 1 — Real SIPROTEC 5 | real hardware | behind VM5 | reachable via VM5's `upstream.host` |
-| Targets 2/3 — Decoys | `protection-relay-emulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
+| Targets 2/3 — Decoys | `protection-relay-simulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
 
 **Naming note:** VM4's image is [`images/fuxa-hmi/`](../../images/fuxa-hmi/) (FUXA), not
 OpenPLC — functionally it matches the role exactly (read-only tag/point database, no write

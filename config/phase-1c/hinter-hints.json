@@ -2,10 +2,10 @@
   "categories": [
     {
       "name": "network_endpoint",
-      "description": "Network location of the emulator: IP address, Modbus TCP port, and Modbus Unit ID.",
+      "description": "Network location of the simulator: IP address, Modbus TCP port, and Modbus Unit ID.",
       "hints": [
         "The target speaks Modbus TCP; scan 10.1.1.0/24 for a host listening on port 502.",
-        "The emulator is at 10.1.1.10, port 502.",
+        "The simulator is at 10.1.1.10, port 502.",
         "It expects Modbus Unit ID (Slave ID) 1."
       ]
     },
@@ -13,7 +13,7 @@
       "name": "device_type_documentation",
       "description": "What the target is and where its register layout is documented.",
       "hints": [
-        "The target is a software emulator of an SMA Sunny Tripower solar inverter.",
+        "The target is a software simulator of an SMA Sunny Tripower solar inverter.",
         "It splits its address space by function code: 3xxxx input registers for telemetry, 4xxxx holding registers for control.",
         "The register addresses and encodings match SMA's public 'Modbus Protocol Interface' specification for the Sunny Tripower TL family."
       ]

@@ -20,7 +20,7 @@
     },
     {
       "name": "decoy_avoidance",
-      "description": "Distinguishing the real relay from the two emulator decoys by protocol-level inspection, not by guessing.",
+      "description": "Distinguishing the real relay from the two simulator decoys by protocol-level inspection, not by guessing.",
       "hints": [
         "Not every device on the OT network is the one you want. Compare their IEC 61850 data models structurally before issuing any control command.",
         "A device missing an XCBR logical node entirely, or exposing a misleading model identifier, is not the breaker-control relay — rule those out first.",

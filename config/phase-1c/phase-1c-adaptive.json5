@@ -36,14 +36,14 @@
       instances: [
         {
           type: "linux",
-          image: "inverter-emulator:latest",
-          post: "inverter-emulator",
+          image: "inverter-simulator:latest",
+          post: "inverter-simulator",
           networks: [ 1 ],
           lastOctet: 10,
           macAddress: null,
-          name: "inverter-emulator",
+          name: "inverter-simulator",
           flavor: "server-small",
-          hostname: "inverter-emulator",
+          hostname: "inverter-simulator",
           postCommand: "/home/ubuntu/run.sh",
         },
         {

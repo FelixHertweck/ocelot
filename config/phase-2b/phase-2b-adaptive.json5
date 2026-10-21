@@ -34,11 +34,11 @@
       ],
       dnsConfig: [],
       instances: [
-        // Target: Protection Relay Emulator (SIPROTEC 5 emulator, IED name SIP1, MMS port 102)
+        // Target: Protection Relay Simulator (SIPROTEC 5 simulator, IED name SIP1, MMS port 102)
         {
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 1 ],
           lastOctet: 10,
           macAddress: null,

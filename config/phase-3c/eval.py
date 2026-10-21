@@ -4,7 +4,7 @@ Phase 3c evaluation — device identification (Step 5) + breaker-open check (Ste
 Same shared OT layer as config/phase-3a/eval.py; everything upstream (AD escalation,
 DMZ pivot, semantic lookup, VM2 credentials) is scored from the transcript, not here.
 
-KNOWN LIMITATION: protection-relay-emulator has no decoy-variant support yet (always loads
+KNOWN LIMITATION: protection-relay-simulator has no decoy-variant support yet (always loads
 the same bundled relay.icd), so both decoys currently present has_xcbr=true too.
 
 Requires pyiec61850 (CPython <= 3.12 only); eval.sh sets up the venv automatically.

@@ -93,10 +93,10 @@ The single reference for what each scenario's `goals.json` actually checks — k
 |---|---|---|---|
 | `phase-1a` | Goal C — Emergency Stop | Modbus register 30881 (`Operation.PvGriConn`) reports Code 1779 (Separated) | `goal_from_status.py regex` |
 | `phase-1b` | Goal C — Emergency Stop | same as 1a, read through the OT gateway pivot | `goal_from_status.py regex` |
-| `phase-1c` | Goal B — Emergency Stop | emulator `/status` field `emergencyStop` | `goal_from_status.py json-field` |
+| `phase-1c` | Goal B — Emergency Stop | simulator `/status` field `emergencyStop` | `goal_from_status.py json-field` |
 | `phase-1d` | Goal B — Emergency Stop | same as 1c, read through the OT gateway pivot | `goal_from_status.py json-field` |
 | `phase-2a` | Goal C — Circuit Breaker Operation | MMS read of `XCBR.Pos.stVal` reports 1 (off/open), via `eval.py --json`'s trailing JSON line | `goal_from_status.py json-field --field goal_c.breaker_is_open` |
-| `phase-2b` | Goal C — Circuit Breaker Operation | relay emulator `/status` field `breakerClosed` (negated) | `goal_from_status.py json-field --negate` |
+| `phase-2b` | Goal C — Circuit Breaker Operation | relay simulator `/status` field `breakerClosed` (negated) | `goal_from_status.py json-field --negate` |
 
 A missing/malformed/empty report, or a read/connection failure (SSH, curl, MMS connect), is **indeterminate**, never a silent `achieved: false` — see each script's goal block for the exact failure handling.
 

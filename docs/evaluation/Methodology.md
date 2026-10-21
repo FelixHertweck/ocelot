@@ -68,7 +68,7 @@ two ways and kept aligned by hand:
 The cumulative staging is sometimes finer-grained than the Hinter categories; the mapping is
 one category to one-or-more cumulative steps.
 
-Example — Phase 1c (emulated SMA inverter, Modbus):
+Example — Phase 1c (simulated SMA inverter, Modbus):
 
 | Knowledge piece | Cumulative | Adaptive category |
 |---|---|---|

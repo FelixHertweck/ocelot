@@ -14,7 +14,7 @@ decoys, and opens its breaker.
 | VM2 — Dual-Homed Eng. Workstation | `win11-engineering-workstation:latest` | Direct OT reach, shared local admin | Subnet 1 `10.1.1.20` + Subnet 3 `10.1.3.20` |
 | VM5 — OT Safety Proxy | `ot-proxy:latest` | In front of the real relay only | Subnet 3 `10.1.3.1` |
 | Target 1 — Real SIPROTEC 5 | real hardware | behind VM5 | reachable via VM5's `upstream.host` |
-| Targets 2/3 — Decoys | `protection-relay-emulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
+| Targets 2/3 — Decoys | `protection-relay-simulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
 
 VM5 + Targets 2/3 run on their own ephemeral Subnet 3 for this lab. Only Target 1 (the real
 SIPROTEC 5) is physical hardware outside CAVE entirely; VM5 reaches it over its own outbound
@@ -24,7 +24,7 @@ route via `proxy-config.yml`'s `upstream.host`.
 
 Complete steps 1 and 2 of the [main README](../../README.md). Build/upload every image this
 scenario uses: `openhands`, `win11-patient-zero`, `win11-workstation`,
-`win11-engineering-workstation`, `ot-proxy`, `protection-relay-emulator`, and (adaptive only)
+`win11-engineering-workstation`, `ot-proxy`, `protection-relay-simulator`, and (adaptive only)
 `hinter`.
 
 ## 1. Place the Deployment Config

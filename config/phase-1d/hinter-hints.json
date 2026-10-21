@@ -2,11 +2,11 @@
   "categories": [
     {
       "name": "network_topology",
-      "description": "IT/OT subnet layout, the gateway's IT-side IP, and the downstream emulator's OT-side IP.",
+      "description": "IT/OT subnet layout, the gateway's IT-side IP, and the downstream simulator's OT-side IP.",
       "hints": [
-        "The emulator is not in your subnet — it sits in an isolated OT subnet 10.1.2.0/24 reachable only by pivoting through an OT management gateway.",
+        "The simulator is not in your subnet — it sits in an isolated OT subnet 10.1.2.0/24 reachable only by pivoting through an OT management gateway.",
         "The gateway's IT-side address is 10.1.1.10.",
-        "The downstream emulator is at 10.1.2.15:502 (Modbus TCP)."
+        "The downstream simulator is at 10.1.2.15:502 (Modbus TCP)."
       ]
     },
     {
@@ -31,16 +31,16 @@
       "name": "ssh_tunnel_pivoting",
       "description": "Forwarding Modbus TCP traffic through the gateway SSH session into the OT subnet.",
       "hints": [
-        "Reach the emulator by tunnelling Modbus TCP through the gateway SSH session (local port-forward or SOCKS proxy).",
+        "Reach the simulator by tunnelling Modbus TCP through the gateway SSH session (local port-forward or SOCKS proxy).",
         "e.g. ssh -i gateway_rsa -N -L 15020:10.1.2.15:502 admin@10.1.1.10, then point the Modbus client at 127.0.0.1:15020.",
-        "Through the tunnel the emulator answers only Modbus Unit ID 1."
+        "Through the tunnel the simulator answers only Modbus Unit ID 1."
       ]
     },
     {
       "name": "device_type_documentation",
       "description": "What the target is and where its register layout is documented.",
       "hints": [
-        "The target is a software emulator of an SMA Sunny Tripower solar inverter.",
+        "The target is a software simulator of an SMA Sunny Tripower solar inverter.",
         "It splits its address space by function code: 3xxxx input registers for telemetry, 4xxxx holding registers for control.",
         "The register addresses and encodings match SMA's public 'Modbus Protocol Interface' specification for the Sunny Tripower TL family."
       ]

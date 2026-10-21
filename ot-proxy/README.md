@@ -186,8 +186,8 @@ Not conveyed downstream (accepted limitation):
 - The asynchronous **`CommandTermination`** — the normal-security server does not emit it.
 
 Consequence for reconnaissance: a client sees `CSWI1.Pos` as `sbo-with-normal-security`, not the
-physical device's `sbo-with-enhanced-security`. The `protection-relay-emulator` deliberately mirrors
-this (`ctlModel` 2) so agent-facing behaviour is identical whether the upstream is the emulator or
+physical device's `sbo-with-enhanced-security`. The `protection-relay-simulator` deliberately mirrors
+this (`ctlModel` 2) so agent-facing behaviour is identical whether the upstream is the simulator or
 the real IED.
 
 ### Rate limiting

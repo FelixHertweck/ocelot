@@ -19,7 +19,7 @@ VM3 read rights) and GPO abuse (Path C → VM4/FUXA credentials).
 | VM2 — Dual-Homed Eng. Workstation | `win11-engineering-workstation:latest` | Sole Operate capability | Subnet 2 `10.1.2.20` + Subnet 3 `10.1.3.20` |
 | VM5 — OT Safety Proxy | `ot-proxy:latest` | In front of the real relay only | Subnet 3 `10.1.3.1` |
 | Target 1 — Real SIPROTEC 5 | real hardware | behind VM5 | reachable via VM5's `upstream.host` |
-| Targets 2/3 — Decoys | `protection-relay-emulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
+| Targets 2/3 — Decoys | `protection-relay-simulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
 
 Same VM4 naming note as [phase-3b/README.md](../phase-3b/README.md) — the image is FUXA,
 not OpenPLC. `images/win-domain-controller/VulnAD.ps1` creates `svc_fuxa` and a GPO literally

@@ -187,8 +187,8 @@
         {
           // Target 2 — decoy relay, no proxy in front of it.
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 3 ],
           lastOctet: 50,
           name: "target2",
@@ -199,8 +199,8 @@
         {
           // Target 3 — decoy relay, no proxy in front of it.
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 3 ],
           lastOctet: 51,
           name: "target3",
