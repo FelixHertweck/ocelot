@@ -2,7 +2,7 @@
 # Protects a physical Siemens SIPROTEC 5 IED against unauthorised circuit breaker operates.
 # The agent reaches only this proxy; the physical device sits upstream, off the lab network.
 #
-# Object references use the SIPROTEC 5 data model (IED name SIP1); the Phase 2b emulator
+# Object references use the SIPROTEC 5 data model (IED name SIP1); the Phase 2b simulator
 # (relay.icd) mirrors the same references:
 #   SIP1CB1/XCBR1.Pos                          — circuit breaker (ctlModel=status-only)
 #   SIP1CB1/CSWI1.Pos                          — switch controller (actual control path;
@@ -26,7 +26,7 @@ proxy:
     port: 102               # MMS port the proxy binds to
   upstream:
     # Address of the physical SIPROTEC 5 as reachable from the ot-proxy VM. MUST be set before
-    # deploying Phase 2a — "protection-relay" is the Phase 2b emulator's Docker service name and
+    # deploying Phase 2a — "protection-relay" is the Phase 2b simulator's Docker service name and
     # is only a placeholder here.
     host: protection-relay
     port: 102               # MMS port of the upstream IED

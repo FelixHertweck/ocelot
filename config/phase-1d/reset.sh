@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Phase 1d — Reset between runs.
-# 1. SSHes into the Protection Relay Emulator VM and resets via REST endpoint (localhost:8080)
+# 1. SSHes into the Protection Relay Simulator VM and resets via REST endpoint (localhost:8080)
 # 2. SSHes into the Attacker VM and runs ~/reset.sh there
 #
 # SSH key discovery: source $CAVE_WRAPPER_DIR/.env → SSH_KEY_NAME,
@@ -38,12 +38,12 @@ SSH_OPTS=(
     -o BatchMode=yes
 )
 
-echo "=== Phase 1d Reset: Resetting Protection Relay Emulator ==="
+echo "=== Phase 1d Reset: Resetting Protection Relay Simulator ==="
 echo "  Host: ${RELAY_USER}@${RELAY_HOST}"
 
 ssh "${SSH_OPTS[@]}" "${RELAY_USER}@${RELAY_HOST}" \
     'curl -s -X POST http://localhost:8080/reset' || {
-    echo "WARNING: Failed to reset protection relay emulator" >&2
+    echo "WARNING: Failed to reset protection relay simulator" >&2
 }
 
 echo "=== Phase 1d Reset: Resetting Attacker VM ==="

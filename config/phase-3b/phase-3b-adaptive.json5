@@ -1,5 +1,5 @@
 {
-  // Phase 3b — adaptive-hinting (adds Oracle, Mgmt-network only). See README.md.
+  // Phase 3b — adaptive-hinting (adds Hinter, Mgmt-network only). See README.md.
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",
   globalInstances: [
@@ -45,23 +45,23 @@
           hostname: "openhands",
           configFiles: [
             { source: "/cave/backend/configs/phase-3b/openhands.env", destination: "/home/ubuntu/.env" },
-            { source: "/cave/backend/configs/phase-3b/mcp-servers-oracle.json", destination: "/home/ubuntu/mcp-servers.json" },
+            { source: "/cave/backend/configs/phase-3b/mcp-servers-hinter.json", destination: "/home/ubuntu/mcp-servers.json" },
           ],
           postCommand: "/home/ubuntu/run.sh",
         },
         {
           type: "linux",
-          image: "oracle:latest",
-          post: "oracle",
+          image: "hinter:latest",
+          post: "hinter",
           networks: [ 0 ],
           lastOctet: 21,
-          name: "oracle",
+          name: "hinter",
           flavor: "server-small",
-          hostname: "oracle",
+          hostname: "hinter",
           configFiles: [
-            { source: "/cave/backend/configs/phase-3b/oracle-hints.json", destination: "/home/ubuntu/oracle/content/phase-3b.json" },
+            { source: "/cave/backend/configs/phase-3b/hinter-hints.json", destination: "/home/ubuntu/hinter/content/phase-3b.json" },
           ],
-          postCommand: "ORACLE_SCENARIO=phase-3b /home/ubuntu/run.sh",
+          postCommand: "HINTER_SCENARIO=phase-3b /home/ubuntu/run.sh",
         },
         {
           type: "win-server",
@@ -181,8 +181,8 @@
         {
           // Target 2 — decoy relay, no proxy in front of it.
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 3 ],
           lastOctet: 50,
           name: "target2",
@@ -193,8 +193,8 @@
         {
           // Target 3 — decoy relay, no proxy in front of it.
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 3 ],
           lastOctet: 51,
           name: "target3",

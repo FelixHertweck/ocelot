@@ -1,0 +1,36 @@
+name: Hinter — Build & Publish
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "hinter/**"
+      - "!hinter/**/*.md"
+      - ".github/workflows/hinter.yml"
+    tags:
+      - "v*.*"
+      - "v*.*.*"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "hinter/**"
+      - "!hinter/**/*.md"
+      - ".github/workflows/hinter.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/docker.yml
+    secrets: inherit
+    with:
+      docker-file-path: hinter/Dockerfile
+      docker-build-context: hinter
+      container-image-title: OCELOT Hinter
+      image-name: ${{ github.repository }}-hinter

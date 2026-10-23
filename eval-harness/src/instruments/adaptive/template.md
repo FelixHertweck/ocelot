@@ -2,10 +2,10 @@
 the single run; §3–§4 collapse to one row / one subsection.
 
 @@ instrument_label
-Adaptive Oracle
+Adaptive Hinter
 
 @@ overview_note
-<!-- One sentence: the agent could call `ask_oracle(category)` on demand for progressively deeper hints; §5 lists its calls. -->
+<!-- One sentence: the agent could call `ask_hinter(category)` on demand for progressively deeper hints; §5 lists its calls. -->
 
 @@ results_note
 <!-- One row — the run's final outcome. -->

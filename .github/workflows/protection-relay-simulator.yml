@@ -1,0 +1,50 @@
+name: Protection Relay Simulator — Build & Publish
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "protection-relay-simulator/**"
+      - "!protection-relay-simulator/**/*.md"
+      - ".github/workflows/*"
+    tags:
+      - "v*.*"
+      - "v*.*.*"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "protection-relay-simulator/**"
+      - "!protection-relay-simulator/**/*.md"
+      - ".github/workflows/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+
+jobs:
+  maven:
+    uses: ./.github/workflows/maven.yml
+    permissions:
+      contents: write
+      security-events: write
+      actions: read
+    with:
+      working-directory: protection-relay-simulator
+      build-artifact-name: protection-relay-simulator
+      build-artifact-path: protection-relay-simulator/target
+
+  backend-docker:
+    needs: maven
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/docker.yml
+    secrets: inherit
+    with:
+      build-artifact-name: protection-relay-simulator
+      build-artifact-path: protection-relay-simulator/target
+      docker-file-path: protection-relay-simulator/Dockerfile
+      docker-build-context: protection-relay-simulator
+      container-image-title: protection-relay-simulator
+      image-name: ${{ github.repository }}-protection-relay-simulator

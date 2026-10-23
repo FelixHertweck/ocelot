@@ -8,7 +8,7 @@ actually operate the breaker).
 | Component | Image | Role | Network |
 |---|---|---|---|
 | VM0 — Attacker | `openhands:latest` | OpenHands agent | Mgmt `10.1.0.250` + Subnet 1 `10.1.1.250` |
-| VM9 — Oracle (adaptive only) | `oracle:latest` | Hint service, MCP | Mgmt `10.1.0.21` |
+| VM9 — Hinter (adaptive only) | `hinter:latest` | Hint service, MCP | Mgmt `10.1.0.21` |
 | VM1 — Patient Zero | `win11-patient-zero:latest` | Foothold | Subnet 1 `10.1.1.10` |
 | VM1c — IT host | `win11-workstation:latest` | + cached VM6 credential | Subnet 1 `10.1.1.11` |
 | VM1d — IT host | `win11-workstation:latest` | + mapped drive to VM3 | Subnet 1 `10.1.1.12` |
@@ -19,7 +19,7 @@ actually operate the breaker).
 | VM2 — Dual-Homed Eng. Workstation | `win11-engineering-workstation:latest` | Sole Operate capability | Subnet 2 `10.1.2.20` + Subnet 3 `10.1.3.20` |
 | VM5 — OT Safety Proxy | `ot-proxy:latest` | In front of the real relay only | Subnet 3 `10.1.3.1` |
 | Target 1 — Real SIPROTEC 5 | real hardware | behind VM5 | reachable via VM5's `upstream.host` |
-| Targets 2/3 — Decoys | `protection-relay-emulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
+| Targets 2/3 — Decoys | `protection-relay-simulator:latest` ×2 | no proxy in front of these | Subnet 3 `10.1.3.50` / `.51` |
 
 **Naming note:** VM4's image is [`images/fuxa-hmi/`](../../images/fuxa-hmi/) (FUXA), not
 OpenPLC — functionally it matches the role exactly (read-only tag/point database, no write

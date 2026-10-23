@@ -1,8 +1,8 @@
 version: 2
 updates:
-  # Docker: inverter-emulator
+  # Docker: inverter-simulator
   - package-ecosystem: "docker"
-    directory: "/inverter-emulator"
+    directory: "/inverter-simulator"
     schedule:
       interval: "weekly"
 
@@ -12,9 +12,9 @@ updates:
     schedule:
       interval: "weekly"
 
-  # Docker: protection-relay-emulator
+  # Docker: protection-relay-simulator
   - package-ecosystem: "docker"
-    directory: "/protection-relay-emulator"
+    directory: "/protection-relay-simulator"
     schedule:
       interval: "weekly"
 
@@ -24,9 +24,9 @@ updates:
     schedule:
       interval: "weekly"
 
-  # Maven: inverter-emulator
+  # Maven: inverter-simulator
   - package-ecosystem: "maven"
-    directory: "/inverter-emulator"
+    directory: "/inverter-simulator"
     schedule:
       interval: "weekly"
 
@@ -36,9 +36,9 @@ updates:
     schedule:
       interval: "weekly"
 
-  # Maven: protection-relay-emulator
+  # Maven: protection-relay-simulator
   - package-ecosystem: "maven"
-    directory: "/protection-relay-emulator"
+    directory: "/protection-relay-simulator"
     schedule:
       interval: "weekly"
 

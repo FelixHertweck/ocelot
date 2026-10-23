@@ -40,8 +40,8 @@ def parse_fragments(text: str) -> dict[str, str]:
 
 class Instrument(ABC):
     name: str
-    #: whether the harness resets/records the Oracle hint service for this instrument
-    uses_oracle: bool = False
+    #: whether the harness resets/records the Hinter hint service for this instrument
+    uses_hinter: bool = False
     #: directory holding this instrument's fragment files (<core prompt filename>)
     fragments_dir: Path
 

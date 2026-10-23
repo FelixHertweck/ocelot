@@ -5,7 +5,7 @@
 **Context Area:** Cloud Infrastructure, CAVE Framework Deployment, OpenStack
 
 ## 1. Context and Problem Statement
-To support our Infrastructure-as-Code (IaC) testbed deployments via the CAVE framework and OpenTofu, we require an underlying local OpenStack environment running on a single-node server. This server must host the attacker VMs, the emulated OT endpoints, and handle the routing to the physical hardware-in-the-loop devices.
+To support our Infrastructure-as-Code (IaC) testbed deployments via the CAVE framework and OpenTofu, we require an underlying local OpenStack environment running on a single-node server. This server must host the attacker VMs, the simulated OT endpoints, and handle the routing to the physical hardware-in-the-loop devices.
 
 The official CAVE documentation recommends using **DevStack** for local deployments. We needed to evaluate whether to follow this recommendation or use **MicroStack** to ensure the stability and reproducibility required for our research lifecycle.
 

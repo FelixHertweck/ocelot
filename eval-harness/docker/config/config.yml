@@ -59,7 +59,7 @@ evaluation:
 
 # prompts:
 #   mode: cumulative                         # default: cumulative — name of the instrument (see src/instruments/; e.g. adaptive)
-#                                             # adaptive also needs oracle.base_url + a cave_config_name that deploys the Oracle VM
+#                                             # adaptive also needs hinter.base_url + a cave_config_name that deploys the Hinter VM
 
 # runs:
 #   count: 1                                 # default: 1. If >1, the full prompt sweep is repeated N times
@@ -67,8 +67,8 @@ evaluation:
 #                                             # kept fully separate under run1/, run2/, ... and combined into
 #                                             # a top-level evaluation.md at the end.
 
-# oracle:
-#   base_url: http://10.1.1.21:8080          # required when prompts.mode is adaptive (fails fast at startup if unset) — Oracle's REST base URL, reachable from the harness the same way as openhands.base_url
+# hinter:
+#   base_url: http://10.1.1.21:8080          # required when prompts.mode is adaptive (fails fast at startup if unset) — Hinter's REST base URL, reachable from the harness the same way as openhands.base_url
 
 # context_script:
 #   cmd: "bash eval.sh"                      # default: bash eval.sh in config_dir

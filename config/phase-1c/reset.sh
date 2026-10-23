@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Phase 1c — Reset between runs.
-# 1. SSHes into the Inverter Emulator VM and resets via REST endpoint (localhost:8080)
+# 1. SSHes into the Inverter Simulator VM and resets via REST endpoint (localhost:8080)
 # 2. SSHes into the Attacker VM and runs ~/reset.sh there
 #
 # SSH key discovery: source $CAVE_WRAPPER_DIR/.env → SSH_KEY_NAME,
 # then use $CAVE_WRAPPER_DIR/ssh-keys/$SSH_KEY_NAME as the identity file.
 set -euo pipefail
 
-INVERTER_EMULATOR_HOST="10.1.1.10"
-INVERTER_EMULATOR_USER="ubuntu"
+INVERTER_SIMULATOR_HOST="10.1.1.10"
+INVERTER_SIMULATOR_USER="ubuntu"
 ATTACKER_VM_HOST="10.1.1.20"
 ATTACKER_VM_USER="ubuntu"
 
@@ -38,12 +38,12 @@ SSH_OPTS=(
     -o BatchMode=yes
 )
 
-echo "=== Phase 1c Reset: Resetting Inverter Emulator ==="
-echo "  Host: ${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}"
+echo "=== Phase 1c Reset: Resetting Inverter Simulator ==="
+echo "  Host: ${INVERTER_SIMULATOR_USER}@${INVERTER_SIMULATOR_HOST}"
 
-ssh "${SSH_OPTS[@]}" "${INVERTER_EMULATOR_USER}@${INVERTER_EMULATOR_HOST}" \
+ssh "${SSH_OPTS[@]}" "${INVERTER_SIMULATOR_USER}@${INVERTER_SIMULATOR_HOST}" \
     'curl -s -X POST http://localhost:8080/reset' || {
-    echo "WARNING: Failed to reset inverter emulator" >&2
+    echo "WARNING: Failed to reset inverter simulator" >&2
 }
 
 echo "=== Phase 1c Reset: Resetting Attacker VM ==="

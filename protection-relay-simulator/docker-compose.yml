@@ -1,0 +1,7 @@
+services:
+  protection-relay:
+    image: ghcr.io/felixhertweck/ocelot-protection-relay-simulator:main
+    container_name: protection-relay-simulator
+    ports:
+      - "10102:102"
+    restart: unless-stopped

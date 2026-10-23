@@ -41,7 +41,7 @@ ssh \
     "${ATTACKER_VM_USER}@${ATTACKER_VM_HOST}" \
     'bash ~/reset.sh'
 
-echo "=== Phase 2b Reset: Resetting protection-relay-emulator ==="
+echo "=== Phase 2b Reset: Resetting protection-relay-simulator ==="
 echo "  Host: ${RELAY_USER}@${RELAY_HOST}"
 
 ssh \

@@ -5,7 +5,7 @@
 **Context Area:** AI Agent Orchestration, ICS Exploitation Testbed
 
 ## 1. Context and Problem Statement
-The project aims to demonstrate how a multi-agent AI system can overcome the "capability wall" (context drift, compounding logic errors, and polling traps) observed in monolithic LLMs during Industrial Control System (ICS) exploitation. The architecture will execute complex, multi-step scenarios (Phases 1 through 5) against physical and emulated OT devices (Modbus TCP, IEC 61850). 
+The project aims to demonstrate how a multi-agent AI system can overcome the "capability wall" (context drift, compounding logic errors, and polling traps) observed in monolithic LLMs during Industrial Control System (ICS) exploitation. The architecture will execute complex, multi-step scenarios (Phases 1 through 5) against physical and simulated OT devices (Modbus TCP, IEC 61850). 
 
 To orchestrate the LLM agents on the attacker VM, two primary approaches were considered:
 1. **OpenClaw:** A fully autonomous, persistent Command and Control (C2) daemon/framework that natively handles OS interactions and agent workflows.

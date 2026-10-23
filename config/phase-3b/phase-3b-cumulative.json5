@@ -1,5 +1,5 @@
 {
-  // Phase 3b — cumulative-hinting (no Oracle). See README.md for verification notes.
+  // Phase 3b — cumulative-hinting (no Hinter). See README.md for verification notes.
   firstOctet: 10,
   wireguardCidr: "10.253.0.0/16",
   globalInstances: [
@@ -169,8 +169,8 @@
         {
           // Target 2 — decoy relay, no proxy in front of it.
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 3 ],
           lastOctet: 50,
           name: "target2",
@@ -181,8 +181,8 @@
         {
           // Target 3 — decoy relay, no proxy in front of it.
           type: "linux",
-          image: "protection-relay-emulator:latest",
-          post: "protection-relay-emulator",
+          image: "protection-relay-simulator:latest",
+          post: "protection-relay-simulator",
           networks: [ 3 ],
           lastOctet: 51,
           name: "target3",
